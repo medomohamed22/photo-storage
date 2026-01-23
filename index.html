@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>منصة الخدمات المنزلية - Pi</title>
 
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
@@ -14,19 +13,44 @@
   --p:#7f5cff;
   --bg:#0f0f1a;
   --card:rgba(255,255,255,.08);
+  --muted:rgba(255,255,255,.65);
+  --stroke:rgba(255,255,255,.12);
 }
 *{box-sizing:border-box;font-family:Tajawal,system-ui}
 body{margin:0;background:var(--bg);color:#fff}
-header{padding:15px;text-align:center;font-size:20px;background:#141428}
-.container{padding:12px}
-.card{background:var(--card);padding:12px;border-radius:14px;margin-bottom:10px}
-.btn{background:var(--p);border:none;color:#fff;padding:10px 14px;border-radius:10px}
-input,textarea{width:100%;padding:8px;border-radius:8px;border:none}
-.ads img{width:100%;border-radius:10px}
+header{padding:15px;text-align:center;font-size:20px;background:#141428;position:sticky;top:0;z-index:5}
+.container{padding:12px;max-width:520px;margin:0 auto}
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+  border:1px solid var(--stroke);
+  padding:12px;border-radius:14px;margin-bottom:10px;
+  backdrop-filter: blur(10px);
+}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.btn{
+  background:var(--p);border:none;color:#fff;padding:10px 14px;border-radius:10px;
+  cursor:pointer;transition:.2s transform,.2s opacity;min-width:140px
+}
+.btn:active{transform:scale(.98)}
+.btn.secondary{background:transparent;border:1px solid var(--stroke)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+input,textarea{
+  width:100%;padding:10px;border-radius:10px;border:1px solid var(--stroke);
+  background:rgba(0,0,0,.2);color:#fff;outline:none
+}
+small{color:var(--muted)}
 .badge{background:gold;color:#000;padding:3px 8px;border-radius:8px;font-size:12px}
-.chat{height:200px;overflow:auto;background:#111;border-radius:10px;padding:6px}
-.msg{margin:4px 0}
-.me{color:#7f5cff}
+.chat{height:220px;overflow:auto;background:rgba(0,0,0,.25);border:1px solid var(--stroke);border-radius:12px;padding:10px}
+.msg{margin:6px 0;line-height:1.4}
+.me{color:#cbb6ff}
+.hr{height:1px;background:var(--stroke);margin:10px 0}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:18px;background:rgba(0,0,0,.55);border:1px solid var(--stroke);
+  padding:10px 12px;border-radius:12px;backdrop-filter:blur(10px);
+  max-width:92vw;display:none
+}
+.toast.show{display:block}
 </style>
 </head>
 
@@ -36,106 +60,330 @@ input,textarea{width:100%;padding:8px;border-radius:8px;border:none}
 
 <div class="container">
 
-<div class="card" id="loginBox">
-  <button class="btn" onclick="piLogin()">تسجيل الدخول عبر Pi</button>
+  <div class="card" id="loginBox">
+    <div class="row">
+      <div>
+        <div style="font-size:16px;font-weight:700">تسجيل الدخول</div>
+        <small>سجّل دخولك بحساب Pi لعرض الإعلانات والتواصل مع مقدمي الخدمة</small>
+      </div>
+      <button class="btn" id="loginBtn" onclick="piLogin()">تسجيل الدخول عبر Pi</button>
+    </div>
+    <div class="hr"></div>
+    <small id="sdkState">جارٍ تهيئة Pi SDK…</small>
+  </div>
+
+  <div class="card" id="userBox" style="display:none">
+    <div class="row">
+      <div>
+        👤 <span id="uName" style="font-weight:800"></span><br/>
+        <small id="uMeta"></small>
+      </div>
+      <button class="btn secondary" onclick="logout()">تسجيل خروج</button>
+    </div>
+  </div>
+
+  <div id="ads" class="ads"></div>
+
+  <div class="card" id="chatBox" style="display:none">
+    <h4 style="margin:0 0 10px">💬 المحادثة</h4>
+    <div class="chat" id="chat"></div>
+    <div style="height:10px"></div>
+    <input id="msg" placeholder="اكتب رسالة" />
+    <div style="height:10px"></div>
+    <button class="btn" onclick="sendMsg()">إرسال</button>
+  </div>
+
 </div>
 
-<div class="card" id="userBox" style="display:none">
-  👤 <span id="uName"></span>
-</div>
-
-<div id="ads" class="ads"></div>
-
-<div class="card" id="chatBox" style="display:none">
-  <h4>💬 المحادثة</h4>
-  <div class="chat" id="chat"></div>
-  <input id="msg" placeholder="اكتب رسالة">
-  <button class="btn" onclick="sendMsg()">إرسال</button>
-</div>
-
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
+/** =======================
+ *  Config
+ *  ======================= */
 const SUPABASE_URL = "https://axjkwrssmofzavaoqutq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let user=null, accessToken=null, currentAd=null, convId=null;
+let user = null;
+let accessToken = null;
+let currentAd = null;
 
+/** =======================
+ *  Helpers
+ *  ======================= */
+const $ = (id) => document.getElementById(id);
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 3200);
+}
+
+function setLoadingLogin(isLoading){
+  const btn = $("loginBtn");
+  btn.disabled = isLoading;
+  btn.textContent = isLoading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول عبر Pi";
+}
+
+/** =======================
+ *  Pi SDK Init (sandbox = false دائماً)
+ *  لازم تتنفذ مرة واحدة قبل authenticate
+ *  ======================= */
+(function initPi(){
+  try{
+    if(!window.Pi){
+      $("sdkState").textContent = "Pi SDK غير متاح. تأكد إنك فاتح داخل Pi Browser.";
+      $("loginBtn").disabled = true;
+      return;
+    }
+
+    // مهم: sandbox false
+    Pi.init({ version: "2.0", sandbox: false });
+
+    $("sdkState").textContent = "Pi SDK جاهز ✅ (sandbox: false)";
+  }catch(e){
+    $("sdkState").textContent = "حصل خطأ أثناء تهيئة Pi SDK.";
+    $("loginBtn").disabled = true;
+    console.error(e);
+  }
+})();
+
+/** =======================
+ *  Login / Logout
+ *  ======================= */
 async function piLogin(){
-  const res = await Pi.authenticate(["username","payments"], onIncomplete);
-  user = res.user;
-  accessToken = res.accessToken;
+  try{
+    if(!window.Pi){
+      toast("افتح الموقع من داخل Pi Browser عشان تسجيل الدخول يشتغل.");
+      return;
+    }
 
-  document.getElementById("loginBox").style.display="none";
-  document.getElementById("userBox").style.display="block";
-  uName.innerText=user.username;
+    setLoadingLogin(true);
 
-  loadAds();
+    // scopes: username + payments (عشان الدفع)
+    const scopes = ["username", "payments"];
+
+    // callback للمدفوعات غير المكتملة (مهم وجوده في بعض الحالات)
+    const onIncompletePaymentFound = async (payment) => {
+      // لو حصل دفع سابق ولم يكتمل، تقدر تكمله هنا بسيرفرك
+      console.log("Incomplete payment found:", payment);
+      toast("في عملية دفع غير مكتملة. لو محتاج نكملها هنكملها من السيرفر.");
+    };
+
+    const res = await Pi.authenticate(scopes, onIncompletePaymentFound);
+
+    // بعض البيئات بتسميه accessToken / access_token، فبنؤمّنها
+    accessToken = res.accessToken || res.access_token || null;
+    user = res.user || null;
+
+    if(!user || !accessToken){
+      throw new Error("Missing user or accessToken from Pi.authenticate()");
+    }
+
+    // حفظ محلي (اختياري)
+    localStorage.setItem("pi_user", JSON.stringify(user));
+    localStorage.setItem("pi_access_token", accessToken);
+
+    $("loginBox").style.display = "none";
+    $("userBox").style.display = "block";
+    $("uName").innerText = user.username || "Pi User";
+    $("uMeta").innerText = `pi_uid: ${user.uid || "N/A"}`;
+
+    toast("تم تسجيل الدخول ✅");
+    await loadAds();
+
+  }catch(err){
+    console.error(err);
+    toast("فشل تسجيل الدخول. تأكد إنك داخل Pi Browser وراجع إعدادات تطبيقك.");
+  }finally{
+    setLoadingLogin(false);
+  }
 }
 
-function onIncomplete(){}
+function logout(){
+  user = null;
+  accessToken = null;
+  localStorage.removeItem("pi_user");
+  localStorage.removeItem("pi_access_token");
 
+  $("loginBox").style.display = "block";
+  $("userBox").style.display = "none";
+  $("ads").innerHTML = "";
+  $("chatBox").style.display = "none";
+  toast("تم تسجيل الخروج");
+}
+
+/** =======================
+ *  Ads
+ *  ======================= */
 async function loadAds(){
-  const {data} = await sb.from("ads").select(`
-    id,title,description,is_featured,
-    provider_profiles(display_name)
-  `).eq("is_active",true).order("is_featured",{ascending:false});
+  $("ads").innerHTML = `<div class="card"><small>جارٍ تحميل الإعلانات…</small></div>`;
 
-  ads.innerHTML="";
-  data.forEach(a=>{
-    ads.innerHTML+=`
-    <div class="card">
-      ${a.is_featured?'<span class="badge">مميز</span>':''}
-      <h4>${a.title}</h4>
-      <p>${a.description||''}</p>
-      <small>👨‍🔧 ${a.provider_profiles.display_name}</small><br><br>
-      <button class="btn" onclick="openChat('${a.id}')">تواصل</button>
-      <button class="btn" onclick="boost('${a.id}')">تمييز الإعلان</button>
-    </div>`;
+  const { data, error } = await sb
+    .from("ads")
+    .select(`id,title,description,is_featured,is_active, provider_profiles(display_name)`)
+    .eq("is_active", true)
+    .order("is_featured", { ascending: false });
+
+  if(error){
+    console.error(error);
+    $("ads").innerHTML = `<div class="card"><small>تعذر تحميل الإعلانات.</small></div>`;
+    return;
+  }
+
+  $("ads").innerHTML = "";
+  (data || []).forEach(a=>{
+    const providerName = a.provider_profiles?.display_name || "مقدم خدمة";
+    $("ads").innerHTML += `
+      <div class="card">
+        <div class="row">
+          <div style="display:flex;gap:8px;align-items:center">
+            ${a.is_featured ? `<span class="badge">مميز</span>` : ``}
+            <div style="font-weight:800">${escapeHtml(a.title)}</div>
+          </div>
+          <small>👨‍🔧 ${escapeHtml(providerName)}</small>
+        </div>
+        <div style="height:8px"></div>
+        <small>${escapeHtml(a.description || "")}</small>
+        <div class="hr"></div>
+        <div class="row">
+          <button class="btn secondary" onclick="openChat('${a.id}')">تواصل</button>
+          <button class="btn" onclick="boost('${a.id}')">تمييز الإعلان</button>
+        </div>
+      </div>
+    `;
   });
+
+  if(!data || data.length === 0){
+    $("ads").innerHTML = `<div class="card"><small>لا توجد إعلانات حالياً.</small></div>`;
+  }
 }
 
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[s]));
+}
+
+/** =======================
+ *  Chat (UI بسيط)
+ *  ======================= */
 async function openChat(adId){
-  currentAd=adId;
-  chatBox.style.display="block";
-  chat.innerHTML="";
+  if(!user || !accessToken){
+    toast("سجّل دخول الأول.");
+    return;
+  }
+  currentAd = adId;
+  $("chatBox").style.display = "block";
+  $("chat").innerHTML = `<small>بدأت محادثة جديدة… (MVP)</small>`;
 }
 
 async function sendMsg(){
-  chat.innerHTML+=`<div class="msg me">أنا: ${msg.value}</div>`;
-  msg.value="";
+  if(!$("msg").value.trim()) return;
+  $("chat").innerHTML += `<div class="msg me">أنا: ${escapeHtml($("msg").value)}</div>`;
+  $("msg").value = "";
+  $("chat").scrollTop = $("chat").scrollHeight;
 }
 
-/* ========== BOOST PAYMENT ========== */
+/** =======================
+ *  Boost Payment
+ *  ======================= */
 async function boost(adId){
-  const payment = await Pi.createPayment({
-    amount:1,
-    memo:"Boost Ad",
-    metadata:{adId}
-  },{
-    onReadyForServerApproval: async (paymentId)=>{
-      await fetch("/api/pi/approve",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          paymentId, adId, boostPlanId:null, piAccessToken:accessToken
-        })
-      });
-    },
-    onReadyForServerCompletion: async (paymentId)=>{
-      await fetch("/api/pi/complete",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({paymentId, piAccessToken:accessToken})
-      });
-      alert("تم تمييز الإعلان ✅");
-      loadAds();
-    },
-    onCancel:()=>alert("تم الإلغاء"),
-    onError:(e)=>alert("خطأ في الدفع")
-  });
+  try{
+    if(!user || !accessToken){
+      toast("لازم تسجّل دخول الأول.");
+      return;
+    }
+    if(!window.Pi){
+      toast("افتح الموقع من داخل Pi Browser عشان الدفع يشتغل.");
+      return;
+    }
+
+    toast("بدء عملية الدفع…");
+
+    await Pi.createPayment(
+      {
+        amount: 1,
+        memo: "Boost Ad",
+        metadata: { adId }
+      },
+      {
+        onReadyForServerApproval: async (paymentId) => {
+          // نرسل للسيرفر يوافق (approve)
+          const r = await fetch("/api/pi/approve",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+              paymentId,
+              adId,
+              boostPlanId: null,
+              piAccessToken: accessToken
+            })
+          });
+
+          if(!r.ok){
+            const t = await r.text();
+            console.error("approve error:", t);
+            throw new Error("approve failed");
+          }
+        },
+
+        onReadyForServerCompletion: async (paymentId) => {
+          // نرسل للسيرفر يكمل (complete)
+          const r = await fetch("/api/pi/complete",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+              paymentId,
+              piAccessToken: accessToken
+            })
+          });
+
+          if(!r.ok){
+            const t = await r.text();
+            console.error("complete error:", t);
+            throw new Error("complete failed");
+          }
+
+          toast("تم تمييز الإعلان ✅");
+          await loadAds();
+        },
+
+        onCancel: () => toast("تم إلغاء الدفع"),
+        onError: (e) => {
+          console.error(e);
+          toast("حصل خطأ في الدفع");
+        }
+      }
+    );
+
+  }catch(err){
+    console.error(err);
+    toast("فشل تمييز الإعلان. راجع إعدادات Pi API والسيرفر.");
+  }
 }
+
+/** =======================
+ *  Auto-restore session (اختياري)
+ *  ======================= */
+(function restore(){
+  try{
+    const u = localStorage.getItem("pi_user");
+    const t = localStorage.getItem("pi_access_token");
+    if(u && t){
+      user = JSON.parse(u);
+      accessToken = t;
+
+      $("loginBox").style.display = "none";
+      $("userBox").style.display = "block";
+      $("uName").innerText = user.username || "Pi User";
+      $("uMeta").innerText = `pi_uid: ${user.uid || "N/A"}`;
+
+      loadAds();
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
