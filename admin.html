@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة الأدمن | طلبات برو</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body{font-family:Tajawal,system-ui;background:#f3f4f6}
+    .card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace}
+    .badge{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;display:inline-flex;gap:6px;align-items:center}
+    .btn{padding:8px 10px;border-radius:10px;font-weight:700;font-size:12px}
+    .btnG{background:#16a34a;color:#fff}
+    .btnR{background:#dc2626;color:#fff}
+    .btnB{background:#2563eb;color:#fff}
+    .btnS{background:#111827;color:#fff}
+    .btnW{background:#fff;border:1px solid #e5e7eb}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #e5e7eb;padding:8px;white-space:nowrap}
+    th{background:#f9fafb;text-align:right}
+  </style>
+</head>
+
+<body class="pb-24">
+
+<header class="bg-gray-900 text-white p-4">
+  <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <div class="font-bold">لوحة الأدمن — طلبات برو</div>
+    <div class="flex gap-2">
+      <button class="btn btnW" onclick="refreshAll()">تحديث الكل</button>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-6xl mx-auto p-4 space-y-6">
+
+  <!-- STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="card text-center">
+      <div class="text-gray-500 text-sm">إجمالي الطلبات</div>
+      <div id="statOrders" class="text-2xl font-bold">—</div>
+      <div class="text-[11px] text-gray-400 mt-1">كل الحالات</div>
+    </div>
+
+    <div class="card text-center">
+      <div class="text-gray-500 text-sm">Pi من الطلبات</div>
+      <div id="statOrdersPi" class="text-2xl font-bold mono text-purple-700">—</div>
+      <div class="text-[11px] text-gray-400 mt-1">pricing_snapshot.total_pi</div>
+    </div>
+
+    <div class="card text-center">
+      <div class="text-gray-500 text-sm">طلبات السحب</div>
+      <div id="statWithdraws" class="text-2xl font-bold text-blue-600">—</div>
+      <div class="text-[11px] text-gray-400 mt-1">pending/approved/paid</div>
+    </div>
+
+    <div class="card text-center">
+      <div class="text-gray-500 text-sm">Pi مسحوب</div>
+      <div id="statWithdrawPi" class="text-2xl font-bold mono text-orange-600">—</div>
+      <div class="text-[11px] text-gray-400 mt-1">withdraw_requests.amount_pi</div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="card flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+    <div class="flex gap-2 flex-wrap">
+      <span class="badge">📦 الطلبات</span>
+      <select id="ordersFilter" class="border rounded-xl p-2 text-sm" onchange="loadOrders()">
+        <option value="all">كل الحالات</option>
+        <option value="pending">pending</option>
+        <option value="accepted">accepted</option>
+        <option value="shipping">shipping</option>
+        <option value="arrived">arrived</option>
+        <option value="delivered">delivered</option>
+        <option value="canceled">canceled</option>
+      </select>
+
+      <input id="searchUser" class="border rounded-xl p-2 text-sm w-60"
+        placeholder="بحث بالعميل/الكابتن..." oninput="loadOrders()"/>
+    </div>
+
+    <div class="flex gap-2 flex-wrap">
+      <span class="badge">💸 السحب</span>
+      <select id="wdFilter" class="border rounded-xl p-2 text-sm" onchange="loadWithdraws()">
+        <option value="all">كل الحالات</option>
+        <option value="pending">pending</option>
+        <option value="approved">approved</option>
+        <option value="paid">paid</option>
+        <option value="rejected">rejected</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-3">
+      <b>الطلبات</b>
+      <div class="flex gap-2">
+        <button class="btn btnW" onclick="loadOrders()">تحديث</button>
+      </div>
+    </div>
+
+    <div class="overflow-auto">
+      <table class="text-sm">
+        <thead>
+          <tr>
+            <th>الوقت</th>
+            <th>المنتج</th>
+            <th>النوع</th>
+            <th>العميل</th>
+            <th>الكابتن</th>
+            <th>EGP</th>
+            <th>Pi</th>
+            <th>الحالة</th>
+            <th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WITHDRAWS -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-3">
+      <b>طلبات السحب (Pi)</b>
+      <div class="flex gap-2">
+        <button class="btn btnW" onclick="loadWithdraws()">تحديث</button>
+      </div>
+    </div>
+
+    <div class="overflow-auto">
+      <table class="text-sm">
+        <thead>
+          <tr>
+            <th>الوقت</th>
+            <th>الكابتن</th>
+            <th>المبلغ (Pi)</th>
+            <th>عنوان محفظة Pi</th>
+            <th>الحالة</th>
+            <th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody id="withdrawTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ========== CONFIG ========== */
+const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ========== HELPERS ========== */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+function fmtDate(ts){
+  try{ return new Date(ts).toLocaleString('ar-EG'); }catch{ return ts; }
+}
+function badgeStatus(s){
+  const cls =
+    s==='pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+    s==='accepted' ? 'bg-green-50 text-green-700 border-green-200' :
+    s==='shipping' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+    s==='arrived' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+    s==='delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+    s==='canceled' ? 'bg-red-50 text-red-700 border-red-200' :
+    'bg-gray-50 text-gray-700 border-gray-200';
+
+  return `<span class="badge ${cls}">${esc(s)}</span>`;
+}
+
+/* ========== STATS ========== */
+async function loadStats(){
+  const { data: orders, error: e1 } = await db.from('orders').select('status,pricing_snapshot');
+  const { data: wds, error: e2 } = await db.from('withdraw_requests').select('status,amount_pi');
+
+  if(e1) console.warn(e1);
+  if(e2) console.warn(e2);
+
+  const totalOrders = orders?.length || 0;
+  const ordersPi = (orders||[]).reduce((sum,o)=> sum + (Number(o?.pricing_snapshot?.total_pi)||0), 0);
+
+  const totalWithdraws = wds?.length || 0;
+  const withdrawPi = (wds||[]).reduce((sum,w)=> sum + (Number(w?.amount_pi)||0), 0);
+
+  document.getElementById('statOrders').innerText = totalOrders;
+  document.getElementById('statOrdersPi').innerText = ordersPi.toFixed(3);
+  document.getElementById('statWithdraws').innerText = totalWithdraws;
+  document.getElementById('statWithdrawPi').innerText = withdrawPi.toFixed(3);
+}
+
+/* ========== ORDERS ========== */
+async function loadOrders(){
+  const statusFilter = document.getElementById('ordersFilter').value;
+  const q = document.getElementById('searchUser').value.trim().toLowerCase();
+
+  let query = db.from('orders')
+    .select('id,created_at,product_name,order_type,customer_pi_username,delivery_id,total_price,status,pricing_snapshot')
+    .order('created_at',{ascending:false})
+    .limit(200);
+
+  if(statusFilter !== 'all') query = query.eq('status', statusFilter);
+
+  const { data, error } = await query;
+  const tb = document.getElementById('ordersTable');
+
+  if(error){
+    console.error(error);
+    tb.innerHTML = `<tr><td colspan="9" class="p-3 text-center text-red-600">خطأ في جلب الطلبات: ${esc(error.message)}</td></tr>`;
+    return;
+  }
+
+  const filtered = (data||[]).filter(o=>{
+    if(!q) return true;
+    const a = (o.customer_pi_username||'').toLowerCase();
+    const b = (o.delivery_id||'').toLowerCase();
+    return a.includes(q) || b.includes(q);
+  });
+
+  tb.innerHTML = filtered.map(o=>{
+    const pi = Number(o?.pricing_snapshot?.total_pi || 0);
+    const egp = Number(o?.total_price || 0);
+
+    return `
+      <tr>
+        <td>${esc(fmtDate(o.created_at))}</td>
+        <td><b>${esc(o.product_name)}</b></td>
+        <td>${esc(o.order_type || 'any')}</td>
+        <td>${esc(o.customer_pi_username || '-')}</td>
+        <td>${esc(o.delivery_id || '-')}</td>
+        <td class="mono">${egp.toFixed(2)}</td>
+        <td class="mono text-purple-700">${pi ? pi.toFixed(3) : '—'}</td>
+        <td>${badgeStatus(o.status)}</td>
+        <td>
+          <div class="flex gap-1 flex-wrap">
+            <button class="btn btnB" onclick="setOrderStatus('${o.id}','shipping')">shipping</button>
+            <button class="btn btnB" onclick="setOrderStatus('${o.id}','arrived')">arrived</button>
+            <button class="btn btnG" onclick="setOrderStatus('${o.id}','delivered')">delivered</button>
+            <button class="btn btnR" onclick="setOrderStatus('${o.id}','canceled')">cancel</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('') || `<tr><td colspan="9" class="p-3 text-center text-gray-500">لا توجد بيانات</td></tr>`;
+
+  loadStats();
+}
+
+async function setOrderStatus(id, st){
+  const ok = await Swal.fire({
+    icon:'question',
+    title:'تأكيد',
+    text:`تغيير حالة الطلب إلى: ${st} ؟`,
+    showCancelButton:true,
+    confirmButtonText:'نعم',
+    cancelButtonText:'إلغاء'
+  });
+  if(!ok.isConfirmed) return;
+
+  const { error } = await db.from('orders').update({ status: st }).eq('id', id);
+  if(error){
+    console.error(error);
+    return Swal.fire('خطأ', error.message, 'error');
+  }
+  Swal.fire('تم', 'تم تحديث الحالة', 'success');
+  loadOrders();
+}
+
+/* ========== WITHDRAWS ========== */
+async function loadWithdraws(){
+  const st = document.getElementById('wdFilter').value;
+
+  let q = db.from('withdraw_requests')
+    .select('id,created_at,delivery_id,amount_pi,wallet_address,status,note')
+    .order('created_at',{ascending:false})
+    .limit(200);
+
+  if(st !== 'all') q = q.eq('status', st);
+
+  const { data, error } = await q;
+  const tb = document.getElementById('withdrawTable');
+
+  if(error){
+    console.error(error);
+    tb.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-red-600">خطأ في جلب السحب: ${esc(error.message)}</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = (data||[]).map(w=>{
+    const amountPi = Number(w.amount_pi || 0).toFixed(3);
+    const wallet = w.wallet_address || '-';
+
+    const actions = `
+      <div class="flex gap-1 flex-wrap">
+        ${w.status==='pending' ? `<button class="btn btnB" onclick="approveWithdraw('${w.id}')">موافقة</button>` : ''}
+        ${w.status==='approved' ? `<button class="btn btnS" onclick="markPaid('${w.id}')">تم الدفع</button>` : ''}
+        ${(w.status==='pending' || w.status==='approved') ? `<button class="btn btnR" onclick="rejectWithdraw('${w.id}')">رفض</button>` : ''}
+        <button class="btn btnW" onclick="copyText('${esc(wallet)}')">نسخ العنوان</button>
+      </div>
+    `;
+
+    return `
+      <tr>
+        <td>${esc(fmtDate(w.created_at))}</td>
+        <td><b>${esc(w.delivery_id)}</b></td>
+        <td class="mono text-purple-700">${amountPi} Pi</td>
+        <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(wallet)}</td>
+        <td>${badgeStatus(w.status)}</td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join('') || `<tr><td colspan="6" class="p-3 text-center text-gray-500">لا توجد بيانات</td></tr>`;
+
+  loadStats();
+}
+
+function copyText(t){
+  navigator.clipboard?.writeText(t);
+  Swal.fire({icon:'success', title:'تم النسخ', timer:900, showConfirmButton:false});
+}
+
+async function approveWithdraw(id){
+  const ok = await Swal.fire({
+    icon:'question',
+    title:'موافقة على السحب؟',
+    text:'سيتم تحويل الحالة إلى approved',
+    showCancelButton:true,
+    confirmButtonText:'موافقة',
+    cancelButtonText:'إلغاء'
+  });
+  if(!ok.isConfirmed) return;
+
+  const { error } = await db.from('withdraw_requests').update({ status:'approved' }).eq('id', id);
+  if(error) return Swal.fire('خطأ', error.message, 'error');
+
+  Swal.fire('تم', 'تمت الموافقة', 'success');
+  loadWithdraws();
+}
+
+/**
+ * ✅ markPaid:
+ * - يغير حالة السحب إلى paid
+ * - يخصم amount_pi من delivery_wallet.balance_pi
+ * (علشان كده لازم delivery_wallet.balance_pi موجود)
+ */
+async function markPaid(id){
+  try{
+    // هات بيانات السحب
+    const { data: w, error: e1 } = await db.from('withdraw_requests')
+      .select('id,delivery_id,amount_pi,status')
+      .eq('id', id)
+      .single();
+
+    if(e1) throw e1;
+    if(!w) throw new Error('Withdraw not found');
+    if(w.status !== 'approved') return Swal.fire('تنبيه','لازم يكون approved الأول','warning');
+
+    const ok = await Swal.fire({
+      icon:'warning',
+      title:'تأكيد تم الدفع',
+      html:`سيتم خصم <b class="mono">${Number(w.amount_pi).toFixed(3)} Pi</b> من رصيد الكابتن <b>${esc(w.delivery_id)}</b>`,
+      showCancelButton:true,
+      confirmButtonText:'تم الدفع',
+      cancelButtonText:'إلغاء'
+    });
+    if(!ok.isConfirmed) return;
+
+    // 1) اخصم من المحفظة (Update)
+    const { data: wal, error: e2 } = await db.from('delivery_wallet')
+      .select('balance_pi')
+      .eq('delivery_id', w.delivery_id)
+      .maybeSingle();
+    if(e2) throw e2;
+
+    const cur = Number(wal?.balance_pi || 0);
+    const amt = Number(w.amount_pi || 0);
+    if(amt <= 0) return Swal.fire('خطأ','amount_pi غير صحيح','error');
+    if(cur < amt) return Swal.fire('خطأ','رصيد الكابتن غير كافي','error');
+
+    const { error: e3 } = await db.from('delivery_wallet')
+      .update({ balance_pi: (cur - amt) })
+      .eq('delivery_id', w.delivery_id);
+    if(e3) throw e3;
+
+    // 2) غير حالة السحب
+    const { error: e4 } = await db.from('withdraw_requests')
+      .update({ status:'paid' })
+      .eq('id', id);
+    if(e4) throw e4;
+
+    Swal.fire('تم','تم تسجيل الدفع وخصم الرصيد','success');
+    loadWithdraws();
+
+  }catch(e){
+    console.error(e);
+    Swal.fire('خطأ', e?.message || 'حصل خطأ', 'error');
+  }
+}
+
+async function rejectWithdraw(id){
+  const { value: note } = await Swal.fire({
+    title:'سبب الرفض (اختياري)',
+    input:'text',
+    inputPlaceholder:'مثال: العنوان غير صحيح',
+    showCancelButton:true,
+    confirmButtonText:'رفض',
+    cancelButtonText:'إلغاء'
+  });
+  if(note === undefined) return;
+
+  const { error } = await db.from('withdraw_requests')
+    .update({ status:'rejected', note: note || null })
+    .eq('id', id);
+
+  if(error) return Swal.fire('خطأ', error.message, 'error');
+
+  Swal.fire('تم','تم رفض الطلب','info');
+  loadWithdraws();
+}
+
+/* ========== INIT ========== */
+async function refreshAll(){
+  await Promise.allSettled([loadOrders(), loadWithdraws(), loadStats()]);
+}
+refreshAll();
+</script>
+
+</body>
+</html>
