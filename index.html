@@ -1,389 +1,330 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>منصة الخدمات المنزلية - Pi</title>
-
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-:root{
-  --p:#7f5cff;
-  --bg:#0f0f1a;
-  --card:rgba(255,255,255,.08);
-  --muted:rgba(255,255,255,.65);
-  --stroke:rgba(255,255,255,.12);
-}
-*{box-sizing:border-box;font-family:Tajawal,system-ui}
-body{margin:0;background:var(--bg);color:#fff}
-header{padding:15px;text-align:center;font-size:20px;background:#141428;position:sticky;top:0;z-index:5}
-.container{padding:12px;max-width:520px;margin:0 auto}
-.card{
-  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-  border:1px solid var(--stroke);
-  padding:12px;border-radius:14px;margin-bottom:10px;
-  backdrop-filter: blur(10px);
-}
-.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.btn{
-  background:var(--p);border:none;color:#fff;padding:10px 14px;border-radius:10px;
-  cursor:pointer;transition:.2s transform,.2s opacity;min-width:140px
-}
-.btn:active{transform:scale(.98)}
-.btn.secondary{background:transparent;border:1px solid var(--stroke)}
-.btn:disabled{opacity:.6;cursor:not-allowed}
-input,textarea{
-  width:100%;padding:10px;border-radius:10px;border:1px solid var(--stroke);
-  background:rgba(0,0,0,.2);color:#fff;outline:none
-}
-small{color:var(--muted)}
-.badge{background:gold;color:#000;padding:3px 8px;border-radius:8px;font-size:12px}
-.chat{height:220px;overflow:auto;background:rgba(0,0,0,.25);border:1px solid var(--stroke);border-radius:12px;padding:10px}
-.msg{margin:6px 0;line-height:1.4}
-.me{color:#cbb6ff}
-.hr{height:1px;background:var(--stroke);margin:10px 0}
-.toast{
-  position:fixed;left:50%;transform:translateX(-50%);
-  bottom:18px;background:rgba(0,0,0,.55);border:1px solid var(--stroke);
-  padding:10px 12px;border-radius:12px;backdrop-filter:blur(10px);
-  max-width:92vw;display:none
-}
-.toast.show{display:block}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طلبات برو | النسخة المضمونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; padding-bottom: 50px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s; }
+        .chat-container { height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 15px; background: #fff; border-radius: 20px; border: 1px solid #eee; }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 14px; }
+        .msg-customer { background: #ff7a00; color: white; align-self: flex-start; border-bottom-right-radius: 2px; }
+        .msg-delivery { background: #f0f2f5; color: #1e293b; align-self: flex-end; border-bottom-left-radius: 2px; }
+    </style>
 </head>
-
 <body>
 
-<header>🔧 خدمات منزلية بعملة Pi</header>
+    <div id="notification-area" class="fixed top-5 left-5 z-[9999] w-72 space-y-3"></div>
 
-<div class="container">
-
-  <div class="card" id="loginBox">
-    <div class="row">
-      <div>
-        <div style="font-size:16px;font-weight:700">تسجيل الدخول</div>
-        <small>سجّل دخولك بحساب Pi لعرض الإعلانات والتواصل مع مقدمي الخدمة</small>
-      </div>
-      <button class="btn" id="loginBtn" onclick="piLogin()">تسجيل الدخول عبر Pi</button>
-    </div>
-    <div class="hr"></div>
-    <small id="sdkState">جارٍ تهيئة Pi SDK…</small>
-  </div>
-
-  <div class="card" id="userBox" style="display:none">
-    <div class="row">
-      <div>
-        👤 <span id="uName" style="font-weight:800"></span><br/>
-        <small id="uMeta"></small>
-      </div>
-      <button class="btn secondary" onclick="logout()">تسجيل خروج</button>
-    </div>
-  </div>
-
-  <div id="ads" class="ads"></div>
-
-  <div class="card" id="chatBox" style="display:none">
-    <h4 style="margin:0 0 10px">💬 المحادثة</h4>
-    <div class="chat" id="chat"></div>
-    <div style="height:10px"></div>
-    <input id="msg" placeholder="اكتب رسالة" />
-    <div style="height:10px"></div>
-    <button class="btn" onclick="sendMsg()">إرسال</button>
-  </div>
-
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-/** =======================
- *  Config
- *  ======================= */
-const SUPABASE_URL = "https://axjkwrssmofzavaoqutq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let user = null;
-let accessToken = null;
-let currentAd = null;
-
-/** =======================
- *  Helpers
- *  ======================= */
-const $ = (id) => document.getElementById(id);
-function toast(msg){
-  const t = $("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"), 3200);
-}
-
-function setLoadingLogin(isLoading){
-  const btn = $("loginBtn");
-  btn.disabled = isLoading;
-  btn.textContent = isLoading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول عبر Pi";
-}
-
-/** =======================
- *  Pi SDK Init (sandbox = false دائماً)
- *  لازم تتنفذ مرة واحدة قبل authenticate
- *  ======================= */
-(function initPi(){
-  try{
-    if(!window.Pi){
-      $("sdkState").textContent = "Pi SDK غير متاح. تأكد إنك فاتح داخل Pi Browser.";
-      $("loginBtn").disabled = true;
-      return;
-    }
-
-    // مهم: sandbox false
-    Pi.init({ version: "2.0", sandbox: false });
-
-    $("sdkState").textContent = "Pi SDK جاهز ✅ (sandbox: false)";
-  }catch(e){
-    $("sdkState").textContent = "حصل خطأ أثناء تهيئة Pi SDK.";
-    $("loginBtn").disabled = true;
-    console.error(e);
-  }
-})();
-
-/** =======================
- *  Login / Logout
- *  ======================= */
-async function piLogin(){
-  try{
-    if(!window.Pi){
-      toast("افتح الموقع من داخل Pi Browser عشان تسجيل الدخول يشتغل.");
-      return;
-    }
-
-    setLoadingLogin(true);
-
-    // scopes: username + payments (عشان الدفع)
-    const scopes = ["username", "payments"];
-
-    // callback للمدفوعات غير المكتملة (مهم وجوده في بعض الحالات)
-    const onIncompletePaymentFound = async (payment) => {
-      // لو حصل دفع سابق ولم يكتمل، تقدر تكمله هنا بسيرفرك
-      console.log("Incomplete payment found:", payment);
-      toast("في عملية دفع غير مكتملة. لو محتاج نكملها هنكملها من السيرفر.");
-    };
-
-    const res = await Pi.authenticate(scopes, onIncompletePaymentFound);
-
-    // بعض البيئات بتسميه accessToken / access_token، فبنؤمّنها
-    accessToken = res.accessToken || res.access_token || null;
-    user = res.user || null;
-
-    if(!user || !accessToken){
-      throw new Error("Missing user or accessToken from Pi.authenticate()");
-    }
-
-    // حفظ محلي (اختياري)
-    localStorage.setItem("pi_user", JSON.stringify(user));
-    localStorage.setItem("pi_access_token", accessToken);
-
-    $("loginBox").style.display = "none";
-    $("userBox").style.display = "block";
-    $("uName").innerText = user.username || "Pi User";
-    $("uMeta").innerText = `pi_uid: ${user.uid || "N/A"}`;
-
-    toast("تم تسجيل الدخول ✅");
-    await loadAds();
-
-  }catch(err){
-    console.error(err);
-    toast("فشل تسجيل الدخول. تأكد إنك داخل Pi Browser وراجع إعدادات تطبيقك.");
-  }finally{
-    setLoadingLogin(false);
-  }
-}
-
-function logout(){
-  user = null;
-  accessToken = null;
-  localStorage.removeItem("pi_user");
-  localStorage.removeItem("pi_access_token");
-
-  $("loginBox").style.display = "block";
-  $("userBox").style.display = "none";
-  $("ads").innerHTML = "";
-  $("chatBox").style.display = "none";
-  toast("تم تسجيل الخروج");
-}
-
-/** =======================
- *  Ads
- *  ======================= */
-async function loadAds(){
-  $("ads").innerHTML = `<div class="card"><small>جارٍ تحميل الإعلانات…</small></div>`;
-
-  const { data, error } = await sb
-    .from("ads")
-    .select(`id,title,description,is_featured,is_active, provider_profiles(display_name)`)
-    .eq("is_active", true)
-    .order("is_featured", { ascending: false });
-
-  if(error){
-    console.error(error);
-    $("ads").innerHTML = `<div class="card"><small>تعذر تحميل الإعلانات.</small></div>`;
-    return;
-  }
-
-  $("ads").innerHTML = "";
-  (data || []).forEach(a=>{
-    const providerName = a.provider_profiles?.display_name || "مقدم خدمة";
-    $("ads").innerHTML += `
-      <div class="card">
-        <div class="row">
-          <div style="display:flex;gap:8px;align-items:center">
-            ${a.is_featured ? `<span class="badge">مميز</span>` : ``}
-            <div style="font-weight:800">${escapeHtml(a.title)}</div>
-          </div>
-          <small>👨‍🔧 ${escapeHtml(providerName)}</small>
+    <nav class="bg-orange-600 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-bolt"></i> طلبات برو
+            </h1>
+            <div class="flex gap-2 bg-orange-700 p-1 rounded-2xl">
+                <button onclick="showTab('customer')" id="btn-customer" class="bg-white text-orange-600 px-4 py-1 rounded-xl font-bold shadow transition-all">العميل</button>
+                <button onclick="showTab('delivery')" id="btn-delivery" class="text-orange-200 px-4 py-1 rounded-xl font-bold transition-all">الدليفري</button>
+            </div>
         </div>
-        <div style="height:8px"></div>
-        <small>${escapeHtml(a.description || "")}</small>
-        <div class="hr"></div>
-        <div class="row">
-          <button class="btn secondary" onclick="openChat('${a.id}')">تواصل</button>
-          <button class="btn" onclick="boost('${a.id}')">تمييز الإعلان</button>
+    </nav>
+
+    <div class="container mx-auto p-4 max-w-lg">
+        
+        <div id="customer" class="tab-content active">
+            <div id="orderForm" class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 mb-6 animate__animated animate__fadeInUp">
+                <h2 class="text-lg font-bold mb-4 text-gray-700">طلب جديد</h2>
+                <div class="space-y-4">
+                    <input type="text" id="prodName" placeholder="ماذا تريد أن نشتري؟" class="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none focus:border-orange-300">
+                    <input type="number" id="prodPrice" oninput="calculateTotal()" placeholder="السعر التقريبي" class="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none">
+                    
+                    <div class="flex justify-between items-center bg-orange-50 p-4 rounded-2xl">
+                        <span class="text-sm text-gray-600">الإجمالي (+30 توصيل):</span>
+                        <span id="finalTotal" class="font-bold text-orange-600 text-lg">0 ج.م</span>
+                    </div>
+
+                    <button onclick="getLocation()" id="locBtn" class="w-full py-3 text-blue-600 border border-blue-100 rounded-2xl hover:bg-blue-50 transition-all text-sm font-bold">
+                        <i class="fas fa-map-marker-alt ml-1"></i> تحديد موقعي (اختياري)
+                    </button>
+
+                    <button onclick="placeOrder()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-orange-600 active:scale-95 transition-all">
+                        تأكيد وإرسال الطلب 🚀
+                    </button>
+                </div>
+            </div>
+
+            <div id="orderTracking" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-xl text-center">
+                    <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <i class="fas fa-satellite-dish fa-2x"></i>
+                    </div>
+                    <h3 id="statusTitle" class="font-bold text-xl mb-2">جاري البحث...</h3>
+                    <p id="statusDesc" class="text-gray-500 text-sm">طلبك الآن متاح لكل الكباتن القريبة</p>
+                </div>
+
+                <div id="customerChatArea" class="hidden bg-white p-4 rounded-3xl shadow-lg border">
+                    <h4 class="font-bold text-sm mb-2 text-gray-500">محادثة مع الكابتن</h4>
+                    <div id="chatBoxCustomer" class="chat-container mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="inputMsgCustomer" placeholder="اكتب رسالة..." class="flex-1 p-3 bg-gray-100 rounded-2xl outline-none">
+                        <button onclick="sendMsg('customer')" class="bg-orange-500 text-white w-12 rounded-2xl"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+             <div class="mt-8">
+                <h3 class="font-bold text-gray-700 mb-3 px-2">آخر الطلبات المكتملة</h3>
+                <div id="customerHistoryList" class="space-y-3"></div>
+            </div>
         </div>
-      </div>
-    `;
-  });
 
-  if(!data || data.length === 0){
-    $("ads").innerHTML = `<div class="card"><small>لا توجد إعلانات حالياً.</small></div>`;
-  }
-}
+        <div id="delivery" class="tab-content">
+            <div id="deliveryOrders" class="space-y-4 min-h-[300px]">
+                <p class="text-center text-gray-400 py-10">جاري تحميل الطلبات...</p>
+            </div>
+             <div class="mt-8 border-t pt-4">
+                <h3 class="font-bold text-gray-700 mb-3 px-2">سجل الأرباح</h3>
+                <div id="deliveryHistoryList" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
 
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, s => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
-  }[s]));
-}
+    <script>
+        // --- 1. إعداد الاتصال ---
+        const supabaseUrl = 'https://axjkwrssmofzavaoqutq.supabase.co';
+        const supabaseKey ='sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'; // المفتاح العام
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-/** =======================
- *  Chat (UI بسيط)
- *  ======================= */
-async function openChat(adId){
-  if(!user || !accessToken){
-    toast("سجّل دخول الأول.");
-    return;
-  }
-  currentAd = adId;
-  $("chatBox").style.display = "block";
-  $("chat").innerHTML = `<small>بدأت محادثة جديدة… (MVP)</small>`;
-}
+        let activeOrderId = null;
+        let userLocation = null;
 
-async function sendMsg(){
-  if(!$("msg").value.trim()) return;
-  $("chat").innerHTML += `<div class="msg me">أنا: ${escapeHtml($("msg").value)}</div>`;
-  $("msg").value = "";
-  $("chat").scrollTop = $("chat").scrollHeight;
-}
-
-/** =======================
- *  Boost Payment
- *  ======================= */
-async function boost(adId){
-  try{
-    if(!user || !accessToken){
-      toast("لازم تسجّل دخول الأول.");
-      return;
-    }
-    if(!window.Pi){
-      toast("افتح الموقع من داخل Pi Browser عشان الدفع يشتغل.");
-      return;
-    }
-
-    toast("بدء عملية الدفع…");
-
-    await Pi.createPayment(
-      {
-        amount: 1,
-        memo: "Boost Ad",
-        metadata: { adId }
-      },
-      {
-        onReadyForServerApproval: async (paymentId) => {
-          // نرسل للسيرفر يوافق (approve)
-          const r = await fetch("/api/pi/approve",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-              paymentId,
-              adId,
-              boostPlanId: null,
-              piAccessToken: accessToken
-            })
-          });
-
-          if(!r.ok){
-            const t = await r.text();
-            console.error("approve error:", t);
-            throw new Error("approve failed");
-          }
-        },
-
-        onReadyForServerCompletion: async (paymentId) => {
-          // نرسل للسيرفر يكمل (complete)
-          const r = await fetch("/api/pi/complete",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-              paymentId,
-              piAccessToken: accessToken
-            })
-          });
-
-          if(!r.ok){
-            const t = await r.text();
-            console.error("complete error:", t);
-            throw new Error("complete failed");
-          }
-
-          toast("تم تمييز الإعلان ✅");
-          await loadAds();
-        },
-
-        onCancel: () => toast("تم إلغاء الدفع"),
-        onError: (e) => {
-          console.error(e);
-          toast("حصل خطأ في الدفع");
+        // --- 2. وظائف العميل ---
+        
+        function calculateTotal() {
+            const val = parseFloat(document.getElementById('prodPrice').value) || 0;
+            document.getElementById('finalTotal').innerText = (val > 0 ? val + 30 : 0) + ' ج.م';
         }
-      }
-    );
 
-  }catch(err){
-    console.error(err);
-    toast("فشل تمييز الإعلان. راجع إعدادات Pi API والسيرفر.");
-  }
-}
+        function getLocation() {
+            if(!navigator.geolocation) return Swal.fire('خطأ', 'المتصفح لا يدعم الموقع', 'error');
+            document.getElementById('locBtn').innerText = 'جاري التحديد...';
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    document.getElementById('locBtn').innerHTML = '<i class="fas fa-check text-green-500"></i> تم حفظ الموقع';
+                    document.getElementById('locBtn').classList.add('bg-green-50', 'text-green-600', 'border-green-200');
+                },
+                () => {
+                    document.getElementById('locBtn').innerText = 'فشل تحديد الموقع (اضغط للمحاولة)';
+                    Swal.fire('تنبيه', 'يجب تفعيل الـ GPS', 'warning');
+                }
+            );
+        }
 
-/** =======================
- *  Auto-restore session (اختياري)
- *  ======================= */
-(function restore(){
-  try{
-    const u = localStorage.getItem("pi_user");
-    const t = localStorage.getItem("pi_access_token");
-    if(u && t){
-      user = JSON.parse(u);
-      accessToken = t;
+        // --- الدالة الحاسمة: إرسال الطلب ---
+        async function placeOrder() {
+            const name = document.getElementById('prodName').value;
+            const price = parseFloat(document.getElementById('prodPrice').value);
 
-      $("loginBox").style.display = "none";
-      $("userBox").style.display = "block";
-      $("uName").innerText = user.username || "Pi User";
-      $("uMeta").innerText = `pi_uid: ${user.uid || "N/A"}`;
+            if (!name || !price) {
+                return Swal.fire('بيانات ناقصة', 'أدخل اسم المنتج والسعر', 'warning');
+            }
 
-      loadAds();
-    }
-  }catch(e){}
-})();
-</script>
+            // إظهار التحميل
+            Swal.fire({ title: 'جاري الاتصال بالسحابة...', didOpen: () => Swal.showLoading() });
+
+            // محاولة الإرسال
+            const { data, error } = await _supabase.from('orders').insert([{
+                product_name: name,
+                price: price,
+                total_price: price + 30,
+                status: 'pending',
+                location: userLocation ? userLocation : null // نرسل null لو الموقع مش موجود عشان ميعملش Error
+            }]).select();
+
+            // فحص الأخطاء (Debug)
+            if (error) {
+                console.error(error);
+                return Swal.fire('خطأ في قاعدة البيانات', error.message, 'error');
+            }
+
+            // نجاح
+            if (data && data.length > 0) {
+                activeOrderId = data[0].id;
+                Swal.close();
+                document.getElementById('orderForm').classList.add('hidden');
+                document.getElementById('orderTracking').classList.remove('hidden');
+                subscribeToOrderUpdates();
+                
+                // إضافة تأثير احتفالي بسيط
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+            }
+        }
+
+        // الاستماع لتغيير حالة الطلب
+        function subscribeToOrderUpdates() {
+            _supabase.channel('custom-tracking')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${activeOrderId}` }, payload => {
+                const s = payload.new.status;
+                const title = document.getElementById('statusTitle');
+                const desc = document.getElementById('statusDesc');
+
+                if (s === 'accepted') {
+                    title.innerText = "تم قبول الطلب! 👨‍✈️";
+                    desc.innerText = "تحدث مع الكابتن الآن في الأسفل";
+                    title.classList.add('text-green-600');
+                    document.getElementById('customerChatArea').classList.remove('hidden');
+                    startChatSystem();
+                } else if (s === 'shipping') {
+                    title.innerText = "الطلب في الطريق 🛵";
+                    desc.innerText = "الكابتن يتحرك نحوك الآن";
+                } else if (s === 'delivered') {
+                    Swal.fire('تم التسليم', 'شكراً لاستخدامك طلبات برو', 'success').then(() => location.reload());
+                }
+            }).subscribe();
+        }
+
+        // --- 3. وظائف الدليفري ---
+
+        async function fetchAvailableOrders() {
+            const container = document.getElementById('deliveryOrders');
+            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-orange-500"></i></div>';
+
+            const { data, error } = await _supabase.from('orders').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+
+            if (error) return container.innerHTML = '<p class="text-red-500 text-center">خطأ في جلب البيانات</p>';
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400 bg-white rounded-3xl"><p>لا توجد طلبات معلقة</p></div>';
+                return;
+            }
+
+            container.innerHTML = data.map(o => `
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-gray-800 text-lg">${o.product_name}</h4>
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">${o.total_price} ج.م</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-4"><i class="fas fa-clock"></i> ${new Date(o.created_at).toLocaleTimeString('ar-EG')}</p>
+                    <button onclick="acceptOrder('${o.id}')" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition">قبول هذا الطلب</button>
+                </div>
+            `).join('');
+        }
+
+        async function acceptOrder(id) {
+            activeOrderId = id;
+            const { error } = await _supabase.from('orders').update({ status: 'accepted' }).eq('id', id);
+            
+            if (error) return Swal.fire('خطأ', error.message, 'error');
+
+            // تحويل واجهة الدليفري للشات
+            document.getElementById('deliveryOrders').innerHTML = `
+                <div class="bg-white p-5 rounded-3xl shadow-xl border-t-4 border-blue-500">
+                    <h3 class="text-center font-bold mb-4">أنت الآن مسؤول عن هذا الطلب</h3>
+                    <div id="chatBoxDelivery" class="chat-container mb-3 bg-gray-50"></div>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="inputMsgDelivery" placeholder="رسالة..." class="flex-1 p-3 bg-white border rounded-2xl outline-none">
+                        <button onclick="sendMsg('delivery')" class="bg-blue-600 text-white px-4 rounded-2xl"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="updateOrderStatus('shipping')" class="bg-orange-500 text-white py-3 rounded-xl font-bold text-sm">بدء التحرك 🛵</button>
+                        <button onclick="updateOrderStatus('delivered')" class="bg-gray-800 text-white py-3 rounded-xl font-bold text-sm">تم التسليم ✅</button>
+                    </div>
+                </div>
+            `;
+            startChatSystem();
+        }
+
+        async function updateOrderStatus(st) {
+            await _supabase.from('orders').update({ status: st }).eq('id', activeOrderId);
+            if(st === 'delivered') {
+                Swal.fire('أحسنت!', 'تم إضافة الأرباح لسجلك', 'success').then(() => location.reload());
+            }
+        }
+
+        // --- 4. نظام الشات ---
+        
+        function startChatSystem() {
+            loadMessages();
+            // اشتراك في الرسائل الجديدة
+            _supabase.channel('chat-room')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `order_id=eq.${activeOrderId}` }, payload => {
+                appendMessage(payload.new);
+            }).subscribe();
+        }
+
+        async function loadMessages() {
+            const { data } = await _supabase.from('chat_messages').select('*').eq('order_id', activeOrderId).order('created_at', { ascending: true });
+            const custBox = document.getElementById('chatBoxCustomer');
+            const delivBox = document.getElementById('chatBoxDelivery');
+            if(custBox) custBox.innerHTML = '';
+            if(delivBox) delivBox.innerHTML = '';
+            data.forEach(appendMessage);
+        }
+
+        function appendMessage(msg) {
+            const html = `<div class="msg ${msg.sender === 'customer' ? 'msg-customer' : 'msg-delivery'} animate__animated animate__fadeInUp">${msg.message_text}</div>`;
+            const custBox = document.getElementById('chatBoxCustomer');
+            const delivBox = document.getElementById('chatBoxDelivery');
+            
+            if (custBox) { custBox.innerHTML += html; custBox.scrollTop = custBox.scrollHeight; }
+            if (delivBox) { delivBox.innerHTML += html; delivBox.scrollTop = delivBox.scrollHeight; }
+        }
+
+        async function sendMsg(sender) {
+            const inputId = sender === 'customer' ? 'inputMsgCustomer' : 'inputMsgDelivery';
+            const input = document.getElementById(inputId);
+            const txt = input.value;
+            if(!txt) return;
+
+            await _supabase.from('chat_messages').insert([{
+                order_id: activeOrderId,
+                sender: sender,
+                message_text: txt
+            }]);
+            input.value = '';
+        }
+
+        // --- 5. السجلات والتبديل ---
+
+        function showTab(t) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
+            
+            // تحديث ستايل الأزرار
+            const isCust = t === 'customer';
+            document.getElementById('btn-customer').className = isCust ? "bg-white text-orange-600 px-4 py-1 rounded-xl font-bold shadow transition-all" : "text-orange-200 px-4 py-1 rounded-xl font-bold transition-all";
+            document.getElementById('btn-delivery').className = !isCust ? "bg-white text-orange-600 px-4 py-1 rounded-xl font-bold shadow transition-all" : "text-orange-200 px-4 py-1 rounded-xl font-bold transition-all";
+
+            if (t === 'delivery') fetchAvailableOrders();
+        }
+
+        // تحميل السجلات عند البدء
+        (async function loadHistory() {
+            const { data } = await _supabase.from('orders').select('*').eq('status', 'delivered').order('created_at', { ascending: false }).limit(5);
+            const html = data && data.length ? data.map(h => `
+                <div class="bg-white p-3 rounded-xl border-r-4 border-green-500 shadow-sm flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-sm text-gray-800">${h.product_name}</div>
+                        <div class="text-[10px] text-gray-400">${new Date(h.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div class="font-bold text-green-600 text-sm">${h.total_price} ج.م</div>
+                </div>
+            `).join('') : '<p class="text-xs text-gray-400 text-center">لا توجد سجلات</p>';
+
+            document.getElementById('customerHistoryList').innerHTML = html;
+            document.getElementById('deliveryHistoryList').innerHTML = html;
+        })();
+
+    </script>
 </body>
 </html>
