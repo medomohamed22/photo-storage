@@ -217,7 +217,7 @@
             <button class="chip" onclick="setCustomerLocation()">تحديد الموقع</button>
           </div>
           <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
-          <a id="custMapLink" class="tiny text-purple-300 underline hidden" target="_blank" rel="noreferrer">فتح الموقع على Google Maps</a>
+          <a id="custMapLink" class="tiny text-purple-300 underline hidden" target="_blank" rel="noreferrer" onclick="return openMapUrl(this.href)">فتح الموقع على Google Maps</a>
         </div>
         <textarea id="notes" class="w-full p-3" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
 
@@ -262,7 +262,7 @@
         </div>
         <div class="row text-sm">
           <span class="muted">الموقع</span>
-          <a id="custTrackMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noreferrer">فتح على الخريطة</a>
+          <a id="custTrackMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
         </div>
         <div id="otpBox" class="hidden text-sm">
           كود التسليم: <b id="otp" class="text-orange-200 text-lg mono"></b>
@@ -335,7 +335,7 @@
           <div class="row"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
           <div class="row"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
           <div class="row"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
-          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noreferrer">فتح على الخريطة</a></div>
+          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a></div>
           <div class="row"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
           <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300"><span id="dTotalEgp">—</span> ج</b></div>
@@ -500,6 +500,16 @@ function buildMapUrl(lat, lng){
   return `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
 }
 
+function openMapUrl(url){
+  if (!url || url === '#') return false;
+  if (window.Pi && typeof Pi.openUrlInSystemBrowser === 'function') {
+    Pi.openUrlInSystemBrowser(url);
+    return false;
+  }
+  window.open(url, '_blank', 'noopener');
+  return false;
+}
+
 async function setCustomerLocation(){
   try{
     const loc = await getCurrentLocation();
@@ -509,6 +519,7 @@ async function setCustomerLocation(){
     const link = document.getElementById('custMapLink');
     link.href = buildMapUrl(loc.lat, loc.lng);
     link.classList.remove('hidden');
+    link.onclick = () => openMapUrl(link.href);
   }catch(e){
     Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ' });
   }
@@ -795,6 +806,7 @@ async function payAndCreate() {
     const trackLink = document.getElementById('custTrackMapLink');
     trackLink.href = buildMapUrl(CUSTOMER_LOCATION.lat, CUSTOMER_LOCATION.lng);
     trackLink.classList.remove('hidden');
+    trackLink.onclick = () => openMapUrl(trackLink.href);
 
     Swal.close();
 
@@ -886,7 +898,7 @@ async function loadOrders(){
         <div class="soft p-3 text-sm space-y-1">
           <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
           ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
-          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noreferrer" href="${mapUrl}">فتح الخريطة</a></div>` : ``}
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noreferrer" href="${mapUrl}" onclick="return openMapUrl('${mapUrl}')">فتح الخريطة</a></div>` : ``}
           <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
           <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300">${Number(totalEgp).toFixed(2)} ج</b></div>
@@ -968,6 +980,7 @@ async function loadOrderDetailsForDelivery(orderId){
   if (HAS_LOCATION_COLUMNS && typeof data.customer_lat === 'number' && typeof data.customer_lng === 'number') {
     mapLink.href = buildMapUrl(data.customer_lat, data.customer_lng);
     mapLink.classList.remove('hidden');
+    mapLink.onclick = () => openMapUrl(mapLink.href);
   } else {
     mapLink.href = '#';
     mapLink.classList.add('hidden');
@@ -1207,7 +1220,20 @@ async function loadWalletPi(){
         .maybeSingle();
 
       if(!error && data && typeof data.balance_pi !== 'undefined'){
-        document.getElementById('walletPi').innerText = Number(data.balance_pi || 0).toFixed(6);
+        const { data: approvedWithdraws } = await db.from('withdraw_requests')
+          .select('amount_pi,status')
+          .eq('delivery_id', PI_USERNAME)
+          .eq('status', 'approved')
+          .limit(500);
+
+        let approvedSum = 0;
+        (approvedWithdraws || []).forEach(w => {
+          const amount = Number(w.amount_pi || 0);
+          if(!isNaN(amount)) approvedSum += amount;
+        });
+
+        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum);
+        document.getElementById('walletPi').innerText = available.toFixed(6);
         return;
       }
     }catch(e){
@@ -1229,7 +1255,20 @@ async function loadWalletPi(){
       if(!isNaN(pi)) sum += pi;
     });
 
-    document.getElementById('walletPi').innerText = sum.toFixed(6);
+    const { data: approvedWithdraws } = await db.from('withdraw_requests')
+      .select('amount_pi,status')
+      .eq('delivery_id', PI_USERNAME)
+      .eq('status', 'approved')
+      .limit(500);
+
+    let approvedSum = 0;
+    (approvedWithdraws || []).forEach(w => {
+      const amount = Number(w.amount_pi || 0);
+      if(!isNaN(amount)) approvedSum += amount;
+    });
+
+    const available = Math.max(0, sum - approvedSum);
+    document.getElementById('walletPi').innerText = available.toFixed(6);
 
   }catch(e){
     console.warn(e);
