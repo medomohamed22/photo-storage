@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
     body{font-family:Tajawal,system-ui;background:#f3f4f6}
     .card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace}
@@ -23,16 +24,18 @@
     table{border-collapse:collapse;width:100%}
     th,td{border:1px solid #e5e7eb;padding:8px;white-space:nowrap}
     th{background:#f9fafb;text-align:right}
+    .input{border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-size:13px}
   </style>
 </head>
 
 <body class="pb-24">
 
 <header class="bg-gray-900 text-white p-4">
-  <div class="max-w-6xl mx-auto flex items-center justify-between">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
     <div class="font-bold">لوحة الأدمن — طلبات برو</div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-wrap">
       <button class="btn btnW" onclick="refreshAll()">تحديث الكل</button>
+      <button class="btn btnW" onclick="logout()">خروج</button>
     </div>
   </div>
 </header>
@@ -68,9 +71,9 @@
 
   <!-- FILTER BAR -->
   <div class="card flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
-    <div class="flex gap-2 flex-wrap">
+    <div class="flex gap-2 flex-wrap items-center">
       <span class="badge">📦 الطلبات</span>
-      <select id="ordersFilter" class="border rounded-xl p-2 text-sm" onchange="loadOrders()">
+      <select id="ordersFilter" class="input" onchange="loadOrders()">
         <option value="all">كل الحالات</option>
         <option value="pending">pending</option>
         <option value="accepted">accepted</option>
@@ -80,13 +83,13 @@
         <option value="canceled">canceled</option>
       </select>
 
-      <input id="searchUser" class="border rounded-xl p-2 text-sm w-60"
+      <input id="searchUser" class="input w-64"
         placeholder="بحث بالعميل/الكابتن..." oninput="loadOrders()"/>
     </div>
 
-    <div class="flex gap-2 flex-wrap">
+    <div class="flex gap-2 flex-wrap items-center">
       <span class="badge">💸 السحب</span>
-      <select id="wdFilter" class="border rounded-xl p-2 text-sm" onchange="loadWithdraws()">
+      <select id="wdFilter" class="input" onchange="loadWithdraws()">
         <option value="all">كل الحالات</option>
         <option value="pending">pending</option>
         <option value="approved">approved</option>
@@ -98,9 +101,9 @@
 
   <!-- ORDERS -->
   <div class="card">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-3 gap-2">
       <b>الطلبات</b>
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <button class="btn btnW" onclick="loadOrders()">تحديث</button>
       </div>
     </div>
@@ -127,9 +130,9 @@
 
   <!-- WITHDRAWS -->
   <div class="card">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-3 gap-2">
       <b>طلبات السحب (Pi)</b>
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <button class="btn btnW" onclick="loadWithdraws()">تحديث</button>
       </div>
     </div>
@@ -156,8 +159,47 @@
 <script>
 /* ========== CONFIG ========== */
 const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_ANON_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ========== AUTH GUARD (ADMIN ONLY) ========== */
+async function guardAdmin(){
+  try{
+    const { data, error } = await db.auth.getSession();
+    if(error) throw error;
+
+    const session = data?.session;
+    if(!session){
+      location.href = './login.html';
+      return;
+    }
+
+    const uid = session.user.id;
+
+    // لازم يكون موجود في جدول admins
+    const { data: adminRow, error: e2 } = await db
+      .from('admins')
+      .select('user_id')
+      .eq('user_id', uid)
+      .maybeSingle();
+
+    if(e2) throw e2;
+    if(!adminRow){
+      await db.auth.signOut();
+      location.href = './login.html';
+      return;
+    }
+  }catch(e){
+    console.error(e);
+    try{ await db.auth.signOut(); }catch{}
+    location.href = './login.html';
+  }
+}
+
+async function logout(){
+  await db.auth.signOut();
+  location.href = './login.html';
+}
 
 /* ========== HELPERS ========== */
 function esc(s){
@@ -350,14 +392,12 @@ async function approveWithdraw(id){
 }
 
 /**
- * ✅ markPaid:
+ * markPaid:
  * - يغير حالة السحب إلى paid
  * - يخصم amount_pi من delivery_wallet.balance_pi
- * (علشان كده لازم delivery_wallet.balance_pi موجود)
  */
 async function markPaid(id){
   try{
-    // هات بيانات السحب
     const { data: w, error: e1 } = await db.from('withdraw_requests')
       .select('id,delivery_id,amount_pi,status')
       .eq('id', id)
@@ -377,7 +417,6 @@ async function markPaid(id){
     });
     if(!ok.isConfirmed) return;
 
-    // 1) اخصم من المحفظة (Update)
     const { data: wal, error: e2 } = await db.from('delivery_wallet')
       .select('balance_pi')
       .eq('delivery_id', w.delivery_id)
@@ -386,6 +425,7 @@ async function markPaid(id){
 
     const cur = Number(wal?.balance_pi || 0);
     const amt = Number(w.amount_pi || 0);
+
     if(amt <= 0) return Swal.fire('خطأ','amount_pi غير صحيح','error');
     if(cur < amt) return Swal.fire('خطأ','رصيد الكابتن غير كافي','error');
 
@@ -394,7 +434,6 @@ async function markPaid(id){
       .eq('delivery_id', w.delivery_id);
     if(e3) throw e3;
 
-    // 2) غير حالة السحب
     const { error: e4 } = await db.from('withdraw_requests')
       .update({ status:'paid' })
       .eq('id', id);
@@ -434,7 +473,11 @@ async function rejectWithdraw(id){
 async function refreshAll(){
   await Promise.allSettled([loadOrders(), loadWithdraws(), loadStats()]);
 }
-refreshAll();
+
+(async ()=>{
+  await guardAdmin();
+  await refreshAll();
+})();
 </script>
 
 </body>
