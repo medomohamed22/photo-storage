@@ -3,112 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <title>لوحة الأدمن | طلبات برو</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
-    body{font-family:Tajawal,system-ui;background:#f3f4f6}
-    .card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
+
+    :root{
+      --bg:#0b0720;
+      --bg2:#120a2e;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.10);
+
+      --txt:#f3f4f6;
+      --muted:rgba(243,244,246,.72);
+
+      --p:#6d28d9;      /* Purple dark */
+      --p2:#8b5cf6;
+      --y:#f6c453;      /* Yellow متوسط */
+      --y2:#f59e0b;
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --info:#60a5fa;
+    }
+
+    body{
+      font-family:Tajawal,system-ui;
+      color:var(--txt);
+      background:
+        radial-gradient(900px 500px at 5% -10%, rgba(109,40,217,.20), transparent 60%),
+        radial-gradient(900px 500px at 95% 0%, rgba(246,196,83,.14), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.06));
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      box-shadow: 0 18px 70px rgba(0,0,0,.25);
+      backdrop-filter: blur(10px);
+    }
+
+    .soft{
+      background: var(--card2);
+      border:1px solid var(--stroke);
+      border-radius:16px;
+    }
+
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace}
-    .badge{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;display:inline-flex;gap:6px;align-items:center}
-    .btn{padding:8px 10px;border-radius:10px;font-weight:700;font-size:12px}
-    .btnG{background:#16a34a;color:#fff}
-    .btnR{background:#dc2626;color:#fff}
-    .btnB{background:#2563eb;color:#fff}
-    .btnS{background:#111827;color:#fff}
-    .btnW{background:#fff;border:1px solid #e5e7eb}
-    table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #e5e7eb;padding:8px;white-space:nowrap}
-    th{background:#f9fafb;text-align:right}
-    .input{border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font-size:13px}
+
+    .badge{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      display:inline-flex;gap:8px;align-items:center;
+      color:var(--txt);
+      white-space:nowrap;
+    }
+
+    .btn{
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:800;
+      font-size:12px;
+      user-select:none;
+      transition:.15s;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+    }
+    .btn:active{transform:scale(.98)}
+    .btnP{background: linear-gradient(135deg, rgba(109,40,217,.92), rgba(139,92,246,.75)); border-color: rgba(109,40,217,.35)}
+    .btnY{background: linear-gradient(135deg, rgba(246,196,83,.95), rgba(245,158,11,.75)); border-color: rgba(245,158,11,.35); color:#1f2937}
+    .btnG{background: linear-gradient(135deg, rgba(34,197,94,.92), rgba(22,163,74,.75)); border-color: rgba(34,197,94,.35)}
+    .btnR{background: linear-gradient(135deg, rgba(239,68,68,.92), rgba(220,38,38,.75)); border-color: rgba(239,68,68,.35)}
+    .btnB{background: linear-gradient(135deg, rgba(96,165,250,.92), rgba(37,99,235,.75)); border-color: rgba(96,165,250,.35)}
+    .btnW{background: rgba(255,255,255,.08)}
+    .btnS{background: rgba(17,24,39,.55)}
+
+    .input, select{
+      width:100%;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
+      transition:.15s;
+    }
+    .input:focus, select:focus{
+      border-color: rgba(139,92,246,.55);
+      box-shadow: 0 0 0 4px rgba(109,40,217,.18);
+    }
+    ::placeholder{color:rgba(243,244,246,.55)}
+
+    /* Tables mobile */
+    table{border-collapse:separate;border-spacing:0;width:100%}
+    th,td{
+      border-bottom:1px solid rgba(255,255,255,.10);
+      padding:10px 10px;
+      vertical-align:top;
+      white-space:nowrap;
+    }
+    th{
+      position:sticky; top:0;
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(10px);
+      text-align:right;
+      z-index:1;
+    }
+
+    .tableWrap{
+      overflow:auto;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    .muted{color:var(--muted)}
+    .kpi{
+      font-weight:900;
+      font-size:22px;
+      letter-spacing:.3px;
+    }
+
+    .seg{
+      display:flex; gap:8px; flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,.10);
+      margin: 10px 0;
+    }
   </style>
 </head>
 
 <body class="pb-24">
 
-<header class="bg-gray-900 text-white p-4">
-  <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
-    <div class="font-bold">لوحة الأدمن — طلبات برو</div>
+<!-- HEADER -->
+<header class="sticky top-0 z-50 px-3 pt-3">
+  <div class="max-w-6xl mx-auto glass p-4 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl soft flex items-center justify-center">🛡️</div>
+      <div>
+        <div class="font-extrabold">لوحة الأدمن — طلبات برو</div>
+        <div class="text-[11px] muted">إدارة الطلبات + السحب + إحصائيات</div>
+      </div>
+    </div>
     <div class="flex gap-2 flex-wrap">
       <button class="btn btnW" onclick="refreshAll()">تحديث الكل</button>
-      <button class="btn btnW" onclick="logout()">خروج</button>
+      <button class="btn btnS" onclick="logout()">خروج</button>
     </div>
   </div>
 </header>
 
-<div class="max-w-6xl mx-auto p-4 space-y-6">
+<div class="max-w-6xl mx-auto p-3 md:p-4 space-y-4">
 
   <!-- STATS -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <div class="card text-center">
-      <div class="text-gray-500 text-sm">إجمالي الطلبات</div>
-      <div id="statOrders" class="text-2xl font-bold">—</div>
-      <div class="text-[11px] text-gray-400 mt-1">كل الحالات</div>
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div class="glass p-4">
+      <div class="muted text-sm">إجمالي الطلبات</div>
+      <div id="statOrders" class="kpi">—</div>
+      <div class="text-[11px] muted mt-1">كل الحالات</div>
     </div>
 
-    <div class="card text-center">
-      <div class="text-gray-500 text-sm">Pi من الطلبات</div>
-      <div id="statOrdersPi" class="text-2xl font-bold mono text-purple-700">—</div>
-      <div class="text-[11px] text-gray-400 mt-1">pricing_snapshot.total_pi</div>
+    <div class="glass p-4">
+      <div class="muted text-sm">Pi من الطلبات</div>
+      <div id="statOrdersPi" class="kpi mono" style="color: var(--y)">—</div>
+      <div class="text-[11px] muted mt-1">pricing_snapshot.total_pi</div>
     </div>
 
-    <div class="card text-center">
-      <div class="text-gray-500 text-sm">طلبات السحب</div>
-      <div id="statWithdraws" class="text-2xl font-bold text-blue-600">—</div>
-      <div class="text-[11px] text-gray-400 mt-1">pending/approved/paid</div>
+    <div class="glass p-4">
+      <div class="muted text-sm">طلبات السحب</div>
+      <div id="statWithdraws" class="kpi" style="color: var(--info)">—</div>
+      <div class="text-[11px] muted mt-1">كل الحالات</div>
     </div>
 
-    <div class="card text-center">
-      <div class="text-gray-500 text-sm">Pi مسحوب</div>
-      <div id="statWithdrawPi" class="text-2xl font-bold mono text-orange-600">—</div>
-      <div class="text-[11px] text-gray-400 mt-1">withdraw_requests.amount_pi</div>
+    <div class="glass p-4">
+      <div class="muted text-sm">Pi مسحوب</div>
+      <div id="statWithdrawPi" class="kpi mono" style="color: var(--p2)">—</div>
+      <div class="text-[11px] muted mt-1">withdraw_requests.amount_pi</div>
+    </div>
+
+    <!-- NEW: SITE PROFIT -->
+    <div class="glass p-4">
+      <div class="muted text-sm">أرباح الموقع</div>
+      <div class="flex items-baseline gap-2">
+        <div id="statSiteProfitEgp" class="kpi" style="color: var(--y)">—</div>
+        <div class="muted text-sm">ج</div>
+      </div>
+      <div class="text-[12px] mt-1">
+        <span class="muted">≈</span>
+        <b id="statSiteProfitPi" class="mono" style="color: var(--p2)">—</b>
+        <span class="muted">Pi</span>
+      </div>
+      <div class="text-[11px] muted mt-1">10 ج لكل طلب</div>
     </div>
   </div>
 
   <!-- FILTER BAR -->
-  <div class="card flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
-    <div class="flex gap-2 flex-wrap items-center">
+  <div class="glass p-4 space-y-3">
+    <div class="seg">
       <span class="badge">📦 الطلبات</span>
-      <select id="ordersFilter" class="input" onchange="loadOrders()">
-        <option value="all">كل الحالات</option>
-        <option value="pending">pending</option>
-        <option value="accepted">accepted</option>
-        <option value="shipping">shipping</option>
-        <option value="arrived">arrived</option>
-        <option value="delivered">delivered</option>
-        <option value="canceled">canceled</option>
-      </select>
 
-      <input id="searchUser" class="input w-64"
-        placeholder="بحث بالعميل/الكابتن..." oninput="loadOrders()"/>
+      <div class="w-full md:w-56">
+        <select id="ordersFilter" class="input" onchange="loadOrders()">
+          <option value="all">كل الحالات</option>
+          <option value="pending">pending</option>
+          <option value="accepted">accepted</option>
+          <option value="shipping">shipping</option>
+          <option value="arrived">arrived</option>
+          <option value="delivered">delivered</option>
+          <option value="canceled">canceled</option>
+        </select>
+      </div>
+
+      <div class="w-full md:w-80">
+        <input id="searchUser" class="input"
+          placeholder="بحث بالعميل / الكابتن..." oninput="loadOrders()"/>
+      </div>
+
+      <button class="btn btnP" onclick="loadOrders()">تحديث الطلبات</button>
     </div>
 
-    <div class="flex gap-2 flex-wrap items-center">
+    <div class="divider"></div>
+
+    <div class="seg">
       <span class="badge">💸 السحب</span>
-      <select id="wdFilter" class="input" onchange="loadWithdraws()">
-        <option value="all">كل الحالات</option>
-        <option value="pending">pending</option>
-        <option value="approved">approved</option>
-        <option value="paid">paid</option>
-        <option value="rejected">rejected</option>
-      </select>
+
+      <div class="w-full md:w-56">
+        <select id="wdFilter" class="input" onchange="loadWithdraws()">
+          <option value="all">كل الحالات</option>
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="paid">paid</option>
+          <option value="rejected">rejected</option>
+        </select>
+      </div>
+
+      <button class="btn btnY" onclick="loadWithdraws()">تحديث السحب</button>
     </div>
   </div>
 
   <!-- ORDERS -->
-  <div class="card">
+  <div class="glass p-4">
     <div class="flex items-center justify-between mb-3 gap-2">
-      <b>الطلبات</b>
+      <div>
+        <b class="text-base">الطلبات</b>
+        <div class="text-[11px] muted mt-1">آخر 200 طلب حسب الفلتر</div>
+      </div>
       <div class="flex gap-2 flex-wrap">
         <button class="btn btnW" onclick="loadOrders()">تحديث</button>
       </div>
     </div>
 
-    <div class="overflow-auto">
+    <div class="tableWrap">
       <table class="text-sm">
         <thead>
           <tr>
@@ -129,15 +287,18 @@
   </div>
 
   <!-- WITHDRAWS -->
-  <div class="card">
+  <div class="glass p-4">
     <div class="flex items-center justify-between mb-3 gap-2">
-      <b>طلبات السحب (Pi)</b>
+      <div>
+        <b class="text-base">طلبات السحب (Pi)</b>
+        <div class="text-[11px] muted mt-1">آخر 200 طلب حسب الفلتر</div>
+      </div>
       <div class="flex gap-2 flex-wrap">
         <button class="btn btnW" onclick="loadWithdraws()">تحديث</button>
       </div>
     </div>
 
-    <div class="overflow-auto">
+    <div class="tableWrap">
       <table class="text-sm">
         <thead>
           <tr>
@@ -176,7 +337,6 @@ async function guardAdmin(){
 
     const uid = session.user.id;
 
-    // لازم يكون موجود في جدول admins
     const { data: adminRow, error: e2 } = await db
       .from('admins')
       .select('user_id')
@@ -211,16 +371,31 @@ function fmtDate(ts){
   try{ return new Date(ts).toLocaleString('ar-EG'); }catch{ return ts; }
 }
 function badgeStatus(s){
+  const base = 'badge';
   const cls =
-    s==='pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-    s==='accepted' ? 'bg-green-50 text-green-700 border-green-200' :
-    s==='shipping' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-    s==='arrived' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-    s==='delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-    s==='canceled' ? 'bg-red-50 text-red-700 border-red-200' :
-    'bg-gray-50 text-gray-700 border-gray-200';
+    s==='pending' ? 'border-yellow-400/30 text-yellow-200 bg-yellow-500/10' :
+    s==='accepted' ? 'border-green-400/30 text-green-200 bg-green-500/10' :
+    s==='shipping' ? 'border-orange-400/30 text-orange-200 bg-orange-500/10' :
+    s==='arrived' ? 'border-blue-400/30 text-blue-200 bg-blue-500/10' :
+    s==='delivered' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
+    s==='canceled' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
+    'border-white/10 text-white/80 bg-white/5';
 
-  return `<span class="badge ${cls}">${esc(s)}</span>`;
+  return `<span class="${base} ${cls}">${esc(s)}</span>`;
+}
+
+function sumSiteProfitPi(orders){
+  // أرباح الموقع = platform_fee_egp لكل طلب (ثابت 10ج)
+  // التحويل إلى Pi: platform_fee_egp / pricing_snapshot.pi_egp
+  // لو pi_egp غير موجود => 0
+  let totalPi = 0;
+  (orders || []).forEach(o=>{
+    const piEgp = Number(o?.pricing_snapshot?.pi_egp || 0);
+    if(piEgp > 0){
+      totalPi += (10 / piEgp);
+    }
+  });
+  return totalPi;
 }
 
 /* ========== STATS ========== */
@@ -232,15 +407,23 @@ async function loadStats(){
   if(e2) console.warn(e2);
 
   const totalOrders = orders?.length || 0;
+
   const ordersPi = (orders||[]).reduce((sum,o)=> sum + (Number(o?.pricing_snapshot?.total_pi)||0), 0);
 
   const totalWithdraws = wds?.length || 0;
   const withdrawPi = (wds||[]).reduce((sum,w)=> sum + (Number(w?.amount_pi)||0), 0);
 
+  // NEW: Site profit
+  const siteProfitEgp = totalOrders * 10;
+  const siteProfitPi = sumSiteProfitPi(orders);
+
   document.getElementById('statOrders').innerText = totalOrders;
   document.getElementById('statOrdersPi').innerText = ordersPi.toFixed(3);
   document.getElementById('statWithdraws').innerText = totalWithdraws;
   document.getElementById('statWithdrawPi').innerText = withdrawPi.toFixed(3);
+
+  document.getElementById('statSiteProfitEgp').innerText = siteProfitEgp.toFixed(0);
+  document.getElementById('statSiteProfitPi').innerText = siteProfitPi.toFixed(4);
 }
 
 /* ========== ORDERS ========== */
@@ -260,7 +443,7 @@ async function loadOrders(){
 
   if(error){
     console.error(error);
-    tb.innerHTML = `<tr><td colspan="9" class="p-3 text-center text-red-600">خطأ في جلب الطلبات: ${esc(error.message)}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="9" class="p-3 text-center" style="color:#fca5a5">خطأ في جلب الطلبات: ${esc(error.message)}</td></tr>`;
     return;
   }
 
@@ -277,13 +460,13 @@ async function loadOrders(){
 
     return `
       <tr>
-        <td>${esc(fmtDate(o.created_at))}</td>
+        <td class="muted">${esc(fmtDate(o.created_at))}</td>
         <td><b>${esc(o.product_name)}</b></td>
-        <td>${esc(o.order_type || 'any')}</td>
+        <td class="muted">${esc(o.order_type || 'any')}</td>
         <td>${esc(o.customer_pi_username || '-')}</td>
         <td>${esc(o.delivery_id || '-')}</td>
         <td class="mono">${egp.toFixed(2)}</td>
-        <td class="mono text-purple-700">${pi ? pi.toFixed(3) : '—'}</td>
+        <td class="mono" style="color:var(--y)">${pi ? pi.toFixed(3) : '—'}</td>
         <td>${badgeStatus(o.status)}</td>
         <td>
           <div class="flex gap-1 flex-wrap">
@@ -295,7 +478,7 @@ async function loadOrders(){
         </td>
       </tr>
     `;
-  }).join('') || `<tr><td colspan="9" class="p-3 text-center text-gray-500">لا توجد بيانات</td></tr>`;
+  }).join('') || `<tr><td colspan="9" class="p-3 text-center muted">لا توجد بيانات</td></tr>`;
 
   loadStats();
 }
@@ -307,7 +490,11 @@ async function setOrderStatus(id, st){
     text:`تغيير حالة الطلب إلى: ${st} ؟`,
     showCancelButton:true,
     confirmButtonText:'نعم',
-    cancelButtonText:'إلغاء'
+    cancelButtonText:'إلغاء',
+    background: '#0b0720',
+    color: '#f3f4f6',
+    confirmButtonColor: '#6d28d9',
+    cancelButtonColor: '#334155'
   });
   if(!ok.isConfirmed) return;
 
@@ -316,7 +503,15 @@ async function setOrderStatus(id, st){
     console.error(error);
     return Swal.fire('خطأ', error.message, 'error');
   }
-  Swal.fire('تم', 'تم تحديث الحالة', 'success');
+  Swal.fire({
+    icon:'success',
+    title:'تم',
+    text:'تم تحديث الحالة',
+    timer:1100,
+    showConfirmButton:false,
+    background:'#0b0720',
+    color:'#f3f4f6'
+  });
   loadOrders();
 }
 
@@ -336,7 +531,7 @@ async function loadWithdraws(){
 
   if(error){
     console.error(error);
-    tb.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-red-600">خطأ في جلب السحب: ${esc(error.message)}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="6" class="p-3 text-center" style="color:#fca5a5">خطأ في جلب السحب: ${esc(error.message)}</td></tr>`;
     return;
   }
 
@@ -346,8 +541,8 @@ async function loadWithdraws(){
 
     const actions = `
       <div class="flex gap-1 flex-wrap">
-        ${w.status==='pending' ? `<button class="btn btnB" onclick="approveWithdraw('${w.id}')">موافقة</button>` : ''}
-        ${w.status==='approved' ? `<button class="btn btnS" onclick="markPaid('${w.id}')">تم الدفع</button>` : ''}
+        ${w.status==='pending' ? `<button class="btn btnP" onclick="approveWithdraw('${w.id}')">موافقة</button>` : ''}
+        ${w.status==='approved' ? `<button class="btn btnY" onclick="markPaid('${w.id}')">تم الدفع</button>` : ''}
         ${(w.status==='pending' || w.status==='approved') ? `<button class="btn btnR" onclick="rejectWithdraw('${w.id}')">رفض</button>` : ''}
         <button class="btn btnW" onclick="copyText('${esc(wallet)}')">نسخ العنوان</button>
       </div>
@@ -355,22 +550,29 @@ async function loadWithdraws(){
 
     return `
       <tr>
-        <td>${esc(fmtDate(w.created_at))}</td>
+        <td class="muted">${esc(fmtDate(w.created_at))}</td>
         <td><b>${esc(w.delivery_id)}</b></td>
-        <td class="mono text-purple-700">${amountPi} Pi</td>
+        <td class="mono" style="color:var(--y)">${amountPi} Pi</td>
         <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(wallet)}</td>
         <td>${badgeStatus(w.status)}</td>
         <td>${actions}</td>
       </tr>
     `;
-  }).join('') || `<tr><td colspan="6" class="p-3 text-center text-gray-500">لا توجد بيانات</td></tr>`;
+  }).join('') || `<tr><td colspan="6" class="p-3 text-center muted">لا توجد بيانات</td></tr>`;
 
   loadStats();
 }
 
 function copyText(t){
   navigator.clipboard?.writeText(t);
-  Swal.fire({icon:'success', title:'تم النسخ', timer:900, showConfirmButton:false});
+  Swal.fire({
+    icon:'success',
+    title:'تم النسخ',
+    timer:900,
+    showConfirmButton:false,
+    background:'#0b0720',
+    color:'#f3f4f6'
+  });
 }
 
 async function approveWithdraw(id){
@@ -380,14 +582,25 @@ async function approveWithdraw(id){
     text:'سيتم تحويل الحالة إلى approved',
     showCancelButton:true,
     confirmButtonText:'موافقة',
-    cancelButtonText:'إلغاء'
+    cancelButtonText:'إلغاء',
+    background:'#0b0720',
+    color:'#f3f4f6',
+    confirmButtonColor:'#6d28d9',
+    cancelButtonColor:'#334155'
   });
   if(!ok.isConfirmed) return;
 
   const { error } = await db.from('withdraw_requests').update({ status:'approved' }).eq('id', id);
   if(error) return Swal.fire('خطأ', error.message, 'error');
 
-  Swal.fire('تم', 'تمت الموافقة', 'success');
+  Swal.fire({
+    icon:'success',
+    title:'تمت الموافقة',
+    timer:1100,
+    showConfirmButton:false,
+    background:'#0b0720',
+    color:'#f3f4f6'
+  });
   loadWithdraws();
 }
 
@@ -413,7 +626,11 @@ async function markPaid(id){
       html:`سيتم خصم <b class="mono">${Number(w.amount_pi).toFixed(3)} Pi</b> من رصيد الكابتن <b>${esc(w.delivery_id)}</b>`,
       showCancelButton:true,
       confirmButtonText:'تم الدفع',
-      cancelButtonText:'إلغاء'
+      cancelButtonText:'إلغاء',
+      background:'#0b0720',
+      color:'#f3f4f6',
+      confirmButtonColor:'#f6c453',
+      cancelButtonColor:'#334155'
     });
     if(!ok.isConfirmed) return;
 
@@ -439,7 +656,13 @@ async function markPaid(id){
       .eq('id', id);
     if(e4) throw e4;
 
-    Swal.fire('تم','تم تسجيل الدفع وخصم الرصيد','success');
+    Swal.fire({
+      icon:'success',
+      title:'تم تسجيل الدفع',
+      text:'تم خصم الرصيد وتحديث الحالة',
+      background:'#0b0720',
+      color:'#f3f4f6'
+    });
     loadWithdraws();
 
   }catch(e){
@@ -455,7 +678,11 @@ async function rejectWithdraw(id){
     inputPlaceholder:'مثال: العنوان غير صحيح',
     showCancelButton:true,
     confirmButtonText:'رفض',
-    cancelButtonText:'إلغاء'
+    cancelButtonText:'إلغاء',
+    background:'#0b0720',
+    color:'#f3f4f6',
+    confirmButtonColor:'#ef4444',
+    cancelButtonColor:'#334155'
   });
   if(note === undefined) return;
 
@@ -465,7 +692,14 @@ async function rejectWithdraw(id){
 
   if(error) return Swal.fire('خطأ', error.message, 'error');
 
-  Swal.fire('تم','تم رفض الطلب','info');
+  Swal.fire({
+    icon:'info',
+    title:'تم الرفض',
+    timer:1100,
+    showConfirmButton:false,
+    background:'#0b0720',
+    color:'#f3f4f6'
+  });
   loadWithdraws();
 }
 
