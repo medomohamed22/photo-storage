@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تسجيل دخول الأدمن | طلبات برو</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+    body{font-family:Tajawal,system-ui;background:#0b1220;color:#e5e7eb}
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      border-radius: 22px;
+    }
+    input{
+      background: rgba(255,255,255,.06) !important;
+      border: 1px solid rgba(255,255,255,.12) !important;
+      color:#e5e7eb !important;
+      border-radius:18px !important;
+      outline:none !important;
+    }
+    input::placeholder{color: rgba(229,231,235,.55)}
+    .btn{
+      border-radius:16px;
+      padding:12px 14px;
+      font-weight:800;
+      transition:.2s;
+      user-select:none;
+    }
+    .btn:active{transform:scale(.98)}
+    .btnP{
+      background: linear-gradient(135deg, rgba(167,139,250,.95), rgba(167,139,250,.65));
+      border: 1px solid rgba(255,255,255,.12);
+      color:white;
+      box-shadow: 0 14px 40px rgba(167,139,250,.18);
+    }
+    .btnS{
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      color:#e5e7eb;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md glass p-6 space-y-4">
+    <div class="text-center space-y-1">
+      <div class="text-2xl font-extrabold">تسجيل دخول الأدمن</div>
+      <div class="text-sm opacity-70">Email + Password (Supabase Auth)</div>
+    </div>
+
+    <div class="space-y-2">
+      <input id="email" class="w-full p-3" type="email" placeholder="البريد الإلكتروني" autocomplete="email" />
+      <input id="password" class="w-full p-3" type="password" placeholder="كلمة المرور" autocomplete="current-password" />
+    </div>
+
+    <button class="btn btnP w-full" onclick="login()">دخول</button>
+
+    <button class="btn btnS w-full" onclick="resetPassword()">نسيت كلمة المرور؟</button>
+
+    <div class="text-xs opacity-70 leading-relaxed">
+      لو أول مرة: اعمل المستخدم من Dashboard → Authentication → Users → Invite user / Create user
+      وبعدها ضيفه في جدول <b>admins</b> عشان يبقى أدمن.
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  async function login(){
+    try{
+      const email = (document.getElementById('email').value || '').trim();
+      const password = (document.getElementById('password').value || '').trim();
+      if(!email || !password) return Swal.fire('تنبيه','اكتب الإيميل والباسورد','warning');
+
+      Swal.fire({title:'جاري الدخول...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+
+      // تحقق إنه أدمن فعلاً (موجود في جدول admins)
+      const uid = data?.user?.id;
+      const { data: adminRow, error: e2 } = await db.from('admins').select('user_id').eq('user_id', uid).maybeSingle();
+      if(e2) throw e2;
+      if(!adminRow){
+        await db.auth.signOut();
+        Swal.close();
+        return Swal.fire('مرفوض','الحساب مش مُضاف كأدمن داخل جدول admins','error');
+      }
+
+      Swal.close();
+      location.href = './admin.html';
+    }catch(e){
+      console.error(e);
+      Swal.fire('فشل', e?.message || 'حصل خطأ', 'error');
+    }
+  }
+
+  async function resetPassword(){
+    const { value: email } = await Swal.fire({
+      title:'استرجاع كلمة المرور',
+      input:'email',
+      inputPlaceholder:'اكتب الإيميل',
+      showCancelButton:true,
+      confirmButtonText:'إرسال',
+      cancelButtonText:'إلغاء'
+    });
+    if(!email) return;
+
+    try{
+      Swal.fire({title:'جاري الإرسال...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+      const { error } = await db.auth.resetPasswordForEmail(email, {
+        redirectTo: location.origin + '/login.html'
+      });
+      if(error) throw error;
+      Swal.close();
+      Swal.fire('تم','ابعتنا لينك استرجاع على الإيميل','success');
+    }catch(e){
+      console.error(e);
+      Swal.fire('فشل', e?.message || 'حصل خطأ', 'error');
+    }
+  }
+
+  // لو داخل بالفعل -> روح للأدمن
+  (async ()=>{
+    const { data } = await db.auth.getSession();
+    if(data?.session){
+      // كمان تأكد إنه أدمن
+      const uid = data.session.user.id;
+      const { data: adminRow } = await db.from('admins').select('user_id').eq('user_id', uid).maybeSingle();
+      if(adminRow) location.href = './admin.html';
+    }
+  })();
+</script>
+</body>
+</html>
