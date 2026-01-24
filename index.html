@@ -9,136 +9,169 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <!-- Pi SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
+ <style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
 
-    :root{
-      --bg:#f5f3ff;
-      --bg2:#ede9fe;
-      --card:#ffffff;
-      --card-2:#f8f7ff;
-      --stroke:#e5e7eb;
-      --txt:#1f2937;
-      --muted:#6b7280;
-      --accent:#7c3aed;
-      --accent-2:#a78bfa;
-      --accent-3:#e9d5ff;
-      --ok:#16a34a;
-      --bad:#ef4444;
-      --warn:#f59e0b;
-      --chip:#f3e8ff;
-    }
+  :root{
+    --bg:#0b0720;                 /* خلفية غامقة */
+    --bg2:#120a2e;                /* تدرج غامق */
+    --card:rgba(255,255,255,.06); /* كروت شفافة */
+    --card-2:rgba(255,255,255,.08);
+    --stroke:rgba(255,255,255,.12);
 
-    body{
-      font-family:Tajawal,system-ui;
-      background:
-        radial-gradient(900px 500px at 5% -10%, rgba(124,58,237,.18), transparent 60%),
-        radial-gradient(900px 500px at 95% 0%, rgba(167,139,250,.2), transparent 60%),
-        linear-gradient(180deg, var(--bg), var(--bg2));
-      color: var(--txt);
-    }
+    --txt:#f3f4f6;                /* نص فاتح */
+    --muted:rgba(243,244,246,.72);
 
-    .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.9));
-      border: 1px solid var(--stroke);
-      box-shadow: 0 18px 60px rgba(124,58,237,.12);
-      border-radius: 22px;
-    }
+    --accent:#6d28d9;             /* أرجواني غامق */
+    --accent-2:#8b5cf6;           /* ثانوي */
+    --accent-3:#a78bfa;           /* هايلايت */
 
-    .soft{
-      background: var(--card-2);
-      border: 1px solid var(--stroke);
-      border-radius: 18px;
-    }
+    --ok:#22c55e;
+    --bad:#ef4444;
+    --warn:#f59e0b;
 
-    .chip{
-      font-size:12px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid rgba(124,58,237,.2);
-      background: var(--chip);
-      color: var(--accent);
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-    }
+    --chip:rgba(109,40,217,.18);  /* شريحة */
+    --shadow: 0 18px 60px rgba(0,0,0,.35);
+  }
 
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
-    }
+  body{
+    font-family:Tajawal,system-ui;
+    background:
+      radial-gradient(900px 500px at 5% -10%, rgba(109,40,217,.35), transparent 60%),
+      radial-gradient(900px 500px at 95% 0%, rgba(139,92,246,.22), transparent 60%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
+    color: var(--txt);
+  }
 
-    .row{display:flex;justify-content:space-between;gap:12px;align-items:center}
+  /* Containers */
+  .glass{
+    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+    border: 1px solid var(--stroke);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+    border-radius: 22px;
+  }
 
-    .btn{
-      border-radius:16px;
-      padding:12px 14px;
-      font-weight:800;
-      transition:.2s;
-      user-select:none;
-    }
-    .btn:active{transform:scale(.98)}
-    .btnA{
-      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(124,58,237,.7));
-      border: 1px solid rgba(124,58,237,.2);
-      color:white;
-      box-shadow: 0 14px 40px rgba(124,58,237,.2);
-    }
-    .btnP{
-      background: linear-gradient(135deg, rgba(167,139,250,.95), rgba(139,92,246,.75));
-      border: 1px solid rgba(124,58,237,.2);
-      color:white;
-      box-shadow: 0 14px 40px rgba(124,58,237,.18);
-    }
-    .btnG{
-      background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(22,163,74,.75));
-      border: 1px solid rgba(34,197,94,.25);
-      color:white;
-    }
-    .btnB{
-      background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(37,99,235,.75));
-      border: 1px solid rgba(59,130,246,.2);
-      color:white;
-    }
-    .btnS{
-      background: rgba(124,58,237,.08);
-      border: 1px solid rgba(124,58,237,.2);
-      color: var(--accent);
-    }
+  .soft{
+    background: var(--card-2);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 18px;
+  }
 
-    input,textarea,select{
-      background: #fff !important;
-      border: 1px solid var(--stroke) !important;
-      color: var(--txt) !important;
-      border-radius: 16px !important;
-      outline: none !important;
-      transition: .2s;
-    }
-    input:focus,textarea:focus,select:focus{
-      border-color: rgba(124,58,237,.5) !important;
-      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
-    }
-    input::placeholder, textarea::placeholder{color: rgba(107,114,128,.7)}
-    textarea{min-height:90px}
+  /* Chips */
+  .chip{
+    font-size:12px;
+    padding:7px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background: var(--chip);
+    color: var(--txt);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
 
-    .msg{
-      max-width:78%;
-      padding:10px 12px;
-      border-radius:18px;
-      font-size:13px;
-      word-break:break-word;
-      border:1px solid rgba(124,58,237,.12);
-      animation: pop .2s ease-in-out;
-    }
-    @keyframes pop{
-      from{transform:scale(.96);opacity:.5}
-      to{transform:scale(1);opacity:1}
-    }
-    .c{background: rgba(124,58,237,.14); color:#3b0764; align-self:flex-start}
-    .d{background: #fff; color: var(--txt); align-self:flex-end}
+  .mono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
 
-    .tiny{font-size:11px;color:rgba(107,114,128,.85)}
-    .muted{color:rgba(107,114,128,.9)}
-  </style>
+  .row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+  }
+
+  /* Buttons */
+  .btn{
+    border-radius:16px;
+    padding:12px 14px;
+    font-weight:800;
+    transition:.2s;
+    user-select:none;
+  }
+  .btn:active{transform:scale(.98)}
+
+  .btnA{
+    background: linear-gradient(135deg, rgba(109,40,217,.95), rgba(139,92,246,.75));
+    border: 1px solid rgba(255,255,255,.14);
+    color:white;
+    box-shadow: 0 14px 40px rgba(109,40,217,.22);
+  }
+
+  .btnP{
+    background: linear-gradient(135deg, rgba(139,92,246,.95), rgba(109,40,217,.75));
+    border: 1px solid rgba(255,255,255,.14);
+    color:white;
+    box-shadow: 0 14px 40px rgba(139,92,246,.18);
+  }
+
+  .btnG{
+    background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(22,163,74,.70));
+    border: 1px solid rgba(255,255,255,.14);
+    color:white;
+  }
+
+  .btnB{
+    background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(37,99,235,.70));
+    border: 1px solid rgba(255,255,255,.14);
+    color:white;
+  }
+
+  .btnS{
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    color: var(--txt);
+  }
+
+  /* Inputs */
+  input,textarea,select{
+    width: 100%;
+    background: rgba(255,255,255,.06) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    color: var(--txt) !important;
+    border-radius: 16px !important;
+    outline: none !important;
+    transition: .2s;
+  }
+  input::placeholder, textarea::placeholder{
+    color: rgba(243,244,246,.55);
+  }
+  input:focus,textarea:focus,select:focus{
+    border-color: rgba(167,139,250,.55) !important;
+    box-shadow: 0 0 0 4px rgba(167,139,250,.18);
+  }
+  textarea{min-height:90px}
+
+  /* Chat bubbles */
+  .msg{
+    max-width:78%;
+    padding:10px 12px;
+    border-radius:18px;
+    font-size:13px;
+    word-break:break-word;
+    border:1px solid rgba(255,255,255,.12);
+    animation: pop .2s ease-in-out;
+  }
+  @keyframes pop{
+    from{transform:scale(.96);opacity:.5}
+    to{transform:scale(1);opacity:1}
+  }
+  .c{
+    background: rgba(109,40,217,.28);
+    color:#fff;
+    align-self:flex-start;
+  }
+  .d{
+    background: rgba(255,255,255,.08);
+    color: var(--txt);
+    align-self:flex-end;
+  }
+
+  .tiny{font-size:11px;color:rgba(243,244,246,.65)}
+  .muted{color:rgba(243,244,246,.72)}
+</style>
 </head>
 <body class="pb-24">
   <!-- HEADER -->
