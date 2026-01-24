@@ -78,9 +78,7 @@
     </div>
 
     <!-- زر Admin (اختياري يظهر بعد تسجيل الدخول) -->
-    <div id="adminLinkBox" class="hidden">
-      <a href="admin.html" class="block text-center chip w-full">فتح لوحة الأدمن (admin.html)</a>
-    </div>
+   
 
     <!-- ================= CUSTOMER ================= -->
     <div id="customer" class="hidden space-y-3">
@@ -219,24 +217,31 @@
       </div>
 
       <!-- ✅ محفظة الدليفري (بالـ Pi) + طلب سحب -->
-      <div class="bg-white p-4 rounded-xl shadow space-y-2">
-        <div class="flex items-center justify-between">
-          <b class="text-sm">محفظتي (Pi)</b>
-          <button class="chip" onclick="loadWallet(); loadWithdrawHistory(); loadDeliveryHistory();">تحديث</button>
-        </div>
-        <div class="text-sm">الرصيد التقريبي: <b class="mono text-purple-700"><span id="wallet">0</span> Pi</b></div>
-        <div class="text-[11px] text-gray-500">الرصيد محسوب من رسوم التوصيل (20ج) بعد التحويل إلى Pi.</div>
+<div class="bg-white p-4 rounded-xl shadow space-y-2">
+  <b class="text-sm">محفظتي (Pi)</b>
 
-        <input id="wdAmount" type="number" class="border p-3 rounded-xl w-full" placeholder="مبلغ السحب (Pi)" />
-        <button onclick="withdraw()" class="bg-purple-600 text-white p-3 rounded-xl w-full font-bold">طلب سحب</button>
+  <div class="text-sm">
+    الرصيد المتاح: 
+    <b class="mono text-purple-700"><span id="walletPi">0</span> Pi</b>
+  </div>
 
-        <!-- ✅ سجل السحب -->
-        <div class="border-t pt-3">
-          <b class="text-sm">سجل السحب</b>
-          <div id="wdHistory" class="mt-2 space-y-2 text-sm"></div>
-        </div>
-      </div>
+  <input id="wdAmountPi" type="number" step="0.001"
+    class="border p-3 rounded-xl w-full"
+    placeholder="كم Pi هتسحب؟" />
 
+  <input id="wdWallet"
+    class="border p-3 rounded-xl w-full"
+    placeholder="عنوان محفظة Pi" />
+
+  <button onclick="withdrawPi()" 
+    class="bg-purple-600 text-white p-3 rounded-xl w-full font-bold">
+    طلب سحب Pi
+  </button>
+
+  <div class="text-[11px] text-gray-500">
+    سيتم مراجعة الطلب يدويًا من الإدارة قبل التحويل
+  </div>
+</div>
       <!-- ✅ سجل الدليفري -->
       <div class="bg-white p-4 rounded-xl shadow space-y-2">
         <div class="flex items-center justify-between">
@@ -882,7 +887,7 @@ async function loadWallet(){
       if(!isNaN(pi)) sum += pi;
     });
 
-    document.getElementById('wallet').innerText = sum.toFixed(6);
+    document.getElementById('walletPi').innerText = (data?.balance_pi ?? 0);
 
   }catch(e){
     console.warn(e);
@@ -890,30 +895,45 @@ async function loadWallet(){
   }
 }
 
-async function withdraw(){
-  try{
-    if(!PI_USERNAME) return Swal.fire('سجّل دخول');
-
-    const amount = parseFloat(document.getElementById('wdAmount').value || "0");
-    if(!amount || amount <= 0) return Swal.fire('اكتب مبلغ صحيح');
-
+async function withdrawPi() {
+  try {
+    if (!PI_USERNAME) return Swal.fire('سجّل دخول');
+    
+    const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
+    const wallet = document.getElementById('wdWallet').value.trim();
+    
+    if (!amount || amount <= 0) return Swal.fire('اكتب كمية Pi صحيحة');
+    if (!wallet || wallet.length < 10) return Swal.fire('اكتب عنوان محفظة صحيح');
+    
+    // تحقق من الرصيد
+    const { data: w } = await db.from('delivery_wallet')
+      .select('balance_pi')
+      .eq('delivery_id', PI_USERNAME)
+      .single();
+    
+    if (amount > (w?.balance_pi || 0)) {
+      return Swal.fire('المبلغ أكبر من الرصيد المتاح');
+    }
+    
     const { error } = await db.from('withdraw_requests').insert([{
       delivery_id: PI_USERNAME,
-      amount,           // ✅ amount = PI
+      amount_pi: amount,
+      wallet_address: wallet,
       status: 'pending'
     }]);
-    if(error) throw error;
-
-    Swal.fire({ icon:'success', title:'تم', text:'تم إرسال طلب السحب' });
-    document.getElementById('wdAmount').value = '';
-    loadWithdrawHistory();
-
-  }catch(e){
+    
+    if (error) throw error;
+    
+    Swal.fire({ icon: 'success', title: 'تم', text: 'تم إرسال طلب السحب للإدارة' });
+    
+    document.getElementById('wdAmountPi').value = '';
+    document.getElementById('wdWallet').value = '';
+    
+  } catch (e) {
     console.error(e);
-    Swal.fire({ icon:'error', title:'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
+    Swal.fire({ icon: 'error', title: 'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
   }
 }
-
 async function loadWithdrawHistory(){
   try{
     if(!PI_USERNAME) return;
