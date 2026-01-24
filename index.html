@@ -210,6 +210,15 @@
 
         <input id="prod" class="w-full p-3" placeholder="اسم المنتج" />
         <input id="price" type="number" class="w-full p-3" placeholder="سعر المنتج بالجنيه المصري" oninput="recalcInvoice()" />
+        <input id="custAddress" class="w-full p-3" placeholder="العنوان بالتفصيل" />
+        <div class="soft p-3 space-y-2 text-sm">
+          <div class="row">
+            <span class="muted">موقعك الحالي</span>
+            <button class="chip" onclick="setCustomerLocation()">تحديد الموقع</button>
+          </div>
+          <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+          <a id="custMapLink" class="tiny text-purple-300 underline hidden" target="_blank" rel="noreferrer">فتح الموقع على Google Maps</a>
+        </div>
         <textarea id="notes" class="w-full p-3" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
 
         <!-- INVOICE -->
@@ -246,6 +255,14 @@
         <div class="row">
           <b>حالة الطلب:</b>
           <b id="custStatus" class="text-orange-300">pending</b>
+        </div>
+        <div class="row text-sm">
+          <span class="muted">العنوان</span>
+          <b id="custAddressView">—</b>
+        </div>
+        <div class="row text-sm">
+          <span class="muted">الموقع</span>
+          <a id="custTrackMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noreferrer">فتح على الخريطة</a>
         </div>
         <div id="otpBox" class="hidden text-sm">
           كود التسليم: <b id="otp" class="text-orange-200 text-lg mono"></b>
@@ -291,6 +308,14 @@
           <div class="text-sm">الكابتن: <b id="delName">—</b></div>
           <button onclick="loadOrders()" class="chip">تحديث الطلبات</button>
         </div>
+        <div class="soft p-3 mt-3 space-y-2 text-sm">
+          <div class="row">
+            <span class="muted">موقع الكابتن</span>
+            <button class="chip" onclick="setDeliveryLocation()">تحديد موقعي</button>
+          </div>
+          <div id="delLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+          <div class="tiny">سيظهر لك الطلبات على بعد 5 كم فقط.</div>
+        </div>
       </div>
 
       <div id="ordersBox" class="space-y-2"></div>
@@ -309,6 +334,8 @@
           <div class="row"><span class="muted">المنتج</span><b id="dProd">—</b></div>
           <div class="row"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
           <div class="row"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+          <div class="row"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
+          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noreferrer">فتح على الخريطة</a></div>
           <div class="row"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
           <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300"><span id="dTotalEgp">—</span> ج</b></div>
@@ -332,9 +359,9 @@
 
       <!-- WALLET + WITHDRAW -->
       <div class="glass p-4 space-y-2">
-        <b class="text-sm">محفظتي (Pi)</b>
+        <b class="text-sm">أرباحي المتاحة (Pi)</b>
         <div class="text-sm">
-          الرصيد المتاح:
+          الأرباح المتاحة:
           <b class="mono text-purple-300"><span id="walletPi">0.000000</span> Pi</b>
         </div>
 
@@ -383,6 +410,9 @@ const PLATFORM_FEE_EGP = 10;
 let PI_USER = null;
 let PI_USERNAME = null;
 let ACTIVE_ORDER = null;
+let CUSTOMER_LOCATION = null;
+let DELIVERY_LOCATION = null;
+let HAS_LOCATION_COLUMNS = true;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -449,6 +479,69 @@ function egpToPi(egp){
   const piEgp = PI_USDT * USD_EGP;
   if(!piEgp || piEgp <= 0) return 0;
   return egp / piEgp;
+}
+
+/* ================== LOCATION ================== */
+function getCurrentLocation(){
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('المتصفح لا يدعم تحديد الموقع'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => reject(err),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+}
+
+function buildMapUrl(lat, lng){
+  return `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
+}
+
+async function setCustomerLocation(){
+  try{
+    const loc = await getCurrentLocation();
+    CUSTOMER_LOCATION = loc;
+    const status = `تم تحديد الموقع: ${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`;
+    document.getElementById('custLocStatus').innerText = status;
+    const link = document.getElementById('custMapLink');
+    link.href = buildMapUrl(loc.lat, loc.lng);
+    link.classList.remove('hidden');
+  }catch(e){
+    Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+async function setDeliveryLocation(){
+  try{
+    const loc = await getCurrentLocation();
+    DELIVERY_LOCATION = loc;
+    const status = `تم تحديد الموقع: ${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`;
+    document.getElementById('delLocStatus').innerText = status;
+    await loadOrders();
+  }catch(e){
+    Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+function distanceKm(a, b){
+  if(!a || !b) return null;
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const lat1 = a.lat * Math.PI / 180;
+  const lat2 = b.lat * Math.PI / 180;
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLng = Math.sin(dLng / 2);
+  const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function hasMissingLocationColumn(error){
+  const msg = String(error?.message || '').toLowerCase();
+  return msg.includes('customer_lat') || msg.includes('customer_lng') || msg.includes('customer_address');
 }
 
 /* ================== LOGIN ================== */
@@ -556,9 +649,12 @@ async function payAndCreate() {
     const product = document.getElementById('prod').value.trim();
     const orderType = document.getElementById('orderType').value;
     const notes = document.getElementById('notes').value.trim();
+    const address = document.getElementById('custAddress').value.trim();
     const prodEgp = parseFloat(document.getElementById('price').value || "0") || 0;
 
     if (!product || prodEgp <= 0) return Swal.fire('اكتب اسم المنتج وسعر صحيح');
+    if (!address) return Swal.fire('اكتب العنوان بالتفصيل');
+    if (!CUSTOMER_LOCATION) return Swal.fire('من فضلك حدّد موقعك أولاً');
 
     if (!(PI_USDT > 0 && USD_EGP > 0)) {
       await refreshRates();
@@ -598,41 +694,44 @@ async function payAndCreate() {
 
     Swal.fire({ title: 'جاري الدفع...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
-    await Pi.createPayment({
-      amount: amountPi,
-      memo: `Talabat Pro | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
-      metadata: {
-        product, orderType, prodEgp,
-        deliveryFee: DELIVERY_FEE_EGP,
-        platformFee: PLATFORM_FEE_EGP,
-        totalEgp,
-        pi_usdt: PI_USDT,
-        usd_egp: USD_EGP
-      }
-    }, {
-      onReadyForServerApproval: async (paymentId) => {
-        await fetch('/api/pi/approve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentId })
-        });
-      },
-      onReadyForServerCompletion: async (paymentId, txid) => {
-        await fetch('/api/pi/complete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentId, txid })
-        });
-      },
-      onCancel: (paymentId) => console.log('payment canceled:', paymentId),
-      onError: (err, p) => console.error('payment error:', err, p)
+    const paymentResult = await new Promise((resolve, reject) => {
+      Pi.createPayment({
+        amount: amountPi,
+        memo: `Talabat Pro | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
+        metadata: {
+          product, orderType, prodEgp,
+          deliveryFee: DELIVERY_FEE_EGP,
+          platformFee: PLATFORM_FEE_EGP,
+          totalEgp,
+          pi_usdt: PI_USDT,
+          usd_egp: USD_EGP
+        }
+      }, {
+        onReadyForServerApproval: async (paymentId) => {
+          await fetch('/api/pi/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId })
+          });
+        },
+        onReadyForServerCompletion: async (paymentId, txid) => {
+          await fetch('/api/pi/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, txid })
+          });
+          resolve({ paymentId, txid });
+        },
+        onCancel: (paymentId) => reject(new Error('تم إلغاء الدفع')),
+        onError: (err) => reject(err || new Error('فشل الدفع'))
+      });
     });
 
     // بعد نجاح الدفع: نكتب الطلب في DB
     const deliveryFeePi = egpToPi(DELIVERY_FEE_EGP);
     const platformFeePi = egpToPi(PLATFORM_FEE_EGP);
 
-    const { data, error } = await db.from('orders').insert([{
+    const basePayload = {
       product_name: product,
       order_type: orderType,
       notes: notes || null,
@@ -655,8 +754,33 @@ async function payAndCreate() {
 
         delivery_fee_pi: deliveryFeePi ? Number(deliveryFeePi.toFixed(6)) : 0,
         platform_fee_pi: platformFeePi ? Number(platformFeePi.toFixed(6)) : 0
-      }
-    }]).select();
+      },
+      payment_id: paymentResult?.paymentId || null,
+      payment_txid: paymentResult?.txid || null
+    };
+
+    const payloadWithLocation = {
+      ...basePayload,
+      customer_address: address,
+      customer_lat: CUSTOMER_LOCATION?.lat ?? null,
+      customer_lng: CUSTOMER_LOCATION?.lng ?? null
+    };
+
+    let insertResult = await db.from('orders').insert([payloadWithLocation]).select();
+    if (insertResult.error && hasMissingLocationColumn(insertResult.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      basePayload.pricing_snapshot = {
+        ...basePayload.pricing_snapshot,
+        customer_location: {
+          address,
+          lat: CUSTOMER_LOCATION?.lat ?? null,
+          lng: CUSTOMER_LOCATION?.lng ?? null
+        }
+      };
+      insertResult = await db.from('orders').insert([basePayload]).select();
+    }
+
+    const { data, error } = insertResult;
 
     if (error) throw error;
 
@@ -667,6 +791,10 @@ async function payAndCreate() {
     document.getElementById('custStatus').innerText = 'pending';
     document.getElementById('otp').innerText = otp;
     document.getElementById('otpBox').classList.remove('hidden');
+    document.getElementById('custAddressView').innerText = address;
+    const trackLink = document.getElementById('custTrackMapLink');
+    trackLink.href = buildMapUrl(CUSTOMER_LOCATION.lat, CUSTOMER_LOCATION.lng);
+    trackLink.classList.remove('hidden');
 
     Swal.close();
 
@@ -686,11 +814,20 @@ async function loadOrders(){
     const box = document.getElementById('ordersBox');
     box.innerHTML = `<div class="glass p-4 text-center muted">جاري التحميل...</div>`;
 
-    const { data, error } = await db.from('orders')
-      .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot')
+    let result = await db.from('orders')
+      .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot,customer_lat,customer_lng,customer_address')
       .eq('status','pending')
       .order('created_at',{ascending:false});
 
+    if (result.error && hasMissingLocationColumn(result.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      result = await db.from('orders')
+        .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot')
+        .eq('status','pending')
+        .order('created_at',{ascending:false});
+    }
+
+    const { data, error } = result;
     if (error) throw error;
 
     if (!data?.length) {
@@ -698,11 +835,41 @@ async function loadOrders(){
       return;
     }
 
-    box.innerHTML = data.map(o => {
+    if (!DELIVERY_LOCATION && HAS_LOCATION_COLUMNS) {
+      box.innerHTML = `<div class="glass p-4 text-center muted">حدد موقعك أولاً لعرض الطلبات القريبة (5 كم).</div>`;
+      return;
+    }
+
+    const filtered = HAS_LOCATION_COLUMNS
+      ? data.filter(o => {
+          if (typeof o.customer_lat !== 'number' || typeof o.customer_lng !== 'number') return false;
+          const dist = distanceKm(
+            DELIVERY_LOCATION,
+            { lat: o.customer_lat, lng: o.customer_lng }
+          );
+          return dist !== null && dist <= 5;
+        })
+      : data;
+
+    if (!filtered.length) {
+      box.innerHTML = `<div class="glass p-4 text-center muted">لا توجد طلبات قريبة ضمن 5 كم الآن.</div>`;
+      return;
+    }
+
+    box.innerHTML = filtered.map(o => {
       const delFee = (o.delivery_fee ?? DELIVERY_FEE_EGP);
       const platFee = (o.platform_fee ?? PLATFORM_FEE_EGP);
       const totalEgp = (o.total_price ?? ((o.price||0)+delFee+platFee));
       const totalPi = egpToPi(totalEgp);
+      const dist = HAS_LOCATION_COLUMNS
+        ? distanceKm(
+            DELIVERY_LOCATION,
+            { lat: o.customer_lat, lng: o.customer_lng }
+          )
+        : null;
+      const mapUrl = (HAS_LOCATION_COLUMNS && typeof o.customer_lat === 'number' && typeof o.customer_lng === 'number')
+        ? buildMapUrl(o.customer_lat, o.customer_lng)
+        : '#';
 
       return `
       <div class="glass p-4 space-y-2">
@@ -711,12 +878,15 @@ async function loadOrders(){
             <b class="text-base">${escapeHtml(o.product_name)}</b>
             <div class="tiny">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
             <div class="tiny">نوع: <b>${escapeHtml(o.order_type || 'any')}</b></div>
+            ${HAS_LOCATION_COLUMNS ? `<div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>` : ``}
           </div>
           <div class="text-sm font-extrabold text-emerald-300">${Number(totalEgp).toFixed(2)} ج</div>
         </div>
 
         <div class="soft p-3 text-sm space-y-1">
           <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noreferrer" href="${mapUrl}">فتح الخريطة</a></div>` : ``}
           <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
           <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300">${Number(totalEgp).toFixed(2)} ج</b></div>
@@ -765,11 +935,20 @@ async function acceptOrder(id){
 }
 
 async function loadOrderDetailsForDelivery(orderId){
-  const { data, error } = await db.from('orders')
-    .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price')
+  let result = await db.from('orders')
+    .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,customer_address,customer_lat,customer_lng')
     .eq('id', orderId)
     .single();
 
+  if(result.error && hasMissingLocationColumn(result.error)) {
+    HAS_LOCATION_COLUMNS = false;
+    result = await db.from('orders')
+      .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price')
+      .eq('id', orderId)
+      .single();
+  }
+
+  const { data, error } = result;
   if(error){ console.warn(error); return; }
 
   const delFee = (data.delivery_fee ?? DELIVERY_FEE_EGP);
@@ -780,6 +959,19 @@ async function loadOrderDetailsForDelivery(orderId){
   document.getElementById('dProd').innerText = data.product_name || '—';
   document.getElementById('dType').innerText = data.order_type || 'any';
   document.getElementById('dProdEgp').innerText = Number(data.price||0).toFixed(2);
+  const mapLink = document.getElementById('dMapLink');
+  if (HAS_LOCATION_COLUMNS && data.customer_address) {
+    document.getElementById('dAddress').innerText = data.customer_address;
+  } else {
+    document.getElementById('dAddress').innerText = '—';
+  }
+  if (HAS_LOCATION_COLUMNS && typeof data.customer_lat === 'number' && typeof data.customer_lng === 'number') {
+    mapLink.href = buildMapUrl(data.customer_lat, data.customer_lng);
+    mapLink.classList.remove('hidden');
+  } else {
+    mapLink.href = '#';
+    mapLink.classList.add('hidden');
+  }
   document.getElementById('dDelFeeEgp').innerText = Number(delFee).toFixed(2);
   document.getElementById('dPlatFeeEgp').innerText = Number(platFee).toFixed(2);
   document.getElementById('dTotalEgp').innerText = Number(totalEgp).toFixed(2);
@@ -937,6 +1129,17 @@ function listenStatus(){
       if(s === 'delivered'){
         Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام طلبات برو' });
         loadCustomerHistory();
+        document.getElementById('custTrack').classList.add('hidden');
+        document.getElementById('custChat').classList.add('hidden');
+        ACTIVE_ORDER = null;
+        if (statusChannel) {
+          try { db.removeChannel(statusChannel); } catch {}
+          statusChannel = null;
+        }
+        if (chatChannel) {
+          try { db.removeChannel(chatChannel); } catch {}
+          chatChannel = null;
+        }
       }
     }).subscribe();
 }
@@ -973,6 +1176,13 @@ async function finishWithOtp(){
     Swal.fire({ icon:'success', title:'تم التسليم ✅' });
     await loadWalletPi();
     await loadDeliveryHistory();
+    await loadOrders();
+    document.getElementById('delChat').classList.add('hidden');
+    ACTIVE_ORDER = null;
+    if (chatChannel) {
+      try { db.removeChannel(chatChannel); } catch {}
+      chatChannel = null;
+    }
 
   }catch(e){
     console.error(e);
