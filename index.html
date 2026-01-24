@@ -182,39 +182,14 @@
         QuickCart
       </div>
       <div class="flex items-center gap-2">
+        <button id="roleToggle" onclick="toggleRole()" class="chip hidden">User</button>
+        <a id="adminLink" href="./admin.html" class="chip hidden">Admin</a>
         <span id="piTag" class="chip">…</span>
       </div>
     </div>
   </header>
 
   <div class="max-w-lg mx-auto p-3 space-y-3">
-    <!-- PI STATUS + RATES -->
-    <div class="glass p-4 space-y-3">
-      <div class="row">
-        <div class="text-sm">
-          <b>حالة Pi:</b> <span id="piStateText" class="muted">جاري التحقق...</span>
-        </div>
-        <span class="chip">⏱️ تحديث تلقائي</span>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 text-xs">
-        <div class="soft p-3">
-          <div class="muted">سعر Pi (USDT)</div>
-          <div class="font-extrabold mono text-base"><span id="piUsdt">—</span></div>
-          <div class="tiny">مصدر: OKX</div>
-        </div>
-        <div class="soft p-3">
-          <div class="muted">سعر USD (EGP)</div>
-          <div class="font-extrabold mono text-base"><span id="usdEgp">—</span></div>
-          <div class="tiny">مصدر: open.er-api.com</div>
-        </div>
-      </div>
-
-      <div class="tiny">
-        Pi كل <b>30 ثانية</b> — USD/EGP كل <b>60 ثانية</b>. | 1 Pi ≈ <span class="mono" id="piEgpOne">—</span> ج
-      </div>
-    </div>
-
     <!-- LOGIN -->
     <div id="loginBox" class="glass p-4 text-center space-y-3">
       <div class="text-sm muted">سجّل دخولك بحساب Pi عشان تقدر تطلب/تشتغل دليفري.</div>
@@ -222,211 +197,249 @@
       <button onclick="devLogin()" class="text-xs underline muted">دخول تجريبي (اختبار خارج Pi Browser)</button>
     </div>
 
-    <!-- TABS -->
-    <div id="tabs" class="hidden glass p-2 flex gap-2">
-      <button id="btnC" onclick="showTab('customer')" class="btn btnS flex-1">عميل</button>
-      <button id="btnD" onclick="showTab('delivery')" class="btn btnS flex-1">دليفري</button>
-      <a id="adminLink" href="./admin.html" class="btn btnS">Admin</a>
-    </div>
-
-    <!-- ================= CUSTOMER ================= -->
-    <div id="customer" class="hidden space-y-3">
-
+    <!-- ================= HOME TAB ================= -->
+    <div id="homeTab" class="space-y-3">
+      <!-- PI STATUS + RATES -->
       <div class="glass p-4 space-y-3">
         <div class="row">
-          <div class="text-sm">أهلًا <b id="custName">—</b></div>
-          <span class="chip">💳 Pi Pay</span>
+          <div class="text-sm">
+            <b>حالة Pi:</b> <span id="piStateText" class="muted">جاري التحقق...</span>
+          </div>
+          <span class="chip">⏱️ تحديث تلقائي</span>
         </div>
 
-        <select id="orderType" class="w-full p-3">
-          <option value="any">نوع الطلب: أي حاجة</option>
-          <option value="market">سوبر ماركت</option>
-          <option value="pharmacy">صيدلية</option>
-          <option value="restaurant">مطعم</option>
-        </select>
-
-        <input id="prod" class="w-full p-3" placeholder="اسم المنتج" />
-        <input id="price" type="number" class="w-full p-3" placeholder="سعر المنتج بالجنيه المصري" oninput="recalcInvoice()" />
-        <input id="custAddress" class="w-full p-3" placeholder="العنوان بالتفصيل" />
-        <div class="soft p-3 space-y-2 text-sm">
-          <div class="row">
-            <span class="muted">موقعك الحالي</span>
-            <button class="chip" onclick="setCustomerLocation()">تحديد الموقع</button>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="soft p-3">
+            <div class="muted">سعر Pi (USDT)</div>
+            <div class="font-extrabold mono text-base"><span id="piUsdt">—</span></div>
+            <div class="tiny">مصدر: OKX</div>
           </div>
-          <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
-          <a id="custMapLink" class="tiny text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح الموقع على Google Maps</a>
+          <div class="soft p-3">
+            <div class="muted">سعر USD (EGP)</div>
+            <div class="font-extrabold mono text-base"><span id="usdEgp">—</span></div>
+            <div class="tiny">مصدر: open.er-api.com</div>
+          </div>
         </div>
-        <textarea id="notes" class="w-full p-3" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
 
-        <!-- INVOICE -->
-        <div class="soft p-3 space-y-2">
+        <div class="tiny">
+          Pi كل <b>30 ثانية</b> — USD/EGP كل <b>60 ثانية</b>. | 1 Pi ≈ <span class="mono" id="piEgpOne">—</span> ج
+        </div>
+      </div>
+
+      <!-- ================= CUSTOMER (HOME) ================= -->
+      <div id="customerHome" class="hidden space-y-3">
+
+        <div class="glass p-4 space-y-3">
           <div class="row">
-            <b class="text-sm">تفاصيل الحساب</b>
-            <span class="chip">توصيل: <b>20</b>ج | موقع: <b>10</b>ج</span>
+            <div class="text-sm">أهلًا <b id="custName">—</b></div>
+            <span class="chip">💳 Pi Pay</span>
           </div>
 
-          <div class="text-sm space-y-1">
-            <div class="row"><span class="muted">سعر المنتج</span><b><span id="invProdEgp">0</span> ج</b></div>
-            <div class="row"><span class="muted">رسوم التوصيل</span><b><span id="invDelFeeEgp">20</span> ج</b></div>
-            <div class="row"><span class="muted">رسوم الموقع</span><b><span id="invPlatFeeEgp">10</span> ج</b></div>
-            <div class="border-t border-purple-100 pt-2 row">
-              <span class="font-extrabold">الإجمالي</span>
-              <b class="text-emerald-500"><span id="invTotalEgp">0</span> ج</b>
+          <select id="orderType" class="w-full p-3">
+            <option value="any">نوع الطلب: أي حاجة</option>
+            <option value="market">سوبر ماركت</option>
+            <option value="pharmacy">صيدلية</option>
+            <option value="restaurant">مطعم</option>
+          </select>
+
+          <input id="prod" class="w-full p-3" placeholder="اسم المنتج" />
+          <input id="price" type="number" class="w-full p-3" placeholder="سعر المنتج بالجنيه المصري" oninput="recalcInvoice()" />
+          <input id="custAddress" class="w-full p-3" placeholder="العنوان بالتفصيل" />
+          <div class="soft p-3 space-y-2 text-sm">
+            <div class="row">
+              <span class="muted">موقعك الحالي</span>
+              <button class="chip" onclick="setCustomerLocation()">تحديد الموقع</button>
+            </div>
+            <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+            <a id="custMapLink" class="tiny text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح الموقع على Google Maps</a>
+          </div>
+          <textarea id="notes" class="w-full p-3" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
+
+          <!-- INVOICE -->
+          <div class="soft p-3 space-y-2">
+            <div class="row">
+              <b class="text-sm">تفاصيل الحساب</b>
+              <span class="chip">توصيل: <b>20</b>ج | موقع: <b>10</b>ج</span>
             </div>
 
-            <div class="soft p-3 mt-2">
-              <div class="tiny">التحويل إلى Pi (تقريبي):</div>
-              <div class="row text-sm mt-1">
-                <span class="muted">الإجمالي بـ Pi</span>
-                <b class="mono text-purple-600"><span id="invTotalPi">0</span> Pi</b>
+            <div class="text-sm space-y-1">
+              <div class="row"><span class="muted">سعر المنتج</span><b><span id="invProdEgp">0</span> ج</b></div>
+              <div class="row"><span class="muted">رسوم التوصيل</span><b><span id="invDelFeeEgp">20</span> ج</b></div>
+              <div class="row"><span class="muted">رسوم الموقع</span><b><span id="invPlatFeeEgp">10</span> ج</b></div>
+              <div class="border-t border-purple-100 pt-2 row">
+                <span class="font-extrabold">الإجمالي</span>
+                <b class="text-emerald-500"><span id="invTotalEgp">0</span> ج</b>
+              </div>
+
+              <div class="soft p-3 mt-2">
+                <div class="tiny">التحويل إلى Pi (تقريبي):</div>
+                <div class="row text-sm mt-1">
+                  <span class="muted">الإجمالي بـ Pi</span>
+                  <b class="mono text-purple-600"><span id="invTotalPi">0</span> Pi</b>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <button onclick="payAndCreate()" class="btn btnA w-full">ادفع بـ Pi واطلب 🚀</button>
-      </div>
-
-      <!-- TRACK -->
-      <div id="custTrack" class="hidden glass p-4 space-y-2">
-        <div class="row">
-          <b>حالة الطلب:</b>
-          <b id="custStatus" class="text-purple-600">pending</b>
-        </div>
-        <div class="row text-sm">
-          <span class="muted">العنوان</span>
-          <b id="custAddressView">—</b>
-        </div>
-        <div class="row text-sm">
-          <span class="muted">الموقع</span>
-          <a id="custTrackMapLink" class="text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
-        </div>
-        <div id="otpBox" class="hidden text-sm">
-          كود التسليم: <b id="otp" class="text-purple-600 text-lg mono"></b>
+          <button onclick="payAndCreate()" class="btn btnA w-full">ادفع بـ Pi واطلب 🚀</button>
         </div>
       </div>
 
-      <!-- CHAT -->
-      <div id="custChat" class="hidden glass p-4 space-y-2">
-        <div class="row">
-          <b class="text-sm">الشات (لحظي)</b>
-          <div class="flex gap-2">
-            <button class="chip" onclick="quick('customer','أنا في الطريق؟')">في الطريق؟</button>
-            <button class="chip" onclick="quick('customer','لو مش موجود، بديل؟')">بديل؟</button>
+      <!-- ================= DELIVERY (HOME) ================= -->
+      <div id="deliveryHome" class="hidden space-y-3">
+
+        <div class="glass p-4">
+          <div class="row">
+            <div class="text-sm">الكابتن: <b id="delName">—</b></div>
+            <button onclick="loadOrders()" class="chip">تحديث الطلبات</button>
+          </div>
+          <div class="soft p-3 mt-3 space-y-2 text-sm">
+            <div class="row">
+              <span class="muted">موقع الكابتن</span>
+              <button class="chip" onclick="setDeliveryLocation()">تحديد موقعي</button>
+            </div>
+            <div id="delLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+            <div class="tiny">سيظهر لك الطلبات على بعد 5 كم فقط.</div>
           </div>
         </div>
 
-        <div id="chatC" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
-
-        <div class="flex gap-2 items-center">
-          <input id="msgC" class="flex-1 p-3" placeholder="اكتب رسالة..." />
-          <input type="file" id="imgC" accept="image/*" class="text-xs w-28" />
-          <button onclick="sendMsg('customer')" class="btn btnA">➤</button>
-        </div>
-        <div class="tiny">✅ = اتبعت | ✅✅ = اتقريت</div>
+        <div id="ordersBox" class="space-y-2"></div>
       </div>
-
-      <!-- CUSTOMER HISTORY -->
-      <div class="glass p-4 space-y-2">
-        <div class="row">
-          <b class="text-sm">سجل طلباتي</b>
-          <button class="chip" onclick="loadCustomerHistory()">تحديث</button>
-        </div>
-        <div id="custHistory" class="space-y-2 text-sm"></div>
-      </div>
-
     </div>
 
-    <!-- ================= DELIVERY ================= -->
-    <div id="delivery" class="hidden space-y-3">
-
-      <div class="glass p-4">
-        <div class="row">
-          <div class="text-sm">الكابتن: <b id="delName">—</b></div>
-          <button onclick="loadOrders()" class="chip">تحديث الطلبات</button>
-        </div>
-        <div class="soft p-3 mt-3 space-y-2 text-sm">
+    <!-- ================= TRACK TAB ================= -->
+    <div id="trackTab" class="hidden space-y-3">
+      <!-- ================= CUSTOMER (TRACK) ================= -->
+      <div id="customerTrackTab" class="hidden space-y-3">
+        <!-- TRACK -->
+        <div id="custTrack" class="hidden glass p-4 space-y-2">
           <div class="row">
-            <span class="muted">موقع الكابتن</span>
-            <button class="chip" onclick="setDeliveryLocation()">تحديد موقعي</button>
+            <b>حالة الطلب:</b>
+            <b id="custStatus" class="text-purple-600">pending</b>
           </div>
-          <div id="delLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
-          <div class="tiny">سيظهر لك الطلبات على بعد 5 كم فقط.</div>
-        </div>
-      </div>
-
-      <div id="ordersBox" class="space-y-2"></div>
-
-      <!-- DELIVERY CHAT -->
-      <div id="delChat" class="hidden glass p-4 space-y-2">
-        <div class="row">
-          <b class="text-sm">شات الطلب (لحظي)</b>
-          <div class="flex gap-2">
-            <button class="chip" onclick="quick('delivery','أنا في الطريق 🛵')">في الطريق</button>
-            <button class="chip" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">غير متوفر</button>
+          <div class="row text-sm">
+            <span class="muted">العنوان</span>
+            <b id="custAddressView">—</b>
+          </div>
+          <div class="row text-sm">
+            <span class="muted">الموقع</span>
+            <a id="custTrackMapLink" class="text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+          </div>
+          <div id="otpBox" class="hidden text-sm">
+            كود التسليم: <b id="otp" class="text-purple-600 text-lg mono"></b>
           </div>
         </div>
 
-        <div class="soft p-3 text-sm space-y-1" id="delOrderDetails">
-          <div class="row"><span class="muted">المنتج</span><b id="dProd">—</b></div>
-          <div class="row"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
-          <div class="row"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
-          <div class="row"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
-          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a></div>
-          <div class="row"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
-          <div class="row"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-          <div class="border-t border-purple-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
-          <div class="row"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-purple-600"><span id="dTotalPi">—</span> Pi</b></div>
-          <div class="tiny">ملاحظات: <span id="dNotes">—</span></div>
+        <!-- CHAT -->
+        <div id="custChat" class="hidden glass p-4 space-y-2">
+          <div class="row">
+            <b class="text-sm">الشات (لحظي)</b>
+            <div class="flex gap-2">
+              <button class="chip" onclick="quick('customer','أنا في الطريق؟')">في الطريق؟</button>
+              <button class="chip" onclick="quick('customer','لو مش موجود، بديل؟')">بديل؟</button>
+            </div>
+          </div>
+
+          <div id="chatC" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
+
+          <div class="flex gap-2 items-center">
+            <input id="msgC" class="flex-1 p-3" placeholder="اكتب رسالة..." />
+            <input type="file" id="imgC" accept="image/*" class="text-xs w-28" />
+            <button onclick="sendMsg('customer')" class="btn btnA">➤</button>
+          </div>
+          <div class="tiny">✅ = اتبعت | ✅✅ = اتقريت</div>
         </div>
 
-        <div id="chatD" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
-
-        <div class="flex gap-2 items-center">
-          <input id="msgD" class="flex-1 p-3" placeholder="رسالة..." />
-          <input type="file" id="imgD" accept="image/*" class="text-xs w-28" />
-          <button onclick="sendMsg('delivery')" class="btn btnB">➤</button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="setOrderStatus('arrived')" class="btn btnA">وصلت</button>
-          <button onclick="finishWithOtp()" class="btn btnG">تم التسليم</button>
+        <!-- CUSTOMER HISTORY -->
+        <div class="glass p-4 space-y-2">
+          <div class="row">
+            <b class="text-sm">سجل طلباتي</b>
+            <button class="chip" onclick="loadCustomerHistory()">تحديث</button>
+          </div>
+          <div id="custHistory" class="space-y-2 text-sm"></div>
         </div>
       </div>
 
-      <!-- WALLET + WITHDRAW -->
-      <div class="glass p-4 space-y-2">
-        <b class="text-sm">أرباحي المتاحة (Pi)</b>
-        <div class="text-sm">
-          الأرباح المتاحة:
-          <b class="mono text-purple-600"><span id="walletPi">0.000000</span> Pi</b>
+      <!-- ================= DELIVERY (TRACK) ================= -->
+      <div id="deliveryTrackTab" class="hidden space-y-3">
+        <!-- DELIVERY CHAT -->
+        <div id="delChat" class="hidden glass p-4 space-y-2">
+          <div class="row">
+            <b class="text-sm">شات الطلب (لحظي)</b>
+            <div class="flex gap-2">
+              <button class="chip" onclick="quick('delivery','أنا في الطريق 🛵')">في الطريق</button>
+              <button class="chip" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">غير متوفر</button>
+            </div>
+          </div>
+
+          <div class="soft p-3 text-sm space-y-1" id="delOrderDetails">
+            <div class="row"><span class="muted">المنتج</span><b id="dProd">—</b></div>
+            <div class="row"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+            <div class="row"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+            <div class="row"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
+            <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a></div>
+            <div class="row"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+            <div class="row"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+            <div class="border-t border-purple-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+            <div class="row"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-purple-600"><span id="dTotalPi">—</span> Pi</b></div>
+            <div class="tiny">ملاحظات: <span id="dNotes">—</span></div>
+          </div>
+
+          <div id="chatD" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
+
+          <div class="flex gap-2 items-center">
+            <input id="msgD" class="flex-1 p-3" placeholder="رسالة..." />
+            <input type="file" id="imgD" accept="image/*" class="text-xs w-28" />
+            <button onclick="sendMsg('delivery')" class="btn btnB">➤</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="setOrderStatus('arrived')" class="btn btnA">وصلت</button>
+            <button onclick="finishWithOtp()" class="btn btnG">تم التسليم</button>
+          </div>
         </div>
 
-        <input id="wdAmountPi" type="number" step="0.000001" class="w-full p-3" placeholder="كم Pi هتسحب؟" />
-        <input id="wdWallet" class="w-full p-3" placeholder="عنوان محفظة Pi" />
+        <!-- WALLET + WITHDRAW -->
+        <div class="glass p-4 space-y-2">
+          <b class="text-sm">أرباحي المتاحة (Pi)</b>
+          <div class="text-sm">
+            الأرباح المتاحة:
+            <b class="mono text-purple-600"><span id="walletPi">0.000000</span> Pi</b>
+          </div>
 
-        <button onclick="withdrawPi()" class="btn btnP w-full">طلب سحب Pi</button>
-        <div class="tiny">سيتم مراجعة الطلب يدويًا من الإدارة قبل التحويل</div>
-      </div>
+          <input id="wdAmountPi" type="number" step="0.000001" class="w-full p-3" placeholder="كم Pi هتسحب؟" />
+          <input id="wdWallet" class="w-full p-3" placeholder="عنوان محفظة Pi" />
 
-      <!-- WITHDRAW HISTORY -->
-      <div class="glass p-4 space-y-2">
-        <div class="row">
-          <b class="text-sm">سجل السحب</b>
-          <button class="chip" onclick="loadWithdrawHistory()">تحديث</button>
+          <button onclick="withdrawPi()" class="btn btnP w-full">طلب سحب Pi</button>
+          <div class="tiny">سيتم مراجعة الطلب يدويًا من الإدارة قبل التحويل</div>
         </div>
-        <div id="wdHistory" class="space-y-2 text-sm"></div>
-      </div>
 
-      <!-- DELIVERY HISTORY -->
-      <div class="glass p-4 space-y-2">
-        <div class="row">
-          <b class="text-sm">سجل طلباتي كدليفري</b>
-          <button class="chip" onclick="loadDeliveryHistory()">تحديث</button>
+        <!-- WITHDRAW HISTORY -->
+        <div class="glass p-4 space-y-2">
+          <div class="row">
+            <b class="text-sm">سجل السحب</b>
+            <button class="chip" onclick="loadWithdrawHistory()">تحديث</button>
+          </div>
+          <div id="wdHistory" class="space-y-2 text-sm"></div>
         </div>
-        <div id="delHistory" class="space-y-2 text-sm"></div>
-      </div>
 
+        <!-- DELIVERY HISTORY -->
+        <div class="glass p-4 space-y-2">
+          <div class="row">
+            <b class="text-sm">سجل طلباتي كدليفري</b>
+            <button class="chip" onclick="loadDeliveryHistory()">تحديث</button>
+          </div>
+          <div id="delHistory" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div id="bottomNav" class="fixed bottom-4 left-0 right-0 px-4 z-50 hidden">
+    <div class="max-w-lg mx-auto glass p-2 flex gap-2">
+      <button id="navHome" onclick="setMainTab('home')" class="btn btnA flex-1">طلب جديد</button>
+      <button id="navTrack" onclick="setMainTab('track')" class="btn btnS flex-1">متابعة الطلب</button>
     </div>
   </div>
 
@@ -449,6 +462,8 @@ let ACTIVE_ORDER = null;
 let CUSTOMER_LOCATION = null;
 let DELIVERY_LOCATION = null;
 let HAS_LOCATION_COLUMNS = true;
+let ACTIVE_ROLE = 'customer';
+let ACTIVE_MAIN_TAB = 'home';
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -626,7 +641,8 @@ async function piLogin() {
     document.getElementById('delName').innerText = PI_USERNAME;
 
     document.getElementById('loginBox').classList.add('hidden');
-    document.getElementById('tabs').classList.remove('hidden');
+    document.getElementById('bottomNav').classList.remove('hidden');
+    document.getElementById('roleToggle').classList.remove('hidden');
 
     // زر Admin يظهر فقط للأدمن
     if (PI_USERNAME === 'medomohamed22') {
@@ -634,6 +650,9 @@ async function piLogin() {
     } else {
       document.getElementById('adminLink').classList.add('hidden');
     }
+
+    setMainTab('home');
+    setRole('customer');
 
     await refreshRates();
     await restoreActiveOrder();
@@ -658,9 +677,13 @@ function devLogin(){
   document.getElementById('delName').innerText = PI_USERNAME;
 
   document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('tabs').classList.remove('hidden');
+  document.getElementById('bottomNav').classList.remove('hidden');
+  document.getElementById('roleToggle').classList.remove('hidden');
 
   document.getElementById('adminLink').classList.add('hidden');
+
+  setMainTab('home');
+  setRole('customer');
 
   restoreActiveOrder();
   refreshRates();
@@ -697,7 +720,8 @@ async function restoreActiveOrder(){
   const customerOrder = await findActiveOrderForCustomer(storedId);
   if (customerOrder) {
     setActiveOrderId(customerOrder.id);
-    showTab('customer');
+    setRole('customer');
+    setMainTab('track');
     await applyCustomerOrderState(customerOrder);
     listenStatus();
     startChat();
@@ -707,7 +731,8 @@ async function restoreActiveOrder(){
   const deliveryOrder = await findActiveOrderForDelivery(storedId);
   if (deliveryOrder) {
     setActiveOrderId(deliveryOrder.id);
-    showTab('delivery');
+    setRole('delivery');
+    setMainTab('track');
     await loadOrderDetailsForDelivery(deliveryOrder.id);
     document.getElementById('delChat').classList.remove('hidden');
     startChat();
@@ -716,7 +741,8 @@ async function restoreActiveOrder(){
   }
 
   setActiveOrderId(null);
-  showTab('customer');
+  setRole('customer');
+  setMainTab('home');
 }
 
 async function findActiveOrderForCustomer(orderId){
@@ -937,6 +963,7 @@ async function payAndCreate() {
     if (error) throw error;
 
     setActiveOrderId(data?.[0]?.id || null);
+    setMainTab('track');
 
     document.getElementById('custTrack').classList.remove('hidden');
     document.getElementById('custChat').classList.remove('hidden');
@@ -1072,6 +1099,7 @@ async function acceptOrder(id){
     if (error) throw error;
 
     setActiveOrderId(id);
+    setMainTab('track');
     await loadOrderDetailsForDelivery(id);
 
     document.getElementById('delChat').classList.remove('hidden');
@@ -1173,7 +1201,7 @@ async function loadMessages(){
 }
 
 function currentRole(){
-  return (!document.getElementById('delivery').classList.contains('hidden')) ? 'delivery' : 'customer';
+  return ACTIVE_ROLE;
 }
 
 async function uploadChatImage(file){
@@ -1602,30 +1630,46 @@ async function loadDeliveryHistory(){
 }
 
 /* ================== UI ================== */
-function showTab(t){
-  // tabs style
-  document.getElementById('btnC').classList.remove('btnA');
-  document.getElementById('btnD').classList.remove('btnA');
-  document.getElementById('btnC').classList.add('btnS');
-  document.getElementById('btnD').classList.add('btnS');
+function toggleRole(){
+  setRole(ACTIVE_ROLE === 'customer' ? 'delivery' : 'customer');
+}
 
-  document.getElementById('customer').classList.add('hidden');
-  document.getElementById('delivery').classList.add('hidden');
+function setRole(role){
+  ACTIVE_ROLE = role;
+  updateRoleUI();
+}
 
-  if(t==='customer'){
-    document.getElementById('customer').classList.remove('hidden');
-    document.getElementById('btnC').classList.remove('btnS');
-    document.getElementById('btnC').classList.add('btnA');
+function setMainTab(tab){
+  ACTIVE_MAIN_TAB = tab;
+  updateMainTabUI();
+}
+
+function updateRoleUI(){
+  const isCustomer = ACTIVE_ROLE === 'customer';
+  document.getElementById('roleToggle').innerText = isCustomer ? 'User' : 'Delivery';
+  document.getElementById('customerHome').classList.toggle('hidden', !isCustomer);
+  document.getElementById('deliveryHome').classList.toggle('hidden', isCustomer);
+  document.getElementById('customerTrackTab').classList.toggle('hidden', !isCustomer);
+  document.getElementById('deliveryTrackTab').classList.toggle('hidden', isCustomer);
+
+  if(isCustomer){
     loadCustomerHistory();
   } else {
-    document.getElementById('delivery').classList.remove('hidden');
-    document.getElementById('btnD').classList.remove('btnS');
-    document.getElementById('btnD').classList.add('btnA');
     loadOrders();
     loadWalletPi();
     loadWithdrawHistory();
     loadDeliveryHistory();
   }
+}
+
+function updateMainTabUI(){
+  const isHome = ACTIVE_MAIN_TAB === 'home';
+  document.getElementById('homeTab').classList.toggle('hidden', !isHome);
+  document.getElementById('trackTab').classList.toggle('hidden', isHome);
+  document.getElementById('navHome').classList.toggle('btnA', isHome);
+  document.getElementById('navHome').classList.toggle('btnS', !isHome);
+  document.getElementById('navTrack').classList.toggle('btnA', !isHome);
+  document.getElementById('navTrack').classList.toggle('btnS', isHome);
 }
 
 /* ================== HELPERS ================== */
