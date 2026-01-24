@@ -302,7 +302,6 @@
 
     <!-- ================= DELIVERY ================= -->
     <div id="delivery" class="hidden space-y-3">
-
       <div class="glass p-4">
         <div class="row">
           <div class="text-sm">الكابتن: <b id="delName">—</b></div>
@@ -412,6 +411,7 @@ let PI_USERNAME = null;
 let ACTIVE_ORDER = null;
 let CUSTOMER_LOCATION = null;
 let DELIVERY_LOCATION = null;
+let HAS_LOCATION_COLUMNS = true;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -536,6 +536,11 @@ function distanceKm(a, b){
   const sinDLng = Math.sin(dLng / 2);
   const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
   return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function hasMissingLocationColumn(error){
+  const msg = String(error?.message || '').toLowerCase();
+  return msg.includes('customer_lat') || msg.includes('customer_lng') || msg.includes('customer_address');
 }
 
 /* ================== LOGIN ================== */
@@ -725,7 +730,7 @@ async function payAndCreate() {
     const deliveryFeePi = egpToPi(DELIVERY_FEE_EGP);
     const platformFeePi = egpToPi(PLATFORM_FEE_EGP);
 
-    const { data, error } = await db.from('orders').insert([{
+    const basePayload = {
       product_name: product,
       order_type: orderType,
       notes: notes || null,
@@ -749,12 +754,32 @@ async function payAndCreate() {
         delivery_fee_pi: deliveryFeePi ? Number(deliveryFeePi.toFixed(6)) : 0,
         platform_fee_pi: platformFeePi ? Number(platformFeePi.toFixed(6)) : 0
       },
-      customer_address: address,
-      customer_lat: CUSTOMER_LOCATION?.lat ?? null,
-      customer_lng: CUSTOMER_LOCATION?.lng ?? null,
       payment_id: paymentResult?.paymentId || null,
       payment_txid: paymentResult?.txid || null
-    }]).select();
+    };
+
+    const payloadWithLocation = {
+      ...basePayload,
+      customer_address: address,
+      customer_lat: CUSTOMER_LOCATION?.lat ?? null,
+      customer_lng: CUSTOMER_LOCATION?.lng ?? null
+    };
+
+    let insertResult = await db.from('orders').insert([payloadWithLocation]).select();
+    if (insertResult.error && hasMissingLocationColumn(insertResult.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      basePayload.pricing_snapshot = {
+        ...basePayload.pricing_snapshot,
+        customer_location: {
+          address,
+          lat: CUSTOMER_LOCATION?.lat ?? null,
+          lng: CUSTOMER_LOCATION?.lng ?? null
+        }
+      };
+      insertResult = await db.from('orders').insert([basePayload]).select();
+    }
+
+    const { data, error } = insertResult;
 
     if (error) throw error;
 
@@ -788,11 +813,20 @@ async function loadOrders(){
     const box = document.getElementById('ordersBox');
     box.innerHTML = `<div class="glass p-4 text-center muted">جاري التحميل...</div>`;
 
-    const { data, error } = await db.from('orders')
+    let result = await db.from('orders')
       .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot,customer_lat,customer_lng,customer_address')
       .eq('status','pending')
       .order('created_at',{ascending:false});
 
+    if (result.error && hasMissingLocationColumn(result.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      result = await db.from('orders')
+        .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot')
+        .eq('status','pending')
+        .order('created_at',{ascending:false});
+    }
+
+    const { data, error } = result;
     if (error) throw error;
 
     if (!data?.length) {
@@ -800,19 +834,21 @@ async function loadOrders(){
       return;
     }
 
-    if (!DELIVERY_LOCATION) {
+    if (!DELIVERY_LOCATION && HAS_LOCATION_COLUMNS) {
       box.innerHTML = `<div class="glass p-4 text-center muted">حدد موقعك أولاً لعرض الطلبات القريبة (5 كم).</div>`;
       return;
     }
 
-    const filtered = data.filter(o => {
-      if (typeof o.customer_lat !== 'number' || typeof o.customer_lng !== 'number') return false;
-      const dist = distanceKm(
-        DELIVERY_LOCATION,
-        { lat: o.customer_lat, lng: o.customer_lng }
-      );
-      return dist !== null && dist <= 5;
-    });
+    const filtered = HAS_LOCATION_COLUMNS
+      ? data.filter(o => {
+          if (typeof o.customer_lat !== 'number' || typeof o.customer_lng !== 'number') return false;
+          const dist = distanceKm(
+            DELIVERY_LOCATION,
+            { lat: o.customer_lat, lng: o.customer_lng }
+          );
+          return dist !== null && dist <= 5;
+        })
+      : data;
 
     if (!filtered.length) {
       box.innerHTML = `<div class="glass p-4 text-center muted">لا توجد طلبات قريبة ضمن 5 كم الآن.</div>`;
@@ -824,11 +860,13 @@ async function loadOrders(){
       const platFee = (o.platform_fee ?? PLATFORM_FEE_EGP);
       const totalEgp = (o.total_price ?? ((o.price||0)+delFee+platFee));
       const totalPi = egpToPi(totalEgp);
-      const dist = distanceKm(
-        DELIVERY_LOCATION,
-        { lat: o.customer_lat, lng: o.customer_lng }
-      );
-      const mapUrl = (typeof o.customer_lat === 'number' && typeof o.customer_lng === 'number')
+      const dist = HAS_LOCATION_COLUMNS
+        ? distanceKm(
+            DELIVERY_LOCATION,
+            { lat: o.customer_lat, lng: o.customer_lng }
+          )
+        : null;
+      const mapUrl = (HAS_LOCATION_COLUMNS && typeof o.customer_lat === 'number' && typeof o.customer_lng === 'number')
         ? buildMapUrl(o.customer_lat, o.customer_lng)
         : '#';
 
@@ -839,15 +877,15 @@ async function loadOrders(){
             <b class="text-base">${escapeHtml(o.product_name)}</b>
             <div class="tiny">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
             <div class="tiny">نوع: <b>${escapeHtml(o.order_type || 'any')}</b></div>
-            <div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>
+            ${HAS_LOCATION_COLUMNS ? `<div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>` : ``}
           </div>
           <div class="text-sm font-extrabold text-emerald-300">${Number(totalEgp).toFixed(2)} ج</div>
         </div>
 
         <div class="soft p-3 text-sm space-y-1">
           <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
-          <div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>
-          <div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noreferrer" href="${mapUrl}">فتح الخريطة</a></div>
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noreferrer" href="${mapUrl}">فتح الخريطة</a></div>` : ``}
           <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
           <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300">${Number(totalEgp).toFixed(2)} ج</b></div>
@@ -862,7 +900,7 @@ async function loadOrders(){
   }catch(e){
     console.error(e);
     document.getElementById('ordersBox').innerHTML =
-      `<div class="glass p-4 text-center" style="color:#fca5a5">خطأ في جلب الطلبات: ${escapeHtml(e?.message||'')}</div>`;
+      `<div class="glass p-4 text-center" style="color:#fca5a5">خطأ في جل الطلبات: ${escapeHtml(e?.message||'')}</div>`;
   }
 }
 
@@ -896,11 +934,20 @@ async function acceptOrder(id){
 }
 
 async function loadOrderDetailsForDelivery(orderId){
-  const { data, error } = await db.from('orders')
+  let result = await db.from('orders')
     .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,customer_address,customer_lat,customer_lng')
     .eq('id', orderId)
     .single();
 
+  if(result.error && hasMissingLocationColumn(result.error)) {
+    HAS_LOCATION_COLUMNS = false;
+    result = await db.from('orders')
+      .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price')
+      .eq('id', orderId)
+      .single();
+  }
+
+  const { data, error } = result;
   if(error){ console.warn(error); return; }
 
   const delFee = (data.delivery_fee ?? DELIVERY_FEE_EGP);
@@ -911,9 +958,13 @@ async function loadOrderDetailsForDelivery(orderId){
   document.getElementById('dProd').innerText = data.product_name || '—';
   document.getElementById('dType').innerText = data.order_type || 'any';
   document.getElementById('dProdEgp').innerText = Number(data.price||0).toFixed(2);
-  document.getElementById('dAddress').innerText = data.customer_address || '—';
   const mapLink = document.getElementById('dMapLink');
-  if (typeof data.customer_lat === 'number' && typeof data.customer_lng === 'number') {
+  if (HAS_LOCATION_COLUMNS && data.customer_address) {
+    document.getElementById('dAddress').innerText = data.customer_address;
+  } else {
+    document.getElementById('dAddress').innerText = '—';
+  }
+  if (HAS_LOCATION_COLUMNS && typeof data.customer_lat === 'number' && typeof data.customer_lng === 'number') {
     mapLink.href = buildMapUrl(data.customer_lat, data.customer_lng);
     mapLink.classList.remove('hidden');
   } else {
