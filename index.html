@@ -3,55 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>طلبات برو | Pi (iOS 26 UI)</title>
-
+  <title>QuickCart | واجهة Pi (iOS 26 UI)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
   <!-- Pi SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
 
     :root{
-      --bg1:#0b1220;
-      --bg2:#0f172a;
-      --glass: rgba(255,255,255,.08);
-      --glass2: rgba(255,255,255,.12);
-      --stroke: rgba(255,255,255,.12);
-      --txt: #e5e7eb;
-      --muted: rgba(229,231,235,.7);
-      --accent:#ff7a1a;
-      --accent2:#a78bfa;
-      --ok:#22c55e;
+      --bg:#f5f3ff;
+      --bg2:#ede9fe;
+      --card:#ffffff;
+      --card-2:#f8f7ff;
+      --stroke:#e5e7eb;
+      --txt:#1f2937;
+      --muted:#6b7280;
+      --accent:#7c3aed;
+      --accent-2:#a78bfa;
+      --accent-3:#e9d5ff;
+      --ok:#16a34a;
       --bad:#ef4444;
       --warn:#f59e0b;
-      --chip: rgba(255,255,255,.06);
+      --chip:#f3e8ff;
     }
 
     body{
       font-family:Tajawal,system-ui;
       background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(167,139,250,.35), transparent 60%),
-        radial-gradient(1200px 600px at 90% 0%, rgba(255,122,26,.28), transparent 60%),
-        linear-gradient(180deg, var(--bg1), var(--bg2));
+        radial-gradient(900px 500px at 5% -10%, rgba(124,58,237,.18), transparent 60%),
+        radial-gradient(900px 500px at 95% 0%, rgba(167,139,250,.2), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
       color: var(--txt);
     }
 
     .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.9));
       border: 1px solid var(--stroke);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      box-shadow: 0 18px 60px rgba(124,58,237,.12);
       border-radius: 22px;
     }
 
     .soft{
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.08);
+      background: var(--card-2);
+      border: 1px solid var(--stroke);
       border-radius: 18px;
     }
 
@@ -59,9 +55,9 @@
       font-size:12px;
       padding:7px 10px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
+      border:1px solid rgba(124,58,237,.2);
       background: var(--chip);
-      color: var(--txt);
+      color: var(--accent);
       display:inline-flex;
       align-items:center;
       gap:8px;
@@ -82,41 +78,46 @@
     }
     .btn:active{transform:scale(.98)}
     .btnA{
-      background: linear-gradient(135deg, rgba(255,122,26,.95), rgba(255,122,26,.65));
-      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(124,58,237,.7));
+      border: 1px solid rgba(124,58,237,.2);
       color:white;
-      box-shadow: 0 14px 40px rgba(255,122,26,.18);
+      box-shadow: 0 14px 40px rgba(124,58,237,.2);
     }
     .btnP{
-      background: linear-gradient(135deg, rgba(167,139,250,.95), rgba(167,139,250,.65));
-      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(167,139,250,.95), rgba(139,92,246,.75));
+      border: 1px solid rgba(124,58,237,.2);
       color:white;
-      box-shadow: 0 14px 40px rgba(167,139,250,.18);
+      box-shadow: 0 14px 40px rgba(124,58,237,.18);
     }
     .btnG{
-      background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(34,197,94,.65));
-      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(22,163,74,.75));
+      border: 1px solid rgba(34,197,94,.25);
       color:white;
     }
     .btnB{
-      background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(59,130,246,.65));
-      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(37,99,235,.75));
+      border: 1px solid rgba(59,130,246,.2);
       color:white;
     }
     .btnS{
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      color: var(--txt);
+      background: rgba(124,58,237,.08);
+      border: 1px solid rgba(124,58,237,.2);
+      color: var(--accent);
     }
 
     input,textarea,select{
-      background: rgba(255,255,255,.06) !important;
-      border: 1px solid rgba(255,255,255,.10) !important;
+      background: #fff !important;
+      border: 1px solid var(--stroke) !important;
       color: var(--txt) !important;
-      border-radius: 18px !important;
+      border-radius: 16px !important;
       outline: none !important;
+      transition: .2s;
     }
-    input::placeholder, textarea::placeholder{color: rgba(229,231,235,.55)}
+    input:focus,textarea:focus,select:focus{
+      border-color: rgba(124,58,237,.5) !important;
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+    input::placeholder, textarea::placeholder{color: rgba(107,114,128,.7)}
     textarea{min-height:90px}
 
     .msg{
@@ -125,23 +126,27 @@
       border-radius:18px;
       font-size:13px;
       word-break:break-word;
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid rgba(124,58,237,.12);
+      animation: pop .2s ease-in-out;
     }
-    .c{background: rgba(255,122,26,.22); color:#fff; align-self:flex-start}
-    .d{background: rgba(255,255,255,.10); color: var(--txt); align-self:flex-end}
+    @keyframes pop{
+      from{transform:scale(.96);opacity:.5}
+      to{transform:scale(1);opacity:1}
+    }
+    .c{background: rgba(124,58,237,.14); color:#3b0764; align-self:flex-start}
+    .d{background: #fff; color: var(--txt); align-self:flex-end}
 
-    .tiny{font-size:11px;color:rgba(229,231,235,.65)}
-    .muted{color:rgba(229,231,235,.7)}
+    .tiny{font-size:11px;color:rgba(107,114,128,.85)}
+    .muted{color:rgba(107,114,128,.9)}
   </style>
 </head>
-
 <body class="pb-24">
   <!-- HEADER -->
   <header class="sticky top-0 z-50 px-3 pt-3">
     <div class="max-w-lg mx-auto glass p-4 flex items-center justify-between">
       <div class="font-extrabold text-lg flex items-center gap-2">
-        <span class="w-9 h-9 rounded-2xl flex items-center justify-center soft">🚀</span>
-        طلبات برو
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center soft">🛍️</span>
+        QuickCart
       </div>
       <div class="flex items-center gap-2">
         <span id="piTag" class="chip">…</span>
@@ -150,7 +155,6 @@
   </header>
 
   <div class="max-w-lg mx-auto p-3 space-y-3">
-
     <!-- PI STATUS + RATES -->
     <div class="glass p-4 space-y-3">
       <div class="row">
@@ -217,7 +221,7 @@
             <button class="chip" onclick="setCustomerLocation()">تحديد الموقع</button>
           </div>
           <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
-          <a id="custMapLink" class="tiny text-purple-300 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح الموقع على Google Maps</a>
+          <a id="custMapLink" class="tiny text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح الموقع على Google Maps</a>
         </div>
         <textarea id="notes" class="w-full p-3" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
 
@@ -232,16 +236,16 @@
             <div class="row"><span class="muted">سعر المنتج</span><b><span id="invProdEgp">0</span> ج</b></div>
             <div class="row"><span class="muted">رسوم التوصيل</span><b><span id="invDelFeeEgp">20</span> ج</b></div>
             <div class="row"><span class="muted">رسوم الموقع</span><b><span id="invPlatFeeEgp">10</span> ج</b></div>
-            <div class="border-t border-white/10 pt-2 row">
+            <div class="border-t border-purple-100 pt-2 row">
               <span class="font-extrabold">الإجمالي</span>
-              <b class="text-emerald-300"><span id="invTotalEgp">0</span> ج</b>
+              <b class="text-emerald-500"><span id="invTotalEgp">0</span> ج</b>
             </div>
 
             <div class="soft p-3 mt-2">
               <div class="tiny">التحويل إلى Pi (تقريبي):</div>
               <div class="row text-sm mt-1">
                 <span class="muted">الإجمالي بـ Pi</span>
-                <b class="mono text-purple-300"><span id="invTotalPi">0</span> Pi</b>
+                <b class="mono text-purple-600"><span id="invTotalPi">0</span> Pi</b>
               </div>
             </div>
           </div>
@@ -254,7 +258,7 @@
       <div id="custTrack" class="hidden glass p-4 space-y-2">
         <div class="row">
           <b>حالة الطلب:</b>
-          <b id="custStatus" class="text-orange-300">pending</b>
+          <b id="custStatus" class="text-purple-600">pending</b>
         </div>
         <div class="row text-sm">
           <span class="muted">العنوان</span>
@@ -262,17 +266,17 @@
         </div>
         <div class="row text-sm">
           <span class="muted">الموقع</span>
-          <a id="custTrackMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+          <a id="custTrackMapLink" class="text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
         </div>
         <div id="otpBox" class="hidden text-sm">
-          كود التسليم: <b id="otp" class="text-orange-200 text-lg mono"></b>
+          كود التسليم: <b id="otp" class="text-purple-600 text-lg mono"></b>
         </div>
       </div>
 
       <!-- CHAT -->
       <div id="custChat" class="hidden glass p-4 space-y-2">
         <div class="row">
-          <b class="text-sm">الشات</b>
+          <b class="text-sm">الشات (لحظي)</b>
           <div class="flex gap-2">
             <button class="chip" onclick="quick('customer','أنا في الطريق؟')">في الطريق؟</button>
             <button class="chip" onclick="quick('customer','لو مش موجود، بديل؟')">بديل؟</button>
@@ -323,7 +327,7 @@
       <!-- DELIVERY CHAT -->
       <div id="delChat" class="hidden glass p-4 space-y-2">
         <div class="row">
-          <b class="text-sm">شات الطلب</b>
+          <b class="text-sm">شات الطلب (لحظي)</b>
           <div class="flex gap-2">
             <button class="chip" onclick="quick('delivery','أنا في الطريق 🛵')">في الطريق</button>
             <button class="chip" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">غير متوفر</button>
@@ -335,11 +339,11 @@
           <div class="row"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
           <div class="row"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
           <div class="row"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
-          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a></div>
+          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-600 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a></div>
           <div class="row"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-          <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300"><span id="dTotalEgp">—</span> ج</b></div>
-          <div class="row"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-purple-300"><span id="dTotalPi">—</span> Pi</b></div>
+          <div class="border-t border-purple-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+          <div class="row"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-purple-600"><span id="dTotalPi">—</span> Pi</b></div>
           <div class="tiny">ملاحظات: <span id="dNotes">—</span></div>
         </div>
 
@@ -362,7 +366,7 @@
         <b class="text-sm">أرباحي المتاحة (Pi)</b>
         <div class="text-sm">
           الأرباح المتاحة:
-          <b class="mono text-purple-300"><span id="walletPi">0.000000</span> Pi</b>
+          <b class="mono text-purple-600"><span id="walletPi">0.000000</span> Pi</b>
         </div>
 
         <input id="wdAmountPi" type="number" step="0.000001" class="w-full p-3" placeholder="كم Pi هتسحب؟" />
@@ -391,10 +395,9 @@
       </div>
 
     </div>
-
   </div>
 
-<script>
+  <script>
 /* ================== CONFIG ================== */
 Pi.init({ version: "2.0", sandbox: false });
 
@@ -599,15 +602,15 @@ async function piLogin() {
       document.getElementById('adminLink').classList.add('hidden');
     }
 
-    showTab('customer');
-    Swal.close();
-
     await refreshRates();
+    await restoreActiveOrder();
     loadOrders();
     loadWalletPi();
     loadCustomerHistory();
     loadDeliveryHistory();
     loadWithdrawHistory();
+
+    Swal.close();
 
   } catch (e) {
     console.error('piLogin error:', e);
@@ -626,7 +629,7 @@ function devLogin(){
 
   document.getElementById('adminLink').classList.add('hidden');
 
-  showTab('customer');
+  restoreActiveOrder();
   refreshRates();
   loadOrders();
   loadWalletPi();
@@ -637,6 +640,111 @@ function devLogin(){
 
 function onIncompletePaymentFound(payment) {
   console.log('incomplete payment found:', payment);
+}
+
+/* ================== RESTORE ACTIVE ORDER ================== */
+function activeOrderStorageKey(){
+  return PI_USERNAME ? `qc_active_order_${PI_USERNAME}` : 'qc_active_order';
+}
+
+function setActiveOrderId(orderId){
+  ACTIVE_ORDER = orderId;
+  if (orderId) {
+    localStorage.setItem(activeOrderStorageKey(), orderId);
+  } else {
+    localStorage.removeItem(activeOrderStorageKey());
+  }
+}
+
+async function restoreActiveOrder(){
+  if(!PI_USERNAME) return;
+
+  const storedId = localStorage.getItem(activeOrderStorageKey());
+
+  const customerOrder = await findActiveOrderForCustomer(storedId);
+  if (customerOrder) {
+    setActiveOrderId(customerOrder.id);
+    showTab('customer');
+    await applyCustomerOrderState(customerOrder);
+    listenStatus();
+    startChat();
+    return;
+  }
+
+  const deliveryOrder = await findActiveOrderForDelivery(storedId);
+  if (deliveryOrder) {
+    setActiveOrderId(deliveryOrder.id);
+    showTab('delivery');
+    await loadOrderDetailsForDelivery(deliveryOrder.id);
+    document.getElementById('delChat').classList.remove('hidden');
+    startChat();
+    markSeen('delivery');
+    return;
+  }
+
+  setActiveOrderId(null);
+  showTab('customer');
+}
+
+async function findActiveOrderForCustomer(orderId){
+  const activeStatuses = ['pending', 'accepted', 'shipping', 'arrived'];
+
+  if (orderId) {
+    const { data } = await db.from('orders')
+      .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code')
+      .eq('id', orderId)
+      .eq('customer_pi_username', PI_USERNAME)
+      .single();
+    if (data && activeStatuses.includes(data.status)) return data;
+  }
+
+  const { data } = await db.from('orders')
+    .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code')
+    .eq('customer_pi_username', PI_USERNAME)
+    .in('status', activeStatuses)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  return data?.[0] || null;
+}
+
+async function findActiveOrderForDelivery(orderId){
+  const activeStatuses = ['accepted', 'shipping', 'arrived'];
+
+  if (orderId) {
+    const { data } = await db.from('orders')
+      .select('id,status')
+      .eq('id', orderId)
+      .eq('delivery_id', PI_USERNAME)
+      .single();
+    if (data && activeStatuses.includes(data.status)) return data;
+  }
+
+  const { data } = await db.from('orders')
+    .select('id,status')
+    .eq('delivery_id', PI_USERNAME)
+    .in('status', activeStatuses)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  return data?.[0] || null;
+}
+
+async function applyCustomerOrderState(order){
+  document.getElementById('custTrack').classList.remove('hidden');
+  document.getElementById('custChat').classList.remove('hidden');
+  document.getElementById('custStatus').innerText = order.status || 'pending';
+  document.getElementById('otp').innerText = order.otp_code || '';
+  document.getElementById('otpBox').classList.toggle('hidden', !order.otp_code);
+  document.getElementById('custAddressView').innerText = order.customer_address || '—';
+  const trackLink = document.getElementById('custTrackMapLink');
+  if (typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
+    trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
+    trackLink.classList.remove('hidden');
+    trackLink.onclick = () => openMapUrl(trackLink.href);
+  } else {
+    trackLink.classList.add('hidden');
+  }
 }
 
 /* ================== INVOICE UI ================== */
@@ -687,7 +795,7 @@ async function payAndCreate() {
           <div>رسوم الموقع: <b>${PLATFORM_FEE_EGP.toFixed(2)} ج</b></div>
           <hr/>
           <div>الإجمالي: <b style="color:#16a34a">${totalEgp.toFixed(2)} ج</b></div>
-          <div>يعادل تقريبًا: <b style="color:#a78bfa">${amountPi} Pi</b></div>
+          <div>يعادل تقريبًا: <b style="color:#7c3aed">${amountPi} Pi</b></div>
           <div style="font-size:12px;opacity:.75;margin-top:6px">
             (1 Pi ≈ ${(PI_USDT*USD_EGP).toFixed(3)} ج)
           </div>
@@ -708,7 +816,7 @@ async function payAndCreate() {
     const paymentResult = await new Promise((resolve, reject) => {
       Pi.createPayment({
         amount: amountPi,
-        memo: `Talabat Pro | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
+        memo: `QuickCart | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
         metadata: {
           product, orderType, prodEgp,
           deliveryFee: DELIVERY_FEE_EGP,
@@ -795,7 +903,7 @@ async function payAndCreate() {
 
     if (error) throw error;
 
-    ACTIVE_ORDER = data?.[0]?.id;
+    setActiveOrderId(data?.[0]?.id || null);
 
     document.getElementById('custTrack').classList.remove('hidden');
     document.getElementById('custChat').classList.remove('hidden');
@@ -892,17 +1000,17 @@ async function loadOrders(){
             <div class="tiny">نوع: <b>${escapeHtml(o.order_type || 'any')}</b></div>
             ${HAS_LOCATION_COLUMNS ? `<div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>` : ``}
           </div>
-          <div class="text-sm font-extrabold text-emerald-300">${Number(totalEgp).toFixed(2)} ج</div>
+          <div class="text-sm font-extrabold text-emerald-500">${Number(totalEgp).toFixed(2)} ج</div>
         </div>
 
         <div class="soft p-3 text-sm space-y-1">
           <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
           ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
-          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noopener noreferrer" href="${mapUrl}" onclick="return openMapUrl('${mapUrl}')">فتح الخريطة</a></div>` : ``}
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-600 underline" target="_blank" rel="noopener noreferrer" href="${mapUrl}" onclick="return openMapUrl('${mapUrl}')">فتح الخريطة</a></div>` : ``}
           <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
-          <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300">${Number(totalEgp).toFixed(2)} ج</b></div>
-          <div class="row"><span class="muted">يعادل بـ Pi</span><b class="mono text-purple-300">${totalPi ? totalPi.toFixed(6) : '—'} Pi</b></div>
+          <div class="border-t border-purple-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500">${Number(totalEgp).toFixed(2)} ج</b></div>
+          <div class="row"><span class="muted">يعادل بـ Pi</span><b class="mono text-purple-600">${totalPi ? totalPi.toFixed(6) : '—'} Pi</b></div>
         </div>
 
         <button onclick="acceptOrder('${o.id}')" class="btn btnG w-full">قبول الطلب</button>
@@ -930,7 +1038,7 @@ async function acceptOrder(id){
 
     if (error) throw error;
 
-    ACTIVE_ORDER = id;
+    setActiveOrderId(id);
     await loadOrderDetailsForDelivery(id);
 
     document.getElementById('delChat').classList.remove('hidden');
@@ -1092,7 +1200,7 @@ function appendMsg(m){
   const bubble = `
     <div class="msg ${m.sender==='customer'?'c':'d'}">
       ${m.message_text ? escapeHtml(m.message_text) : ''}
-      ${m.image_url ? `<img src="${m.image_url}" class="mt-2 rounded-xl border border-white/10" />` : ''}
+      ${m.image_url ? `<img src="${m.image_url}" class="mt-2 rounded-xl border border-purple-100" />` : ''}
       <div class="mt-1 tiny">${m.seen_at ? '✅✅' : '✅'}</div>
     </div>
   `;
@@ -1140,11 +1248,11 @@ function listenStatus(){
       }
 
       if(s === 'delivered'){
-        Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام طلبات برو' });
+        Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام QuickCart' });
         loadCustomerHistory();
         document.getElementById('custTrack').classList.add('hidden');
         document.getElementById('custChat').classList.add('hidden');
-        ACTIVE_ORDER = null;
+        setActiveOrderId(null);
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
           statusChannel = null;
@@ -1191,7 +1299,7 @@ async function finishWithOtp(){
     await loadDeliveryHistory();
     await loadOrders();
     document.getElementById('delChat').classList.add('hidden');
-    ACTIVE_ORDER = null;
+    setActiveOrderId(null);
     if (chatChannel) {
       try { db.removeChannel(chatChannel); } catch {}
       chatChannel = null;
@@ -1334,7 +1442,7 @@ async function loadWithdrawHistory(){
     box.innerHTML = data.map(w => `
       <div class="soft p-3">
         <div class="row">
-          <b class="mono text-purple-300">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
+          <b class="mono text-purple-600">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
           <span class="chip">${escapeHtml(w.status)}</span>
         </div>
         <div class="tiny mt-1">${new Date(w.created_at).toLocaleString('ar-EG')}</div>
@@ -1375,9 +1483,9 @@ async function loadCustomerHistory(){
       const s = o.status || 'pending';
 
       const color =
-        s==='delivered' ? 'text-emerald-300' :
-        s==='canceled' ? 'text-red-300' :
-        'text-orange-200';
+        s==='delivered' ? 'text-emerald-500' :
+        s==='canceled' ? 'text-red-400' :
+        'text-purple-600';
 
       return `
         <div class="soft p-3">
@@ -1388,11 +1496,11 @@ async function loadCustomerHistory(){
           <div class="tiny mt-1">نوع: <b>${escapeHtml(o.order_type||'any')}</b>${o.delivery_id ? ` | كابتن: <b>${escapeHtml(o.delivery_id)}</b>` : ``}</div>
           <div class="row mt-1">
             <span class="tiny">الإجمالي</span>
-            <b class="text-emerald-300">${totalEgp.toFixed(2)} ج</b>
+            <b class="text-emerald-500">${totalEgp.toFixed(2)} ج</b>
           </div>
           <div class="row mt-1">
             <span class="tiny">بالـ Pi</span>
-            <b class="mono text-purple-300">${Number(totalPi||0).toFixed(6)} Pi</b>
+            <b class="mono text-purple-600">${Number(totalPi||0).toFixed(6)} Pi</b>
           </div>
           <div class="tiny mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
         </div>
@@ -1439,15 +1547,15 @@ async function loadDeliveryHistory(){
           <div class="tiny mt-1">عميل: <b>${escapeHtml(o.customer_pi_username||'—')}</b></div>
           <div class="row mt-1">
             <span class="tiny">الإجمالي</span>
-            <b class="text-emerald-300">${totalEgp.toFixed(2)} ج</b>
+            <b class="text-emerald-500">${totalEgp.toFixed(2)} ج</b>
           </div>
           <div class="row mt-1">
             <span class="tiny">بالـ Pi</span>
-            <b class="mono text-purple-300">${Number(totalPi||0).toFixed(6)} Pi</b>
+            <b class="mono text-purple-600">${Number(totalPi||0).toFixed(6)} Pi</b>
           </div>
           <div class="row mt-1">
             <span class="tiny">ربحك</span>
-            <b class="mono text-purple-300">${profitPi.toFixed(6)} Pi</b>
+            <b class="mono text-purple-600">${profitPi.toFixed(6)} Pi</b>
           </div>
           <div class="tiny mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
         </div>
@@ -1493,7 +1601,6 @@ function escapeHtml(str){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
 }
-</script>
-
+  </script>
 </body>
 </html>
