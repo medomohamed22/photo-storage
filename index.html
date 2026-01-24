@@ -13,6 +13,7 @@
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
     body{font-family:Tajawal,system-ui;background:#f3f4f6}
     .msg{max-width:78%;padding:8px 12px;border-radius:16px;font-size:13px;word-break:break-word}
     .c{background:#f97316;color:#fff;align-self:flex-start}
@@ -20,6 +21,7 @@
     .chip{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
     .row{display:flex;justify-content:space-between;gap:10px}
+    .card{background:#fff;border-radius:14px;box-shadow:0 1px 10px rgba(0,0,0,.05)}
   </style>
 </head>
 
@@ -73,6 +75,11 @@
     <div id="tabs" class="hidden flex bg-orange-100 rounded-xl overflow-hidden shadow">
       <button onclick="showTab('customer')" class="flex-1 p-3 font-bold bg-white" id="btnC">عميل</button>
       <button onclick="showTab('delivery')" class="flex-1 p-3 font-bold" id="btnD">دليفري</button>
+    </div>
+
+    <!-- زر Admin (اختياري يظهر بعد تسجيل الدخول) -->
+    <div id="adminLinkBox" class="hidden">
+      <a href="admin.html" class="block text-center chip w-full">فتح لوحة الأدمن (admin.html)</a>
     </div>
 
     <!-- ================= CUSTOMER ================= -->
@@ -153,6 +160,15 @@
         </div>
       </div>
 
+      <!-- ✅ سجل العميل -->
+      <div class="bg-white p-4 rounded-xl shadow space-y-2">
+        <div class="flex items-center justify-between">
+          <b class="text-sm">سجل طلباتي</b>
+          <button class="chip" onclick="loadCustomerHistory()">تحديث</button>
+        </div>
+        <div id="custHistory" class="space-y-2 text-sm text-gray-700"></div>
+      </div>
+
     </div>
 
     <!-- ================= DELIVERY ================= -->
@@ -202,11 +218,32 @@
         </div>
       </div>
 
+      <!-- ✅ محفظة الدليفري (بالـ Pi) + طلب سحب -->
       <div class="bg-white p-4 rounded-xl shadow space-y-2">
-        <b class="text-sm">محفظتي</b>
-        <div class="text-sm">الرصيد: <b id="wallet">0</b> جنيه</div>
-        <input id="wdAmount" type="number" class="border p-3 rounded-xl w-full" placeholder="مبلغ السحب" />
+        <div class="flex items-center justify-between">
+          <b class="text-sm">محفظتي (Pi)</b>
+          <button class="chip" onclick="loadWallet(); loadWithdrawHistory(); loadDeliveryHistory();">تحديث</button>
+        </div>
+        <div class="text-sm">الرصيد التقريبي: <b class="mono text-purple-700"><span id="wallet">0</span> Pi</b></div>
+        <div class="text-[11px] text-gray-500">الرصيد محسوب من رسوم التوصيل (20ج) بعد التحويل إلى Pi.</div>
+
+        <input id="wdAmount" type="number" class="border p-3 rounded-xl w-full" placeholder="مبلغ السحب (Pi)" />
         <button onclick="withdraw()" class="bg-purple-600 text-white p-3 rounded-xl w-full font-bold">طلب سحب</button>
+
+        <!-- ✅ سجل السحب -->
+        <div class="border-t pt-3">
+          <b class="text-sm">سجل السحب</b>
+          <div id="wdHistory" class="mt-2 space-y-2 text-sm"></div>
+        </div>
+      </div>
+
+      <!-- ✅ سجل الدليفري -->
+      <div class="bg-white p-4 rounded-xl shadow space-y-2">
+        <div class="flex items-center justify-between">
+          <b class="text-sm">سجل طلباتي كدليفري</b>
+          <button class="chip" onclick="loadDeliveryHistory()">تحديث</button>
+        </div>
+        <div id="delHistory" class="space-y-2 text-sm text-gray-700"></div>
       </div>
 
     </div>
@@ -245,7 +282,6 @@ function detectPi() {
 
 document.addEventListener('DOMContentLoaded', () => {
   detectPi();
-  // ابدأ جلب الأسعار حتى قبل الدخول
   refreshRates();
   setInterval(fetchPiFromOKX, 30000);
   setInterval(fetchUsdEgp, 60000);
@@ -271,24 +307,16 @@ async function fetchPiFromOKX(){
   }
 }
 
-/**
- * ✅ FIX: جلب USD->EGP من open.er-api.com (بدون API key)
- * بيرجع: { rates: { EGP: ... } }
- */
 async function fetchUsdEgp(){
   try{
     const r = await fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" });
     const j = await r.json();
-
-    // بعض الردود فيها result = "success"
     const rate = parseFloat(j?.rates?.EGP || "0");
     if(rate > 0) USD_EGP = rate;
-
     document.getElementById('usdEgp').innerText = USD_EGP ? USD_EGP.toFixed(4) : '—';
     updatePiEgpOne();
   }catch(e){
     console.warn('USD/EGP failed:', e);
-    // لو فشل، نخليها واضحة بدل ما تفضل —
     document.getElementById('usdEgp').innerText = 'فشل';
   }
 }
@@ -340,14 +368,17 @@ async function piLogin() {
 
     document.getElementById('loginBox').classList.add('hidden');
     document.getElementById('tabs').classList.remove('hidden');
-    showTab('customer');
+    document.getElementById('adminLinkBox').classList.remove('hidden');
 
+    showTab('customer');
     Swal.close();
 
-    // بعد الدخول: تأكد الأسعار
     await refreshRates();
     loadOrders();
     loadWallet();
+    loadCustomerHistory();
+    loadDeliveryHistory();
+    loadWithdrawHistory();
 
   } catch (e) {
     console.error('piLogin error:', e);
@@ -359,12 +390,18 @@ function devLogin(){
   PI_USERNAME = 'dev_user_' + Math.floor(Math.random()*9999);
   document.getElementById('custName').innerText = PI_USERNAME;
   document.getElementById('delName').innerText = PI_USERNAME;
+
   document.getElementById('loginBox').classList.add('hidden');
   document.getElementById('tabs').classList.remove('hidden');
+  document.getElementById('adminLinkBox').classList.remove('hidden');
+
   showTab('customer');
   refreshRates();
   loadOrders();
   loadWallet();
+  loadCustomerHistory();
+  loadDeliveryHistory();
+  loadWithdrawHistory();
 }
 
 function onIncompletePaymentFound(payment) {
@@ -397,7 +434,6 @@ async function payAndCreate() {
 
     if (!product || prodEgp <= 0) return Swal.fire('اكتب اسم المنتج وسعر صحيح');
 
-    // لازم يبقى عندنا rates
     if (!(PI_USDT > 0 && USD_EGP > 0)) {
       await refreshRates();
       if (!(PI_USDT > 0 && USD_EGP > 0)) return Swal.fire('مقدرناش نجيب USD/EGP دلوقتي، جرّب تاني');
@@ -469,6 +505,9 @@ async function payAndCreate() {
     });
 
     // إنشاء الطلب في DB بعد الدفع
+    const deliveryFeePi = egpToPi(DELIVERY_FEE_EGP);
+    const platformFeePi = egpToPi(PLATFORM_FEE_EGP);
+
     const { data, error } = await db.from('orders').insert([{
       product_name: product,
       order_type: orderType,
@@ -488,7 +527,9 @@ async function payAndCreate() {
         pi_usdt: PI_USDT,
         usd_egp: USD_EGP,
         pi_egp: (PI_USDT * USD_EGP),
-        total_pi: parseFloat(amountPi)
+        total_pi: parseFloat(amountPi),
+        delivery_fee_pi: deliveryFeePi ? Number(deliveryFeePi.toFixed(6)) : 0,
+        platform_fee_pi: platformFeePi ? Number(platformFeePi.toFixed(6)) : 0
       }
     }]).select();
 
@@ -507,6 +548,7 @@ async function payAndCreate() {
     listenStatus();
     startChat();
     loadOrders();
+    loadCustomerHistory();
 
   } catch (e) {
     console.error(e);
@@ -592,6 +634,7 @@ async function acceptOrder(id){
 
     startChat();
     markSeen('delivery');
+    loadDeliveryHistory();
 
   }catch(e){
     console.error(e);
@@ -666,6 +709,7 @@ function currentRole(){
 }
 
 async function uploadChatImage(file){
+  // لو storage policies مش جاهزة ممكن يفشل → هنخليها fallback
   const path = `chat/${ACTIVE_ORDER}/${Date.now()}_${file.name}`;
   const up = await db.storage.from('chat').upload(path, file, { upsert: false });
   if (up.error) throw up.error;
@@ -685,7 +729,14 @@ async function sendMsg(sender){
     if(!text && !file) return;
 
     let image_url = null;
-    if(file) image_url = await uploadChatImage(file);
+    if(file){
+      try{
+        image_url = await uploadChatImage(file);
+      }catch(e){
+        console.warn("Image upload failed, sending text only:", e);
+        image_url = null;
+      }
+    }
 
     const { error } = await db.from('chat_messages').insert([{
       order_id: ACTIVE_ORDER,
@@ -763,6 +814,7 @@ function listenStatus(){
 
       if(s === 'delivered'){
         Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام طلبات برو' });
+        loadCustomerHistory();
       }
     }).subscribe();
 }
@@ -798,6 +850,7 @@ async function finishWithOtp(){
 
     Swal.fire({ icon:'success', title:'تم التسليم ✅' });
     loadWallet();
+    loadDeliveryHistory();
 
   }catch(e){
     console.error(e);
@@ -805,39 +858,203 @@ async function finishWithOtp(){
   }
 }
 
-/* ================== WALLET + WITHDRAW ================== */
+/* ================== WALLET (Pi) + WITHDRAW ================== */
+/**
+ * ✅ بدل الاعتماد على جدول delivery_wallet (اللي ممكن مش مضبوط بالـ Pi)،
+ * هنحسب الرصيد من الطلبات delivered الخاصة بالدليفري:
+ * رصيد الدليفري = مجموع delivery_fee_pi من pricing_snapshot
+ */
 async function loadWallet(){
   try{
     if(!PI_USERNAME) return;
-    const { data } = await db.from('delivery_wallet')
-      .select('*')
-      .eq('delivery_id', PI_USERNAME)
-      .maybeSingle();
 
-    document.getElementById('wallet').innerText = (data?.balance ?? 0);
+    const { data, error } = await db.from('orders')
+      .select('pricing_snapshot,status,delivery_id')
+      .eq('delivery_id', PI_USERNAME)
+      .eq('status', 'delivered')
+      .order('created_at', {ascending:false});
+
+    if(error) throw error;
+
+    let sum = 0;
+    (data||[]).forEach(o => {
+      const pi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
+      if(!isNaN(pi)) sum += pi;
+    });
+
+    document.getElementById('wallet').innerText = sum.toFixed(6);
+
   }catch(e){
     console.warn(e);
+    document.getElementById('wallet').innerText = '0.000000';
   }
 }
 
 async function withdraw(){
   try{
     if(!PI_USERNAME) return Swal.fire('سجّل دخول');
+
     const amount = parseFloat(document.getElementById('wdAmount').value || "0");
     if(!amount || amount <= 0) return Swal.fire('اكتب مبلغ صحيح');
 
     const { error } = await db.from('withdraw_requests').insert([{
       delivery_id: PI_USERNAME,
-      amount,
+      amount,           // ✅ amount = PI
       status: 'pending'
     }]);
     if(error) throw error;
 
     Swal.fire({ icon:'success', title:'تم', text:'تم إرسال طلب السحب' });
     document.getElementById('wdAmount').value = '';
+    loadWithdrawHistory();
+
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+async function loadWithdrawHistory(){
+  try{
+    if(!PI_USERNAME) return;
+    const box = document.getElementById('wdHistory');
+    box.innerHTML = `<div class="text-xs text-gray-500">جاري التحميل...</div>`;
+
+    const { data, error } = await db.from('withdraw_requests')
+      .select('*')
+      .eq('delivery_id', PI_USERNAME)
+      .order('created_at', { ascending:false })
+      .limit(20);
+
+    if(error) throw error;
+
+    if(!data?.length){
+      box.innerHTML = `<div class="text-xs text-gray-500">لا يوجد طلبات سحب.</div>`;
+      return;
+    }
+
+    box.innerHTML = data.map(w => `
+      <div class="bg-gray-50 border rounded-xl p-3">
+        <div class="row">
+          <b class="mono text-purple-700">${Number(w.amount||0).toFixed(6)} Pi</b>
+          <span class="chip">${escapeHtml(w.status)}</span>
+        </div>
+        <div class="text-[11px] text-gray-500 mt-1">${new Date(w.created_at).toLocaleString('ar-EG')}</div>
+        ${w.note ? `<div class="text-xs text-gray-600 mt-1">ملاحظة: ${escapeHtml(w.note)}</div>` : ``}
+      </div>
+    `).join('');
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('wdHistory').innerHTML = `<div class="text-xs text-red-600">فشل تحميل سجل السحب</div>`;
+  }
+}
+
+/* ================== HISTORY: CUSTOMER + DELIVERY ================== */
+async function loadCustomerHistory(){
+  try{
+    if(!PI_USERNAME) return;
+    const box = document.getElementById('custHistory');
+    box.innerHTML = `<div class="text-xs text-gray-500">جاري التحميل...</div>`;
+
+    const { data, error } = await db.from('orders')
+      .select('id,product_name,order_type,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot,delivery_id')
+      .eq('customer_pi_username', PI_USERNAME)
+      .order('created_at', { ascending:false })
+      .limit(20);
+
+    if(error) throw error;
+
+    if(!data?.length){
+      box.innerHTML = `<div class="text-xs text-gray-500">لا يوجد طلبات بعد.</div>`;
+      return;
+    }
+
+    box.innerHTML = data.map(o => {
+      const totalEgp = Number(o.total_price||0);
+      const totalPi = Number(o?.pricing_snapshot?.total_pi || egpToPi(totalEgp) || 0);
+      const s = o.status;
+      const badgeColor = s==='delivered' ? 'text-green-700' : (s==='canceled' ? 'text-red-700' : 'text-orange-700');
+      return `
+        <div class="bg-gray-50 border rounded-xl p-3">
+          <div class="row">
+            <b>${escapeHtml(o.product_name)}</b>
+            <span class="chip ${badgeColor}">${escapeHtml(s)}</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            نوع: <b>${escapeHtml(o.order_type||'any')}</b>
+            ${o.delivery_id ? `| كابتن: <b>${escapeHtml(o.delivery_id)}</b>` : ``}
+          </div>
+          <div class="row mt-1">
+            <span class="text-xs text-gray-600">الإجمالي</span>
+            <b class="text-green-700">${totalEgp.toFixed(2)} ج</b>
+          </div>
+          <div class="row mt-1">
+            <span class="text-xs text-gray-600">بالـ Pi</span>
+            <b class="mono text-purple-700">${Number(totalPi||0).toFixed(6)} Pi</b>
+          </div>
+          <div class="text-[11px] text-gray-500 mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
+        </div>
+      `;
+    }).join('');
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('custHistory').innerHTML = `<div class="text-xs text-red-600">فشل تحميل سجل الطلبات</div>`;
+  }
+}
+
+async function loadDeliveryHistory(){
+  try{
+    if(!PI_USERNAME) return;
+    const box = document.getElementById('delHistory');
+    box.innerHTML = `<div class="text-xs text-gray-500">جاري التحميل...</div>`;
+
+    const { data, error } = await db.from('orders')
+      .select('id,product_name,order_type,total_price,status,created_at,pricing_snapshot,customer_pi_username')
+      .eq('delivery_id', PI_USERNAME)
+      .order('created_at', { ascending:false })
+      .limit(20);
+
+    if(error) throw error;
+
+    if(!data?.length){
+      box.innerHTML = `<div class="text-xs text-gray-500">لا يوجد طلبات مسجلة عليك بعد.</div>`;
+      return;
+    }
+
+    box.innerHTML = data.map(o => {
+      const totalEgp = Number(o.total_price||0);
+      const totalPi = Number(o?.pricing_snapshot?.total_pi || egpToPi(totalEgp) || 0);
+      const profitPi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
+      const s = o.status;
+      return `
+        <div class="bg-gray-50 border rounded-xl p-3">
+          <div class="row">
+            <b>${escapeHtml(o.product_name)}</b>
+            <span class="chip">${escapeHtml(s)}</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">عميل: <b>${escapeHtml(o.customer_pi_username||'—')}</b></div>
+          <div class="row mt-1">
+            <span class="text-xs text-gray-600">الإجمالي</span>
+            <b class="text-green-700">${totalEgp.toFixed(2)} ج</b>
+          </div>
+          <div class="row mt-1">
+            <span class="text-xs text-gray-600">بالـ Pi</span>
+            <b class="mono text-purple-700">${Number(totalPi||0).toFixed(6)} Pi</b>
+          </div>
+          <div class="row mt-1">
+            <span class="text-xs text-gray-600">ربحك</span>
+            <b class="mono text-purple-700">${profitPi.toFixed(6)} Pi</b>
+          </div>
+          <div class="text-[11px] text-gray-500 mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
+        </div>
+      `;
+    }).join('');
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('delHistory').innerHTML = `<div class="text-xs text-red-600">فشل تحميل سجل الدليفري</div>`;
   }
 }
 
@@ -851,10 +1068,14 @@ function showTab(t){
   if(t==='customer'){
     document.getElementById('customer').classList.remove('hidden');
     document.getElementById('btnC').classList.add('bg-white');
+    loadCustomerHistory();
   } else {
     document.getElementById('delivery').classList.remove('hidden');
     document.getElementById('btnD').classList.add('bg-white');
     loadOrders();
+    loadWallet();
+    loadWithdrawHistory();
+    loadDeliveryHistory();
   }
 }
 
