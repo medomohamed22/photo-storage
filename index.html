@@ -722,45 +722,140 @@ async function payAndCreate() {
     });
 
     // بعد نجاح الدفع: نكتب الطلب في DB
-   const deliveryFeePi = egpToPi(DELIVERY_FEE_EGP);
-const platformFeePi = egpToPi(PLATFORM_FEE_EGP);
+    const deliveryFeePi = egpToPi(DELIVERY_FEE_EGP);
+    const platformFeePi = egpToPi(PLATFORM_FEE_EGP);
 
-const { data, error } = await db.from('orders').insert([{
-  product_name: product,
-  order_type: orderType,
-  notes: notes || null,
+    const { data, error } = await db.from('orders').insert([{
+      product_name: product,
+      order_type: orderType,
+      notes: notes || null,
 
-  price: prodEgp,
-  delivery_fee: DELIVERY_FEE_EGP,
-  platform_fee: PLATFORM_FEE_EGP,
-  total_price: totalEgp,
+      price: prodEgp,
+      delivery_fee: DELIVERY_FEE_EGP,
+      platform_fee: PLATFORM_FEE_EGP,
 
-  status: 'pending',
-  otp_code: otp,
-  customer_pi_username: PI_USERNAME,
-  can_modify_until: new Date(Date.now() + 60_000).toISOString(),
+      total_price: totalEgp,
+      status: 'pending',
+      otp_code: otp,
+      customer_pi_username: PI_USERNAME,
+      can_modify_until: new Date(Date.now() + 60_000).toISOString(),
 
-  pricing_snapshot: {
-    pi_usdt: PI_USDT,
-    usd_egp: USD_EGP,
-    pi_egp: (PI_USDT * USD_EGP),
-    total_pi: Number(amountPi),
-    delivery_fee_pi: deliveryFeePi ? Number(deliveryFeePi.toFixed(6)) : 0,
-    platform_fee_pi: platformFeePi ? Number(platformFeePi.toFixed(6)) : 0
-  },
+      pricing_snapshot: {
+        pi_usdt: PI_USDT,
+        usd_egp: USD_EGP,
+        pi_egp: (PI_USDT * USD_EGP),
+        total_pi: Number(amountPi),
 
-  customer_address: address,
-  customer_lat: (CUSTOMER_LOCATION && typeof CUSTOMER_LOCATION.lat === 'number') ? CUSTOMER_LOCATION.lat : null,
-  customer_lng: (CUSTOMER_LOCATION && typeof CUSTOMER_LOCATION.lng === 'number') ? CUSTOMER_LOCATION.lng : null,
+        delivery_fee_pi: deliveryFeePi ? Number(deliveryFeePi.toFixed(6)) : 0,
+        platform_fee_pi: platformFeePi ? Number(platformFeePi.toFixed(6)) : 0
+      },
+      customer_address: address,
+      customer_lat: CUSTOMER_LOCATION?.lat ?? null,
+      customer_lng: CUSTOMER_LOCATION?.lng ?? null,
+      payment_id: paymentResult?.paymentId || null,
+      payment_txid: paymentResult?.txid || null
+    }]).select();
 
-  payment_id: paymentResult?.paymentId || null,
-  payment_txid: paymentResult?.txid || null
-}]).select().single();
+    if (error) throw error;
 
-if (error) throw error;
+    ACTIVE_ORDER = data?.[0]?.id;
 
-ACTIVE_ORDER = data.id;
+    document.getElementById('custTrack').classList.remove('hidden');
+    document.getElementById('custChat').classList.remove('hidden');
+    document.getElementById('custStatus').innerText = 'pending';
+    document.getElementById('otp').innerText = otp;
+    document.getElementById('otpBox').classList.remove('hidden');
+    document.getElementById('custAddressView').innerText = address;
+    const trackLink = document.getElementById('custTrackMapLink');
+    trackLink.href = buildMapUrl(CUSTOMER_LOCATION.lat, CUSTOMER_LOCATION.lng);
+    trackLink.classList.remove('hidden');
 
+    Swal.close();
+
+    listenStatus();
+    startChat();
+    loadCustomerHistory();
+
+  } catch (e) {
+    console.error(e);
+    Swal.fire({ icon: 'error', title: 'فشل العملية', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+/* ================== DELIVERY: LOAD + ACCEPT (RPC Lock) ================== */
+async function loadOrders(){
+  try{
+    const box = document.getElementById('ordersBox');
+    box.innerHTML = `<div class="glass p-4 text-center muted">جاري التحميل...</div>`;
+
+    const { data, error } = await db.from('orders')
+      .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot,customer_lat,customer_lng,customer_address')
+      .eq('status','pending')
+      .order('created_at',{ascending:false});
+
+    if (error) throw error;
+
+    if (!data?.length) {
+      box.innerHTML = `<div class="glass p-4 text-center muted">لا توجد طلبات حالياً</div>`;
+      return;
+    }
+
+    if (!DELIVERY_LOCATION) {
+      box.innerHTML = `<div class="glass p-4 text-center muted">حدد موقعك أولاً لعرض الطلبات القريبة (5 كم).</div>`;
+      return;
+    }
+
+    const filtered = data.filter(o => {
+      if (typeof o.customer_lat !== 'number' || typeof o.customer_lng !== 'number') return false;
+      const dist = distanceKm(
+        DELIVERY_LOCATION,
+        { lat: o.customer_lat, lng: o.customer_lng }
+      );
+      return dist !== null && dist <= 5;
+    });
+
+    if (!filtered.length) {
+      box.innerHTML = `<div class="glass p-4 text-center muted">لا توجد طلبات قريبة ضمن 5 كم الآن.</div>`;
+      return;
+    }
+
+    box.innerHTML = filtered.map(o => {
+      const delFee = (o.delivery_fee ?? DELIVERY_FEE_EGP);
+      const platFee = (o.platform_fee ?? PLATFORM_FEE_EGP);
+      const totalEgp = (o.total_price ?? ((o.price||0)+delFee+platFee));
+      const totalPi = egpToPi(totalEgp);
+      const dist = distanceKm(
+        DELIVERY_LOCATION,
+        { lat: o.customer_lat, lng: o.customer_lng }
+      );
+      const mapUrl = (typeof o.customer_lat === 'number' && typeof o.customer_lng === 'number')
+        ? buildMapUrl(o.customer_lat, o.customer_lng)
+        : '#';
+
+      return `
+      <div class="glass p-4 space-y-2">
+        <div class="row">
+          <div>
+            <b class="text-base">${escapeHtml(o.product_name)}</b>
+            <div class="tiny">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
+            <div class="tiny">نوع: <b>${escapeHtml(o.order_type || 'any')}</b></div>
+            <div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>
+          </div>
+          <div class="text-sm font-extrabold text-emerald-300">${Number(totalEgp).toFixed(2)} ج</div>
+        </div>
+
+        <div class="soft p-3 text-sm space-y-1">
+          <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
+          <div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>
+          <div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noreferrer" href="${mapUrl}">فتح الخريطة</a></div>
+          <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
+          <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
+          <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300">${Number(totalEgp).toFixed(2)} ج</b></div>
+          <div class="row"><span class="muted">يعادل بـ Pi</span><b class="mono text-purple-300">${totalPi ? totalPi.toFixed(6) : '—'} Pi</b></div>
+        </div>
+
+        <button onclick="acceptOrder('${o.id}')" class="btn btnG w-full">قبول الطلب</button>
+      </div>
       `;
     }).join('');
 
