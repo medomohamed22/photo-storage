@@ -1,330 +1,276 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طلبات برو | النسخة المضمونة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; padding-bottom: 50px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s; }
-        .chat-container { height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 15px; background: #fff; border-radius: 20px; border: 1px solid #eee; }
-        .msg { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 14px; }
-        .msg-customer { background: #ff7a00; color: white; align-self: flex-start; border-bottom-right-radius: 2px; }
-        .msg-delivery { background: #f0f2f5; color: #1e293b; align-self: flex-end; border-bottom-left-radius: 2px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طلبات برو | Pi Delivery</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+<style>
+body{font-family:Tajawal,system-ui;background:#f3f4f6}
+.msg{max-width:75%;padding:8px 12px;border-radius:16px;font-size:13px}
+.c{background:#f97316;color:white;align-self:flex-start}
+.d{background:#e5e7eb;align-self:flex-end}
+</style>
 </head>
-<body>
+<body class="pb-24">
 
-    <div id="notification-area" class="fixed top-5 left-5 z-[9999] w-72 space-y-3"></div>
+<header class="bg-orange-600 text-white p-4 text-center font-bold">طلبات برو 🚀</header>
 
-    <nav class="bg-orange-600 text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fas fa-bolt"></i> طلبات برو
-            </h1>
-            <div class="flex gap-2 bg-orange-700 p-1 rounded-2xl">
-                <button onclick="showTab('customer')" id="btn-customer" class="bg-white text-orange-600 px-4 py-1 rounded-xl font-bold shadow transition-all">العميل</button>
-                <button onclick="showTab('delivery')" id="btn-delivery" class="text-orange-200 px-4 py-1 rounded-xl font-bold transition-all">الدليفري</button>
-            </div>
-        </div>
-    </nav>
+<div class="max-w-lg mx-auto p-3 space-y-4">
 
-    <div class="container mx-auto p-4 max-w-lg">
-        
-        <div id="customer" class="tab-content active">
-            <div id="orderForm" class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 mb-6 animate__animated animate__fadeInUp">
-                <h2 class="text-lg font-bold mb-4 text-gray-700">طلب جديد</h2>
-                <div class="space-y-4">
-                    <input type="text" id="prodName" placeholder="ماذا تريد أن نشتري؟" class="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none focus:border-orange-300">
-                    <input type="number" id="prodPrice" oninput="calculateTotal()" placeholder="السعر التقريبي" class="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none">
-                    
-                    <div class="flex justify-between items-center bg-orange-50 p-4 rounded-2xl">
-                        <span class="text-sm text-gray-600">الإجمالي (+30 توصيل):</span>
-                        <span id="finalTotal" class="font-bold text-orange-600 text-lg">0 ج.م</span>
-                    </div>
+<!-- LOGIN -->
+<div id="loginBox" class="bg-white p-4 rounded-xl shadow text-center">
+<button onclick="piLogin()" class="bg-purple-600 text-white p-3 rounded-xl w-full">تسجيل الدخول بـ Pi</button>
+</div>
 
-                    <button onclick="getLocation()" id="locBtn" class="w-full py-3 text-blue-600 border border-blue-100 rounded-2xl hover:bg-blue-50 transition-all text-sm font-bold">
-                        <i class="fas fa-map-marker-alt ml-1"></i> تحديد موقعي (اختياري)
-                    </button>
+<!-- TABS -->
+<div id="tabs" class="hidden flex bg-orange-100 rounded-xl overflow-hidden">
+<button onclick="showTab('customer')" class="flex-1 p-3 font-bold bg-white" id="btnC">عميل</button>
+<button onclick="showTab('delivery')" class="flex-1 p-3 font-bold" id="btnD">دليفري</button>
+</div>
 
-                    <button onclick="placeOrder()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-orange-600 active:scale-95 transition-all">
-                        تأكيد وإرسال الطلب 🚀
-                    </button>
-                </div>
-            </div>
+<!-- ================= CUSTOMER ================= -->
+<div id="customer" class="hidden space-y-3">
 
-            <div id="orderTracking" class="hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl shadow-xl text-center">
-                    <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                        <i class="fas fa-satellite-dish fa-2x"></i>
-                    </div>
-                    <h3 id="statusTitle" class="font-bold text-xl mb-2">جاري البحث...</h3>
-                    <p id="statusDesc" class="text-gray-500 text-sm">طلبك الآن متاح لكل الكباتن القريبة</p>
-                </div>
+<div class="bg-white p-4 rounded-xl shadow space-y-2">
+<input id="prod" class="w-full p-2 border rounded" placeholder="اسم المنتج">
+<input id="price" type="number" class="w-full p-2 border rounded" placeholder="السعر بالجنيه" oninput="calcPi()">
+<div class="text-sm text-gray-600">≈ <b id="piVal">0</b> Pi</div>
+<button onclick="payAndCreate()" class="bg-orange-500 text-white w-full p-3 rounded-xl">ادفع واطلب 🚀</button>
+</div>
 
-                <div id="customerChatArea" class="hidden bg-white p-4 rounded-3xl shadow-lg border">
-                    <h4 class="font-bold text-sm mb-2 text-gray-500">محادثة مع الكابتن</h4>
-                    <div id="chatBoxCustomer" class="chat-container mb-3"></div>
-                    <div class="flex gap-2">
-                        <input type="text" id="inputMsgCustomer" placeholder="اكتب رسالة..." class="flex-1 p-3 bg-gray-100 rounded-2xl outline-none">
-                        <button onclick="sendMsg('customer')" class="bg-orange-500 text-white w-12 rounded-2xl"><i class="fas fa-paper-plane"></i></button>
-                    </div>
-                </div>
-            </div>
-            
-             <div class="mt-8">
-                <h3 class="font-bold text-gray-700 mb-3 px-2">آخر الطلبات المكتملة</h3>
-                <div id="customerHistoryList" class="space-y-3"></div>
-            </div>
-        </div>
+<div id="custTrack" class="hidden bg-white p-4 rounded-xl shadow space-y-2">
+<b id="custStatus">بانتظار القبول...</b>
+<div id="otpBox" class="hidden">كود التسليم: <b id="otp"></b></div>
+</div>
 
-        <div id="delivery" class="tab-content">
-            <div id="deliveryOrders" class="space-y-4 min-h-[300px]">
-                <p class="text-center text-gray-400 py-10">جاري تحميل الطلبات...</p>
-            </div>
-             <div class="mt-8 border-t pt-4">
-                <h3 class="font-bold text-gray-700 mb-3 px-2">سجل الأرباح</h3>
-                <div id="deliveryHistoryList" class="space-y-3"></div>
-            </div>
-        </div>
-    </div>
+<div id="custChat" class="hidden bg-white p-3 rounded-xl shadow space-y-2">
+<div id="chatC" class="flex flex-col gap-2 h-48 overflow-y-auto"></div>
+<div class="flex gap-1">
+<input id="msgC" class="flex-1 border rounded p-2">
+<input type="file" id="imgC" accept="image/*">
+<button onclick="sendMsg('customer')" class="bg-orange-500 text-white px-4 rounded">➤</button>
+</div>
+</div>
 
-    <script>
-        // --- 1. إعداد الاتصال ---
-        const supabaseUrl = 'https://axjkwrssmofzavaoqutq.supabase.co';
-        const supabaseKey ='sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'; // المفتاح العام
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+</div>
 
-        let activeOrderId = null;
-        let userLocation = null;
+<!-- ================= DELIVERY ================= -->
+<div id="delivery" class="hidden space-y-3">
 
-        // --- 2. وظائف العميل ---
-        
-        function calculateTotal() {
-            const val = parseFloat(document.getElementById('prodPrice').value) || 0;
-            document.getElementById('finalTotal').innerText = (val > 0 ? val + 30 : 0) + ' ج.م';
-        }
+<div id="ordersBox" class="space-y-2"></div>
 
-        function getLocation() {
-            if(!navigator.geolocation) return Swal.fire('خطأ', 'المتصفح لا يدعم الموقع', 'error');
-            document.getElementById('locBtn').innerText = 'جاري التحديد...';
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    document.getElementById('locBtn').innerHTML = '<i class="fas fa-check text-green-500"></i> تم حفظ الموقع';
-                    document.getElementById('locBtn').classList.add('bg-green-50', 'text-green-600', 'border-green-200');
-                },
-                () => {
-                    document.getElementById('locBtn').innerText = 'فشل تحديد الموقع (اضغط للمحاولة)';
-                    Swal.fire('تنبيه', 'يجب تفعيل الـ GPS', 'warning');
-                }
-            );
-        }
+<div id="delChat" class="hidden bg-white p-3 rounded-xl shadow space-y-2">
+<b>شات الطلب</b>
+<div id="chatD" class="flex flex-col gap-2 h-48 overflow-y-auto"></div>
+<div class="flex gap-1">
+<input id="msgD" class="flex-1 border rounded p-2">
+<input type="file" id="imgD" accept="image/*">
+<button onclick="sendMsg('delivery')" class="bg-blue-600 text-white px-4 rounded">➤</button>
+</div>
 
-        // --- الدالة الحاسمة: إرسال الطلب ---
-        async function placeOrder() {
-            const name = document.getElementById('prodName').value;
-            const price = parseFloat(document.getElementById('prodPrice').value);
+<div class="grid grid-cols-2 gap-2">
+<button onclick="setStatus('arrived')" class="bg-orange-500 text-white p-2 rounded">وصلت</button>
+<button onclick="finishWithOtp()" class="bg-green-600 text-white p-2 rounded">تم التسليم</button>
+</div>
+</div>
 
-            if (!name || !price) {
-                return Swal.fire('بيانات ناقصة', 'أدخل اسم المنتج والسعر', 'warning');
-            }
+<div class="bg-white p-3 rounded-xl shadow">
+<b>محفظتي</b>
+<div>الرصيد: <b id="wallet">0</b> جنيه</div>
+<input id="wdAmount" class="border p-2 rounded w-full" placeholder="مبلغ السحب">
+<button onclick="withdraw()" class="bg-purple-600 text-white p-2 rounded w-full mt-2">طلب سحب</button>
+</div>
 
-            // إظهار التحميل
-            Swal.fire({ title: 'جاري الاتصال بالسحابة...', didOpen: () => Swal.showLoading() });
+</div>
 
-            // محاولة الإرسال
-            const { data, error } = await _supabase.from('orders').insert([{
-                product_name: name,
-                price: price,
-                total_price: price + 30,
-                status: 'pending',
-                location: userLocation ? userLocation : null // نرسل null لو الموقع مش موجود عشان ميعملش Error
-            }]).select();
+</div>
 
-            // فحص الأخطاء (Debug)
-            if (error) {
-                console.error(error);
-                return Swal.fire('خطأ في قاعدة البيانات', error.message, 'error');
-            }
+<script>
+Pi.init({version:"2.0",sandbox:false});
 
-            // نجاح
-            if (data && data.length > 0) {
-                activeOrderId = data[0].id;
-                Swal.close();
-                document.getElementById('orderForm').classList.add('hidden');
-                document.getElementById('orderTracking').classList.remove('hidden');
-                subscribeToOrderUpdates();
-                
-                // إضافة تأثير احتفالي بسيط
-                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-            }
-        }
+const supabase = supabasejs.createClient(
+'https://axjkwrssmofzavaoqutq.supabase.co',
+'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'
+);
 
-        // الاستماع لتغيير حالة الطلب
-        function subscribeToOrderUpdates() {
-            _supabase.channel('custom-tracking')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${activeOrderId}` }, payload => {
-                const s = payload.new.status;
-                const title = document.getElementById('statusTitle');
-                const desc = document.getElementById('statusDesc');
+let PI_USER=null, ACTIVE_ORDER=null, PI_RATE=1;
 
-                if (s === 'accepted') {
-                    title.innerText = "تم قبول الطلب! 👨‍✈️";
-                    desc.innerText = "تحدث مع الكابتن الآن في الأسفل";
-                    title.classList.add('text-green-600');
-                    document.getElementById('customerChatArea').classList.remove('hidden');
-                    startChatSystem();
-                } else if (s === 'shipping') {
-                    title.innerText = "الطلب في الطريق 🛵";
-                    desc.innerText = "الكابتن يتحرك نحوك الآن";
-                } else if (s === 'delivered') {
-                    Swal.fire('تم التسليم', 'شكراً لاستخدامك طلبات برو', 'success').then(() => location.reload());
-                }
-            }).subscribe();
-        }
+// ===== PI LOGIN =====
+async function piLogin(){
+const scopes=['username','payments'];
+PI_USER=await Pi.authenticate(scopes,()=>{});
+loginBox.classList.add('hidden');
+tabs.classList.remove('hidden');
+showTab('customer');
+loadOrders();
+loadWallet();
+fetchRate();
+setInterval(fetchRate,30000);
+}
 
-        // --- 3. وظائف الدليفري ---
+// ===== PRICE =====
+async function fetchRate(){
+try{
+const r=await fetch("https://www.okx.com/api/v5/market/ticker?instId=PI-USDT");
+const j=await r.json();
+PI_RATE=parseFloat(j.data[0].last);
+calcPi();
+}catch{}
+}
 
-        async function fetchAvailableOrders() {
-            const container = document.getElementById('deliveryOrders');
-            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-orange-500"></i></div>';
+function calcPi(){
+piVal.innerText=((+price.value||0)/PI_RATE).toFixed(3);
+}
 
-            const { data, error } = await _supabase.from('orders').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+// ===== PAYMENT + ORDER =====
+async function payAndCreate(){
+const amountPi=(+price.value/PI_RATE).toFixed(3);
 
-            if (error) return container.innerHTML = '<p class="text-red-500 text-center">خطأ في جلب البيانات</p>';
-            
-            if (data.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-gray-400 bg-white rounded-3xl"><p>لا توجد طلبات معلقة</p></div>';
-                return;
-            }
+const payment=await Pi.createPayment({
+amount:amountPi,
+memo:"Delivery Order",
+metadata:{price:price.value}
+},async pid=>{
+await fetch('/api/pi/approve',{method:'POST',body:JSON.stringify({paymentId:pid})});
+},async pid=>{
+await fetch('/api/pi/complete',{method:'POST',body:JSON.stringify({paymentId:pid})});
+});
 
-            container.innerHTML = data.map(o => `
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-gray-800 text-lg">${o.product_name}</h4>
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">${o.total_price} ج.م</span>
-                    </div>
-                    <p class="text-xs text-gray-400 mb-4"><i class="fas fa-clock"></i> ${new Date(o.created_at).toLocaleTimeString('ar-EG')}</p>
-                    <button onclick="acceptOrder('${o.id}')" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition">قبول هذا الطلب</button>
-                </div>
-            `).join('');
-        }
+const otp=Math.floor(1000+Math.random()*9000).toString();
 
-        async function acceptOrder(id) {
-            activeOrderId = id;
-            const { error } = await _supabase.from('orders').update({ status: 'accepted' }).eq('id', id);
-            
-            if (error) return Swal.fire('خطأ', error.message, 'error');
+const {data}=await supabase.from('orders').insert([{
+product_name:prod.value,
+price:+price.value,
+total_price:+price.value,
+status:'pending',
+otp_code:otp,
+customer_pi_username:PI_USER.user.username
+}]).select();
 
-            // تحويل واجهة الدليفري للشات
-            document.getElementById('deliveryOrders').innerHTML = `
-                <div class="bg-white p-5 rounded-3xl shadow-xl border-t-4 border-blue-500">
-                    <h3 class="text-center font-bold mb-4">أنت الآن مسؤول عن هذا الطلب</h3>
-                    <div id="chatBoxDelivery" class="chat-container mb-3 bg-gray-50"></div>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="inputMsgDelivery" placeholder="رسالة..." class="flex-1 p-3 bg-white border rounded-2xl outline-none">
-                        <button onclick="sendMsg('delivery')" class="bg-blue-600 text-white px-4 rounded-2xl"><i class="fas fa-paper-plane"></i></button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="updateOrderStatus('shipping')" class="bg-orange-500 text-white py-3 rounded-xl font-bold text-sm">بدء التحرك 🛵</button>
-                        <button onclick="updateOrderStatus('delivered')" class="bg-gray-800 text-white py-3 rounded-xl font-bold text-sm">تم التسليم ✅</button>
-                    </div>
-                </div>
-            `;
-            startChatSystem();
-        }
+ACTIVE_ORDER=data[0].id;
+custTrack.classList.remove('hidden');
+custChat.classList.remove('hidden');
+otp.innerText=otp;
+listenStatus();
+startChat();
+}
 
-        async function updateOrderStatus(st) {
-            await _supabase.from('orders').update({ status: st }).eq('id', activeOrderId);
-            if(st === 'delivered') {
-                Swal.fire('أحسنت!', 'تم إضافة الأرباح لسجلك', 'success').then(() => location.reload());
-            }
-        }
+// ===== DELIVERY ORDERS =====
+async function loadOrders(){
+const {data}=await supabase.from('orders').select('*').eq('status','pending');
+ordersBox.innerHTML=data.map(o=>`
+<div class="bg-white p-3 rounded shadow">
+<b>${o.product_name}</b>
+<button onclick="accept('${o.id}')" class="bg-green-600 text-white p-2 rounded w-full mt-2">قبول</button>
+</div>`).join('');
+}
 
-        // --- 4. نظام الشات ---
-        
-        function startChatSystem() {
-            loadMessages();
-            // اشتراك في الرسائل الجديدة
-            _supabase.channel('chat-room')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `order_id=eq.${activeOrderId}` }, payload => {
-                appendMessage(payload.new);
-            }).subscribe();
-        }
+async function accept(id){
+const {data,error}=await supabase.rpc('accept_order_once',{
+p_order_id:id,
+p_delivery_id:PI_USER.user.username
+});
+if(error) return alert(error.message);
+ACTIVE_ORDER=id;
+delChat.classList.remove('hidden');
+startChat();
+}
 
-        async function loadMessages() {
-            const { data } = await _supabase.from('chat_messages').select('*').eq('order_id', activeOrderId).order('created_at', { ascending: true });
-            const custBox = document.getElementById('chatBoxCustomer');
-            const delivBox = document.getElementById('chatBoxDelivery');
-            if(custBox) custBox.innerHTML = '';
-            if(delivBox) delivBox.innerHTML = '';
-            data.forEach(appendMessage);
-        }
+// ===== CHAT =====
+function startChat(){
+supabase.channel('chat')
+.on('postgres_changes',{event:'INSERT',table:'chat_messages',filter:`order_id=eq.${ACTIVE_ORDER}`},p=>{
+append(p.new);
+})
+.subscribe();
+}
 
-        function appendMessage(msg) {
-            const html = `<div class="msg ${msg.sender === 'customer' ? 'msg-customer' : 'msg-delivery'} animate__animated animate__fadeInUp">${msg.message_text}</div>`;
-            const custBox = document.getElementById('chatBoxCustomer');
-            const delivBox = document.getElementById('chatBoxDelivery');
-            
-            if (custBox) { custBox.innerHTML += html; custBox.scrollTop = custBox.scrollHeight; }
-            if (delivBox) { delivBox.innerHTML += html; delivBox.scrollTop = delivBox.scrollHeight; }
-        }
+async function sendMsg(role){
+const txt=(role==='customer'?msgC:msgD).value;
+const img=(role==='customer'?imgC:imgD).files[0];
 
-        async function sendMsg(sender) {
-            const inputId = sender === 'customer' ? 'inputMsgCustomer' : 'inputMsgDelivery';
-            const input = document.getElementById(inputId);
-            const txt = input.value;
-            if(!txt) return;
+let url=null;
+if(img){
+const path=`chat/${Date.now()}_${img.name}`;
+await supabase.storage.from('chat').upload(path,img);
+url=supabase.storage.from('chat').getPublicUrl(path).data.publicUrl;
+}
 
-            await _supabase.from('chat_messages').insert([{
-                order_id: activeOrderId,
-                sender: sender,
-                message_text: txt
-            }]);
-            input.value = '';
-        }
+await supabase.from('chat_messages').insert([{
+order_id:ACTIVE_ORDER,
+sender:role,
+message_text:txt,
+image_url:url
+}]);
 
-        // --- 5. السجلات والتبديل ---
+(role==='customer'?msgC:msgD).value='';
+}
 
-        function showTab(t) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.getElementById(t).classList.add('active');
-            
-            // تحديث ستايل الأزرار
-            const isCust = t === 'customer';
-            document.getElementById('btn-customer').className = isCust ? "bg-white text-orange-600 px-4 py-1 rounded-xl font-bold shadow transition-all" : "text-orange-200 px-4 py-1 rounded-xl font-bold transition-all";
-            document.getElementById('btn-delivery').className = !isCust ? "bg-white text-orange-600 px-4 py-1 rounded-xl font-bold shadow transition-all" : "text-orange-200 px-4 py-1 rounded-xl font-bold transition-all";
+function append(m){
+const box=m.sender==='customer'?chatC:chatD;
+box.innerHTML+=`
+<div class="msg ${m.sender==='customer'?'c':'d'}">
+${m.message_text||''}
+${m.image_url?`<img src="${m.image_url}" class="mt-1 rounded">`:''}
+</div>`;
+box.scrollTop=box.scrollHeight;
+}
 
-            if (t === 'delivery') fetchAvailableOrders();
-        }
+// ===== STATUS =====
+function listenStatus(){
+supabase.channel('status')
+.on('postgres_changes',{event:'UPDATE',table:'orders',filter:`id=eq.${ACTIVE_ORDER}`},p=>{
+custStatus.innerText=p.new.status;
+if(p.new.status==='delivered') alert('تم التسليم');
+})
+.subscribe();
+}
 
-        // تحميل السجلات عند البدء
-        (async function loadHistory() {
-            const { data } = await _supabase.from('orders').select('*').eq('status', 'delivered').order('created_at', { ascending: false }).limit(5);
-            const html = data && data.length ? data.map(h => `
-                <div class="bg-white p-3 rounded-xl border-r-4 border-green-500 shadow-sm flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-sm text-gray-800">${h.product_name}</div>
-                        <div class="text-[10px] text-gray-400">${new Date(h.created_at).toLocaleDateString()}</div>
-                    </div>
-                    <div class="font-bold text-green-600 text-sm">${h.total_price} ج.م</div>
-                </div>
-            `).join('') : '<p class="text-xs text-gray-400 text-center">لا توجد سجلات</p>';
+async function setStatus(s){
+await supabase.from('orders').update({status:s}).eq('id',ACTIVE_ORDER);
+}
 
-            document.getElementById('customerHistoryList').innerHTML = html;
-            document.getElementById('deliveryHistoryList').innerHTML = html;
-        })();
+async function finishWithOtp(){
+const code=prompt("ادخل كود العميل");
+const {error}=await supabase.rpc('complete_delivery',{
+p_order_id:ACTIVE_ORDER,
+p_otp:code,
+p_delivery_id:PI_USER.user.username
+});
+if(error) alert(error.message);
+}
 
-    </script>
+// ===== WALLET =====
+async function loadWallet(){
+const {data}=await supabase.from('delivery_wallet').select('*').eq('delivery_id',PI_USER.user.username).single();
+wallet.innerText=data?.balance||0;
+}
+
+async function withdraw(){
+await supabase.from('withdraw_requests').insert([{
+delivery_id:PI_USER.user.username,
+amount:+wdAmount.value
+}]);
+alert('تم إرسال طلب السحب');
+}
+
+// ===== UI =====
+function showTab(t){
+customer.classList.add('hidden');
+delivery.classList.add('hidden');
+btnC.classList.remove('bg-white');
+btnD.classList.remove('bg-white');
+
+if(t==='customer'){customer.classList.remove('hidden');btnC.classList.add('bg-white');}
+else{delivery.classList.remove('hidden');btnD.classList.add('bg-white');}
+}
+</script>
+
 </body>
 </html>
