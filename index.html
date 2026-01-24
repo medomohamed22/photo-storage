@@ -249,6 +249,35 @@
       margin: 10px 0;
     }
     a.linkP{ color: rgba(167,139,250,1); text-decoration: underline; }
+    /* ✅ يمنع أي عنصر يطلع برّه الكارت */
+.miniCard, .soft, .glass { overflow: hidden; }
+
+/* ✅ صف العنوان داخل بطاقة السحب */
+.wdRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-width:0;           /* مهم لقص النص */
+}
+
+.wdLabel{
+  flex:0 0 auto;
+  white-space:nowrap;
+  opacity:.85;
+}
+
+.wdValue{
+  flex:1 1 auto;
+  min-width:0;           /* مهم */
+  overflow:hidden;
+  text-overflow:ellipsis;/* … */
+  white-space:nowrap;    /* سطر واحد */
+  padding:6px 10px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  background: rgba(255,255,255,.06);
+}
   </style>
 </head>
 
@@ -1738,8 +1767,12 @@ async function loadWithdrawHistory(){
           <b class="mono text-purple-600">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
           <span class="chip">${escapeHtml(w.status)}</span>
         </div>
-        <div class="tiny mt-1">${new Date(w.created_at).toLocaleString('ar-EG')}</div>
-        <div class="tiny mt-1">العنوان: <span class="mono">${escapeHtml(w.wallet_address||'-')}</span></div>
+        <div class="tiny mt-1 wdRow">
+  <span class="wdLabel">العنوان:</span>
+  <span class="wdValue mono" title="${escapeHtml(w.wallet_address||'-')}">
+    ${escapeHtml(w.wallet_address||'-')}
+  </span>
+</div>
         ${w.note ? `<div class="tiny mt-1">ملاحظة: ${escapeHtml(w.note)}</div>` : ``}
       </div>
     `).join('');
