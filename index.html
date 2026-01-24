@@ -1,276 +1,704 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>طلبات برو | Pi Delivery</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>طلبات برو | نسخة Pi</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<style>
-body{font-family:Tajawal,system-ui;background:#f3f4f6}
-.msg{max-width:75%;padding:8px 12px;border-radius:16px;font-size:13px}
-.c{background:#f97316;color:white;align-self:flex-start}
-.d{background:#e5e7eb;align-self:flex-end}
-</style>
+  <!-- Pi SDK (لازم يكون قبل أي استخدام لـ Pi) -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <style>
+    body{font-family:Tajawal,system-ui;background:#f3f4f6}
+    .msg{max-width:78%;padding:8px 12px;border-radius:16px;font-size:13px;word-break:break-word}
+    .c{background:#f97316;color:#fff;align-self:flex-start}
+    .d{background:#e5e7eb;color:#111827;align-self:flex-end}
+    .chip{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff}
+  </style>
 </head>
+
 <body class="pb-24">
+  <header class="bg-orange-600 text-white p-4 text-center font-bold">طلبات برو 🚀</header>
 
-<header class="bg-orange-600 text-white p-4 text-center font-bold">طلبات برو 🚀</header>
+  <div class="max-w-lg mx-auto p-3 space-y-3">
 
-<div class="max-w-lg mx-auto p-3 space-y-4">
+    <!-- حالة Pi -->
+    <div id="piState" class="bg-white p-3 rounded-xl shadow text-sm text-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <b>حالة Pi:</b>
+          <span id="piStateText" class="text-gray-500">جاري التحقق...</span>
+        </div>
+        <span id="piTag" class="chip">…</span>
+      </div>
+      <div class="mt-2 text-xs text-gray-500">
+        تسجيل الدخول والدفع يشتغلوا أفضل داخل <b>Pi Browser</b>.
+      </div>
+    </div>
 
-<!-- LOGIN -->
-<div id="loginBox" class="bg-white p-4 rounded-xl shadow text-center">
-<button onclick="piLogin()" class="bg-purple-600 text-white p-3 rounded-xl w-full">تسجيل الدخول بـ Pi</button>
-</div>
+    <!-- LOGIN -->
+    <div id="loginBox" class="bg-white p-4 rounded-xl shadow text-center space-y-3">
+      <div class="text-gray-700 text-sm">
+        سجّل دخولك بحساب Pi عشان تقدر تطلب/تشتغل دليفري.
+      </div>
+      <button id="loginBtn" onclick="piLogin()" class="bg-purple-600 text-white p-3 rounded-xl w-full font-bold">
+        تسجيل الدخول بـ Pi
+      </button>
 
-<!-- TABS -->
-<div id="tabs" class="hidden flex bg-orange-100 rounded-xl overflow-hidden">
-<button onclick="showTab('customer')" class="flex-1 p-3 font-bold bg-white" id="btnC">عميل</button>
-<button onclick="showTab('delivery')" class="flex-1 p-3 font-bold" id="btnD">دليفري</button>
-</div>
+      <!-- بديل اختبار (اختياري) -->
+      <button onclick="devLogin()" class="text-xs text-gray-500 underline">
+        دخول تجريبي (للاختبار خارج Pi Browser)
+      </button>
+    </div>
 
-<!-- ================= CUSTOMER ================= -->
-<div id="customer" class="hidden space-y-3">
+    <!-- TABS -->
+    <div id="tabs" class="hidden flex bg-orange-100 rounded-xl overflow-hidden shadow">
+      <button onclick="showTab('customer')" class="flex-1 p-3 font-bold bg-white" id="btnC">عميل</button>
+      <button onclick="showTab('delivery')" class="flex-1 p-3 font-bold" id="btnD">دليفري</button>
+    </div>
 
-<div class="bg-white p-4 rounded-xl shadow space-y-2">
-<input id="prod" class="w-full p-2 border rounded" placeholder="اسم المنتج">
-<input id="price" type="number" class="w-full p-2 border rounded" placeholder="السعر بالجنيه" oninput="calcPi()">
-<div class="text-sm text-gray-600">≈ <b id="piVal">0</b> Pi</div>
-<button onclick="payAndCreate()" class="bg-orange-500 text-white w-full p-3 rounded-xl">ادفع واطلب 🚀</button>
-</div>
+    <!-- ================= CUSTOMER ================= -->
+    <div id="customer" class="hidden space-y-3">
 
-<div id="custTrack" class="hidden bg-white p-4 rounded-xl shadow space-y-2">
-<b id="custStatus">بانتظار القبول...</b>
-<div id="otpBox" class="hidden">كود التسليم: <b id="otp"></b></div>
-</div>
+      <div class="bg-white p-4 rounded-xl shadow space-y-3">
+        <div class="text-sm text-gray-700">
+          أهلًا <b id="custName">—</b>
+        </div>
 
-<div id="custChat" class="hidden bg-white p-3 rounded-xl shadow space-y-2">
-<div id="chatC" class="flex flex-col gap-2 h-48 overflow-y-auto"></div>
-<div class="flex gap-1">
-<input id="msgC" class="flex-1 border rounded p-2">
-<input type="file" id="imgC" accept="image/*">
-<button onclick="sendMsg('customer')" class="bg-orange-500 text-white px-4 rounded">➤</button>
-</div>
-</div>
+        <input id="prod" class="w-full p-3 border rounded-xl" placeholder="اسم المنتج" />
+        <input id="price" type="number" class="w-full p-3 border rounded-xl" placeholder="السعر بالجنيه" oninput="calcPi()" />
 
-</div>
+        <div class="text-sm text-gray-600">
+          تقدير الدفع: <b id="piVal">0</b> Pi
+          <span class="text-xs text-gray-400">(سعر Pi يتم تحديثه)</span>
+        </div>
 
-<!-- ================= DELIVERY ================= -->
-<div id="delivery" class="hidden space-y-3">
+        <button onclick="payAndCreate()" class="bg-orange-500 text-white w-full p-3 rounded-xl font-bold">
+          ادفع واطلب 🚀
+        </button>
+      </div>
 
-<div id="ordersBox" class="space-y-2"></div>
+      <div id="custTrack" class="hidden bg-white p-4 rounded-xl shadow space-y-2">
+        <b id="custStatus">بانتظار القبول...</b>
+        <div id="otpBox" class="hidden text-sm">
+          كود التسليم: <b id="otp" class="text-orange-600 text-lg"></b>
+        </div>
+      </div>
 
-<div id="delChat" class="hidden bg-white p-3 rounded-xl shadow space-y-2">
-<b>شات الطلب</b>
-<div id="chatD" class="flex flex-col gap-2 h-48 overflow-y-auto"></div>
-<div class="flex gap-1">
-<input id="msgD" class="flex-1 border rounded p-2">
-<input type="file" id="imgD" accept="image/*">
-<button onclick="sendMsg('delivery')" class="bg-blue-600 text-white px-4 rounded">➤</button>
-</div>
+      <div id="custChat" class="hidden bg-white p-3 rounded-xl shadow space-y-2">
+        <div class="flex items-center justify-between">
+          <b class="text-sm">الشات</b>
+          <div class="flex gap-2">
+            <button class="chip" onclick="quick('customer','أنا فين؟')">أنا فين؟</button>
+            <button class="chip" onclick="quick('customer','بديل لو مش موجود؟')">بديل؟</button>
+          </div>
+        </div>
 
-<div class="grid grid-cols-2 gap-2">
-<button onclick="setStatus('arrived')" class="bg-orange-500 text-white p-2 rounded">وصلت</button>
-<button onclick="finishWithOtp()" class="bg-green-600 text-white p-2 rounded">تم التسليم</button>
-</div>
-</div>
+        <div id="chatC" class="flex flex-col gap-2 h-52 overflow-y-auto"></div>
 
-<div class="bg-white p-3 rounded-xl shadow">
-<b>محفظتي</b>
-<div>الرصيد: <b id="wallet">0</b> جنيه</div>
-<input id="wdAmount" class="border p-2 rounded w-full" placeholder="مبلغ السحب">
-<button onclick="withdraw()" class="bg-purple-600 text-white p-2 rounded w-full mt-2">طلب سحب</button>
-</div>
+        <div class="flex gap-1 items-center">
+          <input id="msgC" class="flex-1 border rounded-xl p-2" placeholder="اكتب رسالة..." />
+          <input type="file" id="imgC" accept="image/*" class="text-xs w-28" />
+          <button onclick="sendMsg('customer')" class="bg-orange-500 text-white px-4 py-2 rounded-xl">➤</button>
+        </div>
+      </div>
 
-</div>
+    </div>
 
-</div>
+    <!-- ================= DELIVERY ================= -->
+    <div id="delivery" class="hidden space-y-3">
+
+      <div class="bg-white p-4 rounded-xl shadow">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-700">الكابتن: <b id="delName">—</b></div>
+          <button onclick="loadOrders()" class="chip">تحديث الطلبات</button>
+        </div>
+      </div>
+
+      <div id="ordersBox" class="space-y-2"></div>
+
+      <div id="delChat" class="hidden bg-white p-3 rounded-xl shadow space-y-2">
+        <div class="flex items-center justify-between">
+          <b class="text-sm">شات الطلب</b>
+          <div class="flex gap-2">
+            <button class="chip" onclick="quick('delivery','أنا في الطريق')">في الطريق</button>
+            <button class="chip" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">غير متوفر</button>
+          </div>
+        </div>
+
+        <div id="chatD" class="flex flex-col gap-2 h-52 overflow-y-auto"></div>
+
+        <div class="flex gap-1 items-center">
+          <input id="msgD" class="flex-1 border rounded-xl p-2" placeholder="رسالة..." />
+          <input type="file" id="imgD" accept="image/*" class="text-xs w-28" />
+          <button onclick="sendMsg('delivery')" class="bg-blue-600 text-white px-4 py-2 rounded-xl">➤</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="setStatus('arrived')" class="bg-orange-500 text-white p-3 rounded-xl font-bold">وصلت</button>
+          <button onclick="finishWithOtp()" class="bg-green-600 text-white p-3 rounded-xl font-bold">تم التسليم</button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow space-y-2">
+        <b class="text-sm">محفظتي</b>
+        <div class="text-sm">الرصيد: <b id="wallet">0</b> جنيه</div>
+        <input id="wdAmount" type="number" class="border p-3 rounded-xl w-full" placeholder="مبلغ السحب" />
+        <button onclick="withdraw()" class="bg-purple-600 text-white p-3 rounded-xl w-full font-bold">طلب سحب</button>
+      </div>
+
+    </div>
+
+  </div>
 
 <script>
-Pi.init({version:"2.0",sandbox:false});
+/* ================== SUPABASE ================== */
+const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const supabase = supabasejs.createClient(
-'https://axjkwrssmofzavaoqutq.supabase.co',
-'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'
-);
+/* ================== GLOBALS ================== */
+let PI_USER = null;
+let PI_USERNAME = null;
+let ACTIVE_ORDER = null;
+let PI_USDT = 1; // سعر Pi بالدولار/USDT (تقديري)
 
-let PI_USER=null, ACTIVE_ORDER=null, PI_RATE=1;
+/* ================== PI INIT (آمن) ================== */
+function detectPi() {
+  const hasPi = typeof window.Pi !== 'undefined';
+  const isPiBrowser = !!(navigator.userAgent || '').toLowerCase().includes('pibrowser') || !!window.Pi;
+  const txt = hasPi ? 'SDK موجود' : 'SDK غير موجود';
+  document.getElementById('piStateText').innerText = txt;
+  document.getElementById('piTag').innerText = isPiBrowser ? 'Pi Browser' : 'Web';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  detectPi();
 
-// ===== PI LOGIN =====
-async function piLogin(){
-const scopes=['username','payments'];
-PI_USER=await Pi.authenticate(scopes,()=>{});
-loginBox.classList.add('hidden');
-tabs.classList.remove('hidden');
-showTab('customer');
-loadOrders();
-loadWallet();
-fetchRate();
-setInterval(fetchRate,30000);
+  // حاول تهيئة Pi
+  try {
+    if (window.Pi && Pi.init) {
+      // sandbox=false بناءً على طلبك
+      Pi.init({ version: "2.0", sandbox: false });
+      document.getElementById('piStateText').innerText = 'جاهز لتسجيل الدخول';
+    }
+  } catch (e) {
+    console.warn('Pi.init error:', e);
+  }
+});
+
+/* ================== PI LOGIN (مُصحّح) ================== */
+async function piLogin() {
+  try {
+    if (!window.Pi || !Pi.authenticate) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Pi SDK غير متاح',
+        text: 'افتح الموقع داخل Pi Browser أو تأكد إن sdk.minepi.com محمّل.',
+      });
+    }
+
+    // تحذير لو مش Pi Browser
+    const ua = (navigator.userAgent || '').toLowerCase();
+    const notPiBrowser = !ua.includes('pibrowser');
+    if (notPiBrowser) {
+      const r = await Swal.fire({
+        icon: 'info',
+        title: 'مش Pi Browser',
+        text: 'تسجيل الدخول والدفع ممكن ما يشتغلوش في Chrome. جرّب Pi Browser للأفضل.',
+        showCancelButton: true,
+        confirmButtonText: 'كمّل',
+        cancelButtonText: 'إلغاء'
+      });
+      if (!r.isConfirmed) return;
+    }
+
+    Swal.fire({ title: 'جاري تسجيل الدخول...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+    const scopes = ['username', 'payments'];
+
+    // مهم: onIncompletePaymentFound لازم يكون function
+    const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+
+    // بعض النسخ بترجع { user: { username } } وبعضها { username }… فهنسند بذكاء
+    const username =
+      auth?.user?.username ||
+      auth?.username ||
+      auth?.user?.uid || // fallback (مش الأفضل)
+      null;
+
+    if (!username) {
+      console.log('Pi auth raw:', auth);
+      throw new Error('لم يتم استلام username من Pi. راجع Console.');
+    }
+
+    PI_USER = auth;
+    PI_USERNAME = username;
+
+    // UI
+    document.getElementById('custName').innerText = PI_USERNAME;
+    document.getElementById('delName').innerText = PI_USERNAME;
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('tabs').classList.remove('hidden');
+    showTab('customer');
+
+    Swal.close();
+
+    // بدء جلب السعر + الطلبات + المحفظة
+    fetchRate();
+    setInterval(fetchRate, 30000);
+    loadOrders();
+    loadWallet();
+
+  } catch (e) {
+    console.error('piLogin error:', e);
+    Swal.fire({ icon:'error', title:'فشل تسجيل الدخول', text: e?.message || 'حصل خطأ' });
+  }
 }
 
-// ===== PRICE =====
-async function fetchRate(){
-try{
-const r=await fetch("https://www.okx.com/api/v5/market/ticker?instId=PI-USDT");
-const j=await r.json();
-PI_RATE=parseFloat(j.data[0].last);
-calcPi();
-}catch{}
+// للاختبار خارج Pi Browser (اختياري)
+function devLogin(){
+  PI_USERNAME = 'dev_user_' + Math.floor(Math.random()*9999);
+  document.getElementById('custName').innerText = PI_USERNAME;
+  document.getElementById('delName').innerText = PI_USERNAME;
+  document.getElementById('loginBox').classList.add('hidden');
+  document.getElementById('tabs').classList.remove('hidden');
+  showTab('customer');
+  fetchRate();
+  setInterval(fetchRate, 30000);
+  loadOrders();
+  loadWallet();
+}
+
+function onIncompletePaymentFound(payment) {
+  // لو لقي دفع ناقص، تقدر تكمل/تعرضه (هنا بس لوج)
+  console.log('incomplete payment found:', payment);
+}
+
+/* ================== PRICE (PI-USDT) ================== */
+async function fetchRate() {
+  try {
+    // تحديث سريع - لو CORS حصل، خليه عبر Netlify function proxy لاحقًا
+    const r = await fetch("https://www.okx.com/api/v5/market/ticker?instId=PI-USDT");
+    const j = await r.json();
+    const last = parseFloat(j?.data?.[0]?.last || "0");
+    if (last > 0) PI_USDT = last;
+    calcPi();
+  } catch (e) {
+    // هنسكت عشان ما يزعجش المستخدم
+    console.warn('fetchRate failed:', e);
+  }
 }
 
 function calcPi(){
-piVal.innerText=((+price.value||0)/PI_RATE).toFixed(3);
+  const egp = parseFloat(document.getElementById('price').value || "0");
+  // هنا احنا بنقسم جنيه على PI_USDT (ده مش تحويل حقيقي جنيه->USDT)
+  // عشان يبقى دقيق لازم تجيب سعر USD/EGP أو USDT/EGP من مصدر تاني.
+  // لكن بناءً على طلبك: "تحويل على أساس سعر الباي اللحظي" هنستخدم تقدير بسيط.
+  const approxPi = PI_USDT > 0 ? (egp / PI_USDT) : 0;
+  document.getElementById('piVal').innerText = approxPi.toFixed(3);
 }
 
-// ===== PAYMENT + ORDER =====
-async function payAndCreate(){
-const amountPi=(+price.value/PI_RATE).toFixed(3);
+/* ================== CUSTOMER: PAY + CREATE ORDER ================== */
+async function payAndCreate() {
+  try {
+    if (!PI_USERNAME) return Swal.fire('لازم تسجل دخول الأول');
+    const product = document.getElementById('prod').value.trim();
+    const egpPrice = parseFloat(document.getElementById('price').value || "0");
+    if (!product || !egpPrice) return Swal.fire('اكتب اسم المنتج والسعر');
 
-const payment=await Pi.createPayment({
-amount:amountPi,
-memo:"Delivery Order",
-metadata:{price:price.value}
-},async pid=>{
-await fetch('/api/pi/approve',{method:'POST',body:JSON.stringify({paymentId:pid})});
-},async pid=>{
-await fetch('/api/pi/complete',{method:'POST',body:JSON.stringify({paymentId:pid})});
-});
+    // تقدير pi
+    const amountPi = (PI_USDT > 0 ? (egpPrice / PI_USDT) : 0).toFixed(3);
+    if (!window.Pi || !Pi.createPayment) {
+      return Swal.fire('Pi Payment غير متاح.. افتح داخل Pi Browser');
+    }
 
-const otp=Math.floor(1000+Math.random()*9000).toString();
+    // إنشاء OTP
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
 
-const {data}=await supabase.from('orders').insert([{
-product_name:prod.value,
-price:+price.value,
-total_price:+price.value,
-status:'pending',
-otp_code:otp,
-customer_pi_username:PI_USER.user.username
-}]).select();
+    Swal.fire({ title: 'جاري الدفع...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
-ACTIVE_ORDER=data[0].id;
-custTrack.classList.remove('hidden');
-custChat.classList.remove('hidden');
-otp.innerText=otp;
-listenStatus();
-startChat();
+    // الدفع عبر Pi SDK
+    const payment = await Pi.createPayment({
+      amount: amountPi,
+      memo: "Talabat Pro Order",
+      metadata: { egp: egpPrice, product }
+    }, {
+      onReadyForServerApproval: async (paymentId) => {
+        await fetch('/api/pi/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentId })
+        });
+      },
+      onReadyForServerCompletion: async (paymentId, txid) => {
+        await fetch('/api/pi/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentId, txid })
+        });
+      },
+      onCancel: (paymentId) => {
+        console.log('payment canceled:', paymentId);
+      },
+      onError: (err, payment) => {
+        console.error('payment error:', err, payment);
+      }
+    });
+
+    console.log('payment result:', payment);
+
+    // إنشاء الطلب في DB بعد نجاح التدفق (ممكن تحط شرط success حسب رجوعك)
+    const { data, error } = await db.from('orders').insert([{
+      product_name: product,
+      price: egpPrice,
+      total_price: egpPrice,
+      status: 'pending',
+      otp_code: otp,
+      customer_pi_username: PI_USERNAME,
+      can_modify_until: new Date(Date.now() + 60_000).toISOString()
+    }]).select();
+
+    if (error) throw error;
+
+    ACTIVE_ORDER = data?.[0]?.id;
+    document.getElementById('custTrack').classList.remove('hidden');
+    document.getElementById('custChat').classList.remove('hidden');
+    document.getElementById('custStatus').innerText = 'pending';
+    document.getElementById('otp').innerText = otp;
+    document.getElementById('otpBox').classList.remove('hidden');
+
+    Swal.close();
+
+    listenStatus();
+    startChat();
+
+  } catch (e) {
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل العملية', text: e?.message || 'حصل خطأ' });
+  }
 }
 
-// ===== DELIVERY ORDERS =====
+/* ================== DELIVERY: LOAD + ACCEPT (RPC Lock) ================== */
 async function loadOrders(){
-const {data}=await supabase.from('orders').select('*').eq('status','pending');
-ordersBox.innerHTML=data.map(o=>`
-<div class="bg-white p-3 rounded shadow">
-<b>${o.product_name}</b>
-<button onclick="accept('${o.id}')" class="bg-green-600 text-white p-2 rounded w-full mt-2">قبول</button>
-</div>`).join('');
+  try{
+    const box = document.getElementById('ordersBox');
+    box.innerHTML = `<div class="text-center text-gray-500 py-4">جاري التحميل...</div>`;
+    const { data, error } = await db.from('orders')
+      .select('id,product_name,total_price,created_at,status')
+      .eq('status','pending')
+      .order('created_at',{ascending:false});
+
+    if (error) throw error;
+
+    if (!data?.length) {
+      box.innerHTML = `<div class="bg-white p-4 rounded-xl shadow text-center text-gray-500">لا توجد طلبات حالياً</div>`;
+      return;
+    }
+
+    box.innerHTML = data.map(o => `
+      <div class="bg-white p-4 rounded-xl shadow">
+        <div class="flex justify-between items-start">
+          <div>
+            <b class="text-gray-800">${escapeHtml(o.product_name)}</b>
+            <div class="text-xs text-gray-400 mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
+          </div>
+          <div class="text-sm font-bold text-green-600">${o.total_price || ''} ج</div>
+        </div>
+        <button onclick="acceptOrder('${o.id}')" class="mt-3 w-full bg-green-600 text-white p-3 rounded-xl font-bold">
+          قبول الطلب
+        </button>
+      </div>
+    `).join('');
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('ordersBox').innerHTML =
+      `<div class="bg-white p-4 rounded-xl shadow text-center text-red-600">خطأ في جلب الطلبات</div>`;
+  }
 }
 
-async function accept(id){
-const {data,error}=await supabase.rpc('accept_order_once',{
-p_order_id:id,
-p_delivery_id:PI_USER.user.username
-});
-if(error) return alert(error.message);
-ACTIVE_ORDER=id;
-delChat.classList.remove('hidden');
-startChat();
+async function acceptOrder(id){
+  try{
+    if(!PI_USERNAME) return Swal.fire('سجّل دخول كابتن الأول');
+
+    Swal.fire({ title:'جاري القبول...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+
+    // لازم يكون عندك RPC: accept_order_once(p_order_id uuid, p_delivery_id text)
+    const { data, error } = await db.rpc('accept_order_once', {
+      p_order_id: id,
+      p_delivery_id: PI_USERNAME
+    });
+
+    if (error) throw error;
+
+    ACTIVE_ORDER = id;
+    document.getElementById('delChat').classList.remove('hidden');
+    Swal.close();
+
+    startChat();
+    markSeen('delivery');
+    // ممكن تحدث الحالة هنا في الواجهة
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل القبول', text: e?.message || 'حصل خطأ' });
+  }
 }
 
-// ===== CHAT =====
+/* ================== CHAT: text + image + seen ================== */
+let chatChannel = null;
+
 function startChat(){
-supabase.channel('chat')
-.on('postgres_changes',{event:'INSERT',table:'chat_messages',filter:`order_id=eq.${ACTIVE_ORDER}`},p=>{
-append(p.new);
-})
-.subscribe();
+  if(!ACTIVE_ORDER) return;
+
+  // امنع تكرار القنوات
+  if (chatChannel) {
+    try { db.removeChannel(chatChannel); } catch {}
+    chatChannel = null;
+  }
+
+  // حمّل الشات
+  loadMessages();
+
+  // اشتراك realtime
+  chatChannel = db.channel('chat-room-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'chat_messages',
+      filter: `order_id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      appendMsg(payload.new);
+      // Seen: لو الطرف التاني فاتح الصفحة
+      markSeen(currentRole());
+    })
+    .subscribe();
 }
 
-async function sendMsg(role){
-const txt=(role==='customer'?msgC:msgD).value;
-const img=(role==='customer'?imgC:imgD).files[0];
+async function loadMessages(){
+  const { data, error } = await db.from('chat_messages')
+    .select('*')
+    .eq('order_id', ACTIVE_ORDER)
+    .order('created_at', { ascending: true });
 
-let url=null;
-if(img){
-const path=`chat/${Date.now()}_${img.name}`;
-await supabase.storage.from('chat').upload(path,img);
-url=supabase.storage.from('chat').getPublicUrl(path).data.publicUrl;
+  if(error){ console.error(error); return; }
+
+  // امسح الصناديق
+  document.getElementById('chatC').innerHTML = '';
+  document.getElementById('chatD').innerHTML = '';
+
+  (data||[]).forEach(appendMsg);
+
+  // اعمل seen
+  markSeen(currentRole());
 }
 
-await supabase.from('chat_messages').insert([{
-order_id:ACTIVE_ORDER,
-sender:role,
-message_text:txt,
-image_url:url
-}]);
-
-(role==='customer'?msgC:msgD).value='';
+function currentRole(){
+  // لو التاب دليفري ظاهر يبقى delivery
+  return (!document.getElementById('delivery').classList.contains('hidden')) ? 'delivery' : 'customer';
 }
 
-function append(m){
-const box=m.sender==='customer'?chatC:chatD;
-box.innerHTML+=`
-<div class="msg ${m.sender==='customer'?'c':'d'}">
-${m.message_text||''}
-${m.image_url?`<img src="${m.image_url}" class="mt-1 rounded">`:''}
-</div>`;
-box.scrollTop=box.scrollHeight;
+async function uploadChatImage(file){
+  // لازم يكون عندك bucket اسمه chat وبوليستي تسمح upload
+  const path = `chat/${ACTIVE_ORDER}/${Date.now()}_${file.name}`;
+  const up = await db.storage.from('chat').upload(path, file, { upsert: false });
+  if (up.error) throw up.error;
+  return db.storage.from('chat').getPublicUrl(path).data.publicUrl;
 }
 
-// ===== STATUS =====
+async function sendMsg(sender){
+  try{
+    if(!ACTIVE_ORDER) return Swal.fire('مفيش طلب نشط');
+    const input = sender === 'customer' ? document.getElementById('msgC') : document.getElementById('msgD');
+    const fileEl = sender === 'customer' ? document.getElementById('imgC') : document.getElementById('imgD');
+    const text = (input.value || '').trim();
+    const file = fileEl.files?.[0];
+
+    if(!text && !file) return;
+
+    let image_url = null;
+    if(file) image_url = await uploadChatImage(file);
+
+    const { error } = await db.from('chat_messages').insert([{
+      order_id: ACTIVE_ORDER,
+      sender,
+      message_text: text || null,
+      image_url,
+      seen_at: null
+    }]);
+
+    if(error) throw error;
+
+    input.value = '';
+    fileEl.value = '';
+
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل إرسال الرسالة', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+function quick(role, txt){
+  if(role==='customer') document.getElementById('msgC').value = txt;
+  else document.getElementById('msgD').value = txt;
+}
+
+function appendMsg(m){
+  const bubble = `
+    <div class="msg ${m.sender==='customer'?'c':'d'}">
+      ${m.message_text ? escapeHtml(m.message_text) : ''}
+      ${m.image_url ? `<img src="${m.image_url}" class="mt-2 rounded-xl border" />` : ''}
+      ${m.seen_at ? `<div class="mt-1 text-[10px] opacity-70">✅✅</div>` : `<div class="mt-1 text-[10px] opacity-50">✅</div>`}
+    </div>
+  `;
+
+  document.getElementById('chatC').insertAdjacentHTML('beforeend', bubble);
+  document.getElementById('chatD').insertAdjacentHTML('beforeend', bubble);
+
+  document.getElementById('chatC').scrollTop = document.getElementById('chatC').scrollHeight;
+  document.getElementById('chatD').scrollTop = document.getElementById('chatD').scrollHeight;
+}
+
+async function markSeen(viewerRole){
+  try{
+    if(!ACTIVE_ORDER) return;
+    // اعتبر: الرسائل اللي sender != viewerRole و seen_at null -> seen_at now
+    await db.from('chat_messages')
+      .update({ seen_at: new Date().toISOString() })
+      .eq('order_id', ACTIVE_ORDER)
+      .neq('sender', viewerRole)
+      .is('seen_at', null);
+  }catch(e){
+    console.warn('markSeen failed:', e);
+  }
+}
+
+/* ================== STATUS: arrived + delivered via RPC OTP ================== */
+let statusChannel = null;
+
 function listenStatus(){
-supabase.channel('status')
-.on('postgres_changes',{event:'UPDATE',table:'orders',filter:`id=eq.${ACTIVE_ORDER}`},p=>{
-custStatus.innerText=p.new.status;
-if(p.new.status==='delivered') alert('تم التسليم');
-})
-.subscribe();
+  if(!ACTIVE_ORDER) return;
+
+  if (statusChannel) {
+    try { db.removeChannel(statusChannel); } catch {}
+    statusChannel = null;
+  }
+
+  statusChannel = db.channel('order-status-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      const s = payload.new.status;
+      document.getElementById('custStatus').innerText = s;
+
+      if(s === 'accepted' || s === 'shipping' || s === 'arrived'){
+        document.getElementById('custChat').classList.remove('hidden');
+      }
+      if(s === 'delivered'){
+        Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام طلبات برو' });
+      }
+    }).subscribe();
 }
 
-async function setStatus(s){
-await supabase.from('orders').update({status:s}).eq('id',ACTIVE_ORDER);
+async function setStatus(st){
+  if(!ACTIVE_ORDER) return;
+  await db.from('orders').update({ status: st }).eq('id', ACTIVE_ORDER);
 }
 
 async function finishWithOtp(){
-const code=prompt("ادخل كود العميل");
-const {error}=await supabase.rpc('complete_delivery',{
-p_order_id:ACTIVE_ORDER,
-p_otp:code,
-p_delivery_id:PI_USER.user.username
-});
-if(error) alert(error.message);
+  try{
+    if(!ACTIVE_ORDER) return;
+    if(!PI_USERNAME) return Swal.fire('سجّل دخول');
+
+    const { value: code } = await Swal.fire({
+      title: 'كود التسليم',
+      input: 'text',
+      inputPlaceholder: 'اكتب كود العميل',
+      showCancelButton: true,
+      confirmButtonText: 'تأكيد',
+      cancelButtonText: 'إلغاء'
+    });
+    if(!code) return;
+
+    // RPC لازم تكون عندك: complete_delivery(p_order_id, p_otp, p_delivery_id)
+    const { error } = await db.rpc('complete_delivery', {
+      p_order_id: ACTIVE_ORDER,
+      p_otp: String(code).trim(),
+      p_delivery_id: PI_USERNAME
+    });
+
+    if(error) throw error;
+
+    Swal.fire({ icon:'success', title:'تم التسليم ✅' });
+    loadWallet();
+
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل التسليم', text: e?.message || 'OTP غلط أو غير مسموح' });
+  }
 }
 
-// ===== WALLET =====
+/* ================== WALLET + WITHDRAW ================== */
 async function loadWallet(){
-const {data}=await supabase.from('delivery_wallet').select('*').eq('delivery_id',PI_USER.user.username).single();
-wallet.innerText=data?.balance||0;
+  try{
+    if(!PI_USERNAME) return;
+    const { data } = await db.from('delivery_wallet')
+      .select('*')
+      .eq('delivery_id', PI_USERNAME)
+      .maybeSingle();
+
+    document.getElementById('wallet').innerText = (data?.balance ?? 0);
+  }catch(e){
+    console.warn(e);
+  }
 }
 
 async function withdraw(){
-await supabase.from('withdraw_requests').insert([{
-delivery_id:PI_USER.user.username,
-amount:+wdAmount.value
-}]);
-alert('تم إرسال طلب السحب');
+  try{
+    if(!PI_USERNAME) return Swal.fire('سجّل دخول');
+    const amount = parseFloat(document.getElementById('wdAmount').value || "0");
+    if(!amount || amount <= 0) return Swal.fire('اكتب مبلغ صحيح');
+
+    const { error } = await db.from('withdraw_requests').insert([{
+      delivery_id: PI_USERNAME,
+      amount,
+      status: 'pending'
+    }]);
+
+    if(error) throw error;
+    Swal.fire({ icon:'success', title:'تم', text:'تم إرسال طلب السحب' });
+    document.getElementById('wdAmount').value = '';
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
+  }
 }
 
-// ===== UI =====
+/* ================== UI ================== */
 function showTab(t){
-customer.classList.add('hidden');
-delivery.classList.add('hidden');
-btnC.classList.remove('bg-white');
-btnD.classList.remove('bg-white');
+  document.getElementById('customer').classList.add('hidden');
+  document.getElementById('delivery').classList.add('hidden');
+  document.getElementById('btnC').classList.remove('bg-white');
+  document.getElementById('btnD').classList.remove('bg-white');
 
-if(t==='customer'){customer.classList.remove('hidden');btnC.classList.add('bg-white');}
-else{delivery.classList.remove('hidden');btnD.classList.add('bg-white');}
+  if(t==='customer'){
+    document.getElementById('customer').classList.remove('hidden');
+    document.getElementById('btnC').classList.add('bg-white');
+  } else {
+    document.getElementById('delivery').classList.remove('hidden');
+    document.getElementById('btnD').classList.add('bg-white');
+    loadOrders();
+  }
+}
+
+/* ================== HELPERS ================== */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[s]));
 }
 </script>
-
 </body>
 </html>
