@@ -22,27 +22,27 @@
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap');
 
     :root{
-      --bg0:#07051a;     /* أغمق */
-      --bg1:#0b0720;     /* غامق */
-      --bg2:#120a2e;     /* أرجواني غامق */
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.08);
-      --stroke:rgba(255,255,255,.10);
+      --bg0:#1a0f2e;
+      --bg1:#2a1647;
+      --bg2:#f4f0ff;
+      --card:#ffffff;
+      --card2:#f7f3ff;
+      --stroke:rgba(124,58,237,.22);
 
-      --txt:#f3f4f6;
-      --muted:rgba(243,244,246,.70);
+      --txt:#000000;
+      --muted:rgba(0,0,0,.6);
 
-      --p:#6d28d9;
-      --p2:#8b5cf6;
+      --p:#5b21b6;
+      --p2:#7c3aed;
       --p3:#a78bfa;
 
-      --ok:#22c55e;
-      --bad:#ef4444;
-      --warn:#f59e0b;
-      --info:#60a5fa;
+      --ok:#16a34a;
+      --bad:#dc2626;
+      --warn:#d97706;
+      --info:#2563eb;
 
-      --shadow: 0 18px 70px rgba(0,0,0,.35);
-      --shadow2: 0 14px 35px rgba(0,0,0,.28);
+      --shadow: 0 18px 60px rgba(124,58,237,.15);
+      --shadow2: 0 12px 30px rgba(124,58,237,.12);
       --r1:22px;
       --r2:18px;
     }
@@ -53,9 +53,9 @@
       color:var(--txt);
       min-height:100vh;
       background:
-        radial-gradient(900px 500px at 10% -10%, rgba(109,40,217,.28), transparent 60%),
-        radial-gradient(900px 520px at 95% 0%, rgba(139,92,246,.18), transparent 60%),
-        radial-gradient(900px 520px at 70% 110%, rgba(167,139,250,.12), transparent 60%),
+        radial-gradient(900px 500px at 10% -10%, rgba(91,33,182,.35), transparent 60%),
+        radial-gradient(900px 520px at 95% 0%, rgba(124,58,237,.25), transparent 60%),
+        radial-gradient(900px 520px at 70% 110%, rgba(167,139,250,.18), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1) 45%, var(--bg2));
     }
 
@@ -64,26 +64,26 @@
 
     /* Glass / Cards */
     .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      background: var(--card);
       border: 1px solid var(--stroke);
       border-radius: var(--r1);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      transition: box-shadow .2s ease;
     }
     .soft{
-      background: rgba(255,255,255,.07);
-      border: 1px solid rgba(255,255,255,.10);
+      background: var(--card2);
+      border: 1px solid rgba(124,58,237,.12);
       border-radius: var(--r2);
       box-shadow: var(--shadow2);
+      transition: box-shadow .2s ease;
     }
 
     /* Talabat-like top bar */
     .topBar{
-      background: linear-gradient(180deg, rgba(7,5,26,.85), rgba(7,5,26,.50));
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(248,246,255,.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(124,58,237,.12);
     }
 
     /* Brand badge */
@@ -91,9 +91,9 @@
       width: 44px; height: 44px;
       border-radius: 18px;
       display:flex; align-items:center; justify-content:center;
-      background: radial-gradient(16px 16px at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,.06));
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow: 0 16px 40px rgba(0,0,0,.30);
+      background: radial-gradient(16px 16px at 30% 30%, rgba(91,33,182,.5), rgba(124,58,237,.3));
+      border:1px solid rgba(91,33,182,.4);
+      box-shadow: 0 16px 40px rgba(91,33,182,.3);
     }
 
     /* Chips */
@@ -101,18 +101,19 @@
       font-size:12px;
       padding:8px 10px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
+      border:1px solid rgba(91,33,182,.2);
+      background: rgba(91,33,182,.08);
       color:var(--txt);
       display:inline-flex;
       align-items:center;
       gap:8px;
       white-space:nowrap;
+      transition: box-shadow .2s ease;
     }
-    .chipP{ background: rgba(109,40,217,.18); border-color: rgba(109,40,217,.38); }
-    .chipB{ background: rgba(96,165,250,.14); border-color: rgba(96,165,250,.35); }
-    .chipG{ background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); }
-    .chipS{ background: rgba(255,255,255,.05); }
+    .chipP{ background: rgba(91,33,182,.16); border-color: rgba(91,33,182,.35); }
+    .chipB{ background: rgba(124,58,237,.18); border-color: rgba(124,58,237,.35); }
+    .chipG{ background: rgba(22,163,74,.12); border-color: rgba(22,163,74,.35); }
+    .chipS{ background: rgba(255,255,255,.7); }
 
     /* Buttons */
     .btn{
@@ -121,21 +122,21 @@
       font-weight:900;
       transition:.15s;
       user-select:none;
-      border:1px solid rgba(255,255,255,.12);
+      border:1px solid rgba(124,58,237,.2);
       display:inline-flex; align-items:center; justify-content:center; gap:10px;
     }
     .btn:active{transform:scale(.98)}
     .btnA{
-      background: linear-gradient(135deg, rgba(109,40,217,.95), rgba(139,92,246,.78));
-      border-color: rgba(109,40,217,.40);
+      background: linear-gradient(135deg, rgba(91,33,182,.95), rgba(124,58,237,.85));
+      border-color: rgba(91,33,182,.4);
       color:#fff;
-      box-shadow: 0 16px 45px rgba(109,40,217,.22);
+      box-shadow: 0 16px 45px rgba(91,33,182,.25);
     }
     .btnP{
-      background: linear-gradient(135deg, rgba(139,92,246,.95), rgba(109,40,217,.78));
-      border-color: rgba(139,92,246,.40);
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(91,33,182,.85));
+      border-color: rgba(124,58,237,.4);
       color:#fff;
-      box-shadow: 0 16px 45px rgba(139,92,246,.18);
+      box-shadow: 0 16px 45px rgba(124,58,237,.2);
     }
     .btnG{
       background: linear-gradient(135deg, rgba(34,197,94,.92), rgba(22,163,74,.75));
@@ -148,16 +149,16 @@
       color:#fff;
     }
     .btnS{
-      background: rgba(255,255,255,.06);
-      border-color: rgba(255,255,255,.12);
+      background: rgba(249,247,255,.95);
+      border-color: rgba(124,58,237,.2);
       color: var(--txt);
     }
 
     /* Inputs */
     input,textarea,select{
       width: 100%;
-      background: rgba(255,255,255,.06) !important;
-      border: 1px solid rgba(255,255,255,.12) !important;
+      background: rgba(255,255,255,.9) !important;
+      border: 1px solid rgba(124,58,237,.18) !important;
       color: var(--txt) !important;
       border-radius: 16px !important;
       outline: none !important;
@@ -168,14 +169,14 @@
       color: rgba(243,244,246,.55);
     }
     input:focus,textarea:focus,select:focus{
-      border-color: rgba(139,92,246,.60) !important;
-      box-shadow: 0 0 0 4px rgba(109,40,217,.18);
+      border-color: rgba(124,58,237,.6) !important;
+      box-shadow: 0 0 0 4px rgba(124,58,237,.15);
     }
     textarea{min-height:96px}
 
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .tiny{font-size:11px;color:rgba(243,244,246,.65)}
-    .muted{color:rgba(243,244,246,.72)}
+    .tiny{font-size:11px;color:rgba(0,0,0,.55)}
+    .muted{color:rgba(0,0,0,.6)}
 
     /* Section Title */
     .secTitle{
@@ -185,22 +186,114 @@
       font-size:14px;
       letter-spacing:.2px;
     }
+    .sectionHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .sectionHeader h3{
+      font-size:15px;
+      font-weight:800;
+    }
+    .sectionSub{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .pageShell{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .pageSection{
+      padding:16px;
+    }
+    .statsGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    .statCard{
+      padding:12px;
+      border-radius:16px;
+      background: rgba(255,255,255,.9);
+      border:1px solid rgba(124,58,237,.12);
+      text-align:center;
+    }
+    .statCard b{
+      display:block;
+      font-size:16px;
+    }
+    .featureGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    .infoCard{
+      padding:14px;
+      border-radius:16px;
+      background: rgba(255,255,255,.9);
+      border:1px dashed rgba(124,58,237,.2);
+    }
+    .listCard{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(124,58,237,.12);
+      background: rgba(255,255,255,.9);
+    }
+    .listIcon{
+      width:36px;
+      height:36px;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(124,58,237,.08);
+      border:1px solid rgba(124,58,237,.18);
+    }
+    .ratingStars{
+      display:flex;
+      gap:8px;
+      justify-content:center;
+    }
+    .ratingStar{
+      width:40px;
+      height:40px;
+      border-radius:14px;
+      border:1px solid rgba(124,58,237,.2);
+      background: #fff;
+      color: rgba(124,58,237,.6);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+    }
+    .ratingStar.active{
+      background: rgba(124,58,237,.12);
+      color: rgba(124,58,237,1);
+      border-color: rgba(124,58,237,.35);
+    }
 
     /* Talabat-like feature cards */
     .miniCard{
-      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.06));
-      border: 1px solid rgba(255,255,255,.10);
+      background: var(--card2);
+      border: 1px solid rgba(124,58,237,.15);
       border-radius: 18px;
       padding: 14px;
-      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+      box-shadow: 0 12px 25px rgba(124,58,237,.12);
+      transition: box-shadow .2s ease;
     }
     .miniIcon{
       width: 40px; height: 40px;
       border-radius: 16px;
       display:flex; align-items:center; justify-content:center;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+      background: rgba(124,58,237,.1);
+      border:1px solid rgba(124,58,237,.18);
+      box-shadow: 0 12px 28px rgba(124,58,237,.18);
     }
 
     /* Chat bubbles */
@@ -210,15 +303,15 @@
       border-radius:18px;
       font-size:13px;
       word-break:break-word;
-      border:1px solid rgba(255,255,255,.12);
+      border:1px solid rgba(124,58,237,.15);
       animation: pop .2s ease-in-out;
     }
     @keyframes pop{
       from{transform:scale(.96);opacity:.5}
       to{transform:scale(1);opacity:1}
     }
-    .c{ background: rgba(109,40,217,.22); color:#fff; align-self:flex-start; }
-    .d{ background: rgba(255,255,255,.08); color: var(--txt); align-self:flex-end; }
+    .c{ background: rgba(124,58,237,.18); color: var(--txt); align-self:flex-start; }
+    .d{ background: rgba(255,255,255,.9); color: var(--txt); align-self:flex-end; }
 
     /* Bottom nav - app style */
     .bottomNav{
@@ -233,11 +326,11 @@
       margin: 0 auto;
       padding: 10px;
       border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: 0 18px 60px rgba(0,0,0,.35);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(249,247,255,.98);
+      border:1px solid rgba(124,58,237,.12);
+      box-shadow: 0 18px 40px rgba(91,33,182,.18);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display:flex;
       gap:10px;
     }
@@ -245,10 +338,10 @@
     /* Small tweaks */
     .divider{
       height:1px;
-      background: rgba(255,255,255,.08);
+      background: rgba(124,58,237,.12);
       margin: 10px 0;
     }
-    a.linkP{ color: rgba(167,139,250,1); text-decoration: underline; }
+    a.linkP{ color: rgba(124,58,237,1); text-decoration: underline; }
     /* ✅ يمنع أي عنصر يطلع برّه الكارت */
 .miniCard, .soft, .glass { overflow: hidden; }
 
@@ -274,10 +367,38 @@
   text-overflow:ellipsis;/* … */
   white-space:nowrap;    /* سطر واحد */
   padding:6px 10px;
-  border:1px solid rgba(255,255,255,.12);
+  border:1px solid rgba(124,58,237,.15);
   border-radius:12px;
-  background: rgba(255,255,255,.06);
+  background: rgba(255,255,255,.9);
 }
+
+    /* SweetAlert */
+    .swal2-popup{
+      background: #ffffff !important;
+      color: var(--txt) !important;
+      border: 1px solid rgba(124,58,237,.18) !important;
+      border-radius: 20px !important;
+      box-shadow: 0 18px 40px rgba(124,58,237,.18) !important;
+    }
+    .swal2-title{
+      color: var(--txt) !important;
+    }
+    .swal2-html-container{
+      color: var(--muted) !important;
+    }
+    .swal2-styled.swal2-confirm{
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(139,92,246,.85)) !important;
+      border: none !important;
+      border-radius: 14px !important;
+      box-shadow: 0 12px 25px rgba(124,58,237,.2) !important;
+    }
+    .swal2-styled.swal2-cancel{
+      background: rgba(255,255,255,.9) !important;
+      color: var(--txt) !important;
+      border: 1px solid rgba(124,58,237,.2) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 10px 20px rgba(124,58,237,.12) !important;
+    }
   </style>
 </head>
 
@@ -332,11 +453,11 @@
       </button>
     </div>
 
-    <!-- ================= HOME TAB ================= -->
-    <div id="homeTab" class="space-y-3">
+<!-- ================= HOME TAB ================= -->
+<div id="homeTab" class="pageShell">
 
       <!-- STATUS + RATES -->
-      <section class="glass p-4 space-y-3">
+  <section class="glass pageSection space-y-3">
         <div class="secTitle">
           <b><i class="fa-solid fa-signal mr-1"></i> الحالة والأسعار</b>
           <span class="chip chipS"><i class="fa-regular fa-clock"></i> تحديث تلقائي</span>
@@ -382,7 +503,7 @@
 
       <!-- ================= CUSTOMER (HOME) ================= -->
       <div id="customerHome" class="hidden space-y-3">
-        <section class="glass p-4 space-y-3">
+    <section class="glass pageSection space-y-3">
           <div class="secTitle">
             <b><i class="fa-solid fa-bag-shopping mr-1"></i> طلب جديد</b>
             <span class="chip chipP"><i class="fa-solid fa-credit-card"></i> Pi Pay</span>
@@ -469,11 +590,59 @@
             بالضغط على “ادفع” أنت توافق على إنشاء الطلب والبدء في التنفيذ.
           </div>
         </section>
+
+        <section class="glass pageSection space-y-3">
+          <div class="sectionHeader">
+            <div>
+              <h3>خدمات QuickCart</h3>
+              <div class="sectionSub">اختصر وقتك مع أقسام مخصصة لكل احتياج.</div>
+            </div>
+            <span class="chip chipS"><i class="fa-solid fa-layer-group"></i> أقسام</span>
+          </div>
+          <div class="featureGrid">
+            <div class="miniCard">
+              <div class="flex items-center gap-2">
+                <span class="miniIcon"><i class="fa-solid fa-burger"></i></span>
+                <div>
+                  <div class="text-sm font-bold">مطاعم قريبة</div>
+                  <div class="tiny muted">اختيارات سريعة لعشاء اليوم</div>
+                </div>
+              </div>
+            </div>
+            <div class="miniCard">
+              <div class="flex items-center gap-2">
+                <span class="miniIcon"><i class="fa-solid fa-pills"></i></span>
+                <div>
+                  <div class="text-sm font-bold">صيدليات</div>
+                  <div class="tiny muted">أدوية عاجلة وتوصيل آمن</div>
+                </div>
+              </div>
+            </div>
+            <div class="miniCard">
+              <div class="flex items-center gap-2">
+                <span class="miniIcon"><i class="fa-solid fa-cart-shopping"></i></span>
+                <div>
+                  <div class="text-sm font-bold">سوبر ماركت</div>
+                  <div class="tiny muted">طلبات البيت في دقائق</div>
+                </div>
+              </div>
+            </div>
+            <div class="miniCard">
+              <div class="flex items-center gap-2">
+                <span class="miniIcon"><i class="fa-solid fa-bolt"></i></span>
+                <div>
+                  <div class="text-sm font-bold">طلبات فورية</div>
+                  <div class="tiny muted">توصيل سريع مع كابتن قريب</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- ================= DELIVERY (HOME) ================= -->
       <div id="deliveryHome" class="hidden space-y-3">
-        <section class="glass p-4 space-y-3">
+    <section class="glass pageSection space-y-3">
           <div class="secTitle">
             <b><i class="fa-solid fa-motorcycle mr-1"></i> لوحة الدليفري</b>
             <button onclick="loadOrders()" class="chip chipS">
@@ -501,16 +670,39 @@
         </section>
 
         <div id="ordersBox" class="space-y-2"></div>
+        <div class="glass pageSection space-y-3">
+          <div class="sectionHeader">
+            <div>
+              <h3>مستوى الأداء</h3>
+              <div class="sectionSub">إحصائيات سريعة للكابتن.</div>
+            </div>
+            <span class="chip chipS"><i class="fa-solid fa-chart-line"></i> اليوم</span>
+          </div>
+          <div class="statsGrid">
+            <div class="statCard">
+              <b id="statOrders">0</b>
+              <span class="tiny muted">طلبات مكتملة</span>
+            </div>
+            <div class="statCard">
+              <b id="statRating">4.9</b>
+              <span class="tiny muted">تقييم متوسط</span>
+            </div>
+            <div class="statCard">
+              <b id="statZone">5km</b>
+              <span class="tiny muted">نطاق التوصيل</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- ================= TRACK TAB ================= -->
-    <div id="trackTab" class="hidden space-y-3">
+    <div id="trackTab" class="hidden pageShell">
 
       <!-- ================= CUSTOMER (TRACK) ================= -->
       <div id="customerTrackTab" class="hidden space-y-3">
         <!-- TRACK -->
-        <section id="custTrack" class="hidden glass p-4 space-y-2">
+        <section id="custTrack" class="hidden glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-route mr-1"></i> متابعة الطلب</b>
             <span class="chip chipP"><i class="fa-solid fa-circle-info"></i> Live</span>
@@ -541,8 +733,31 @@
           </div>
         </section>
 
+        <!-- RATING -->
+        <section id="custRating" class="hidden glass pageSection space-y-3">
+          <div class="secTitle">
+            <b><i class="fa-solid fa-star mr-1"></i> تقييم الكابتن</b>
+            <span class="chip chipS">بعد التسليم</span>
+          </div>
+          <div class="miniCard space-y-3 text-center">
+            <div class="text-sm">قيّم تجربة التوصيل من 1 إلى 5 نجوم.</div>
+            <div class="ratingStars" id="ratingStars">
+              <button type="button" class="ratingStar" data-rating="1"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="2"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="3"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="4"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="5"><i class="fa-solid fa-star"></i></button>
+            </div>
+            <textarea id="ratingNote" placeholder="ملاحظة اختيارية للدليفري"></textarea>
+            <button id="ratingSubmit" class="btn btnA w-full" onclick="submitRating()">
+              إرسال التقييم
+            </button>
+            <div id="ratingThanks" class="tiny muted hidden">تم إرسال التقييم، شكرًا لك.</div>
+          </div>
+        </section>
+
         <!-- CHAT -->
-        <section id="custChat" class="hidden glass p-4 space-y-2">
+        <section id="custChat" class="hidden glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-comments mr-1"></i> الشات (لحظي)</b>
             <div class="flex gap-2">
@@ -572,7 +787,7 @@
         </section>
 
         <!-- CUSTOMER HISTORY -->
-        <section class="glass p-4 space-y-2">
+    <section class="glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي</b>
             <button class="chip chipS" onclick="loadCustomerHistory()">
@@ -587,7 +802,7 @@
       <div id="deliveryTrackTab" class="hidden space-y-3">
 
         <!-- DELIVERY CHAT -->
-        <section id="delChat" class="hidden glass p-4 space-y-2">
+    <section id="delChat" class="hidden glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-headset mr-1"></i> شات الطلب (لحظي)</b>
             <div class="flex gap-2">
@@ -643,7 +858,7 @@
         </section>
 
         <!-- WALLET + WITHDRAW -->
-        <section class="glass p-4 space-y-2">
+    <section class="glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-wallet mr-1"></i> أرباحي المتاحة</b>
             <span class="chip chipP"><i class="fa-brands fa-pied-piper-alt"></i> Pi</span>
@@ -654,7 +869,7 @@
               الأرباح المتاحة:
               <b class="mono text-purple-300"><span id="walletPi">0.000000</span> Pi</b>
             </div>
-            <div class="tiny muted mt-1">السحب يتم مراجعته يدويًا من الإدارة</div>
+            <div class="tiny muted mt-1">السحب يتم مباشرة إلى محفظتك بعد التأكيد.</div>
           </div>
 
           <input id="wdAmountPi" type="number" step="0.000001" placeholder="كم Pi هتسحب؟" />
@@ -664,11 +879,11 @@
             <i class="fa-solid fa-hand-holding-dollar"></i>
             طلب سحب Pi
           </button>
-          <div class="tiny muted">سيتم مراجعة الطلب يدويًا من الإدارة قبل التحويل</div>
+          <div class="tiny muted">تأكد من صحة العنوان قبل الإرسال.</div>
         </section>
 
         <!-- WITHDRAW HISTORY -->
-        <section class="glass p-4 space-y-2">
+    <section class="glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-list mr-1"></i> سجل السحب</b>
             <button class="chip chipS" onclick="loadWithdrawHistory()">
@@ -679,7 +894,7 @@
         </section>
 
         <!-- DELIVERY HISTORY -->
-        <section class="glass p-4 space-y-2">
+    <section class="glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي كدليفري</b>
             <button class="chip chipS" onclick="loadDeliveryHistory()">
@@ -689,6 +904,102 @@
           <div id="delHistory" class="space-y-2 text-sm"></div>
         </section>
       </div>
+    </div>
+
+    <!-- ================= DISCOVER TAB ================= -->
+    <div id="discoverTab" class="hidden pageShell">
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>لماذا QuickCart؟</h3>
+            <div class="sectionSub">واجهة مرتبة لكل احتياجاتك اليومية.</div>
+          </div>
+          <span class="chip chipP"><i class="fa-solid fa-star"></i> مميز</span>
+        </div>
+        <div class="infoCard">
+          <div class="text-sm">تجربة طلب سلسة مع متابعة لحظية، شات مباشر، ودفع آمن بـ Pi.</div>
+        </div>
+        <div class="featureGrid">
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-shield-halved"></i></span>
+            <div>
+              <div class="text-sm font-bold">حماية الطلب</div>
+              <div class="tiny muted">كود تسليم سري لضمان الأمان.</div>
+            </div>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-comments"></i></span>
+            <div>
+              <div class="text-sm font-bold">تواصل فوري</div>
+              <div class="tiny muted">شات نصي وصور مع الكابتن.</div>
+            </div>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-location-dot"></i></span>
+            <div>
+              <div class="text-sm font-bold">تتبع مباشر</div>
+              <div class="tiny muted">عرض موقع الطلب على الخريطة.</div>
+            </div>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-wallet"></i></span>
+            <div>
+              <div class="text-sm font-bold">سحب مباشر</div>
+              <div class="tiny muted">تحويل أرباحك سريعًا لمحفظتك.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>خطوات الاستخدام</h3>
+            <div class="sectionSub">ثلاث خطوات بسيطة للطلب.</div>
+          </div>
+          <span class="chip chipS"><i class="fa-solid fa-route"></i> دليل سريع</span>
+        </div>
+        <div class="space-y-2">
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-user"></i></span>
+            <div>
+              <div class="text-sm font-bold">سجّل الدخول</div>
+              <div class="tiny muted">استخدم Pi Browser للوصول الكامل للدفع.</div>
+            </div>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-bag-shopping"></i></span>
+            <div>
+              <div class="text-sm font-bold">أنشئ طلبك</div>
+              <div class="tiny muted">اكتب تفاصيل المنتج وحدد موقعك.</div>
+            </div>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-truck-fast"></i></span>
+            <div>
+              <div class="text-sm font-bold">تابع التسليم</div>
+              <div class="tiny muted">شاهد الحالة وتواصل مع الكابتن.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>الدعم والمساعدة</h3>
+            <div class="sectionSub">جاهزين نساعدك في أي وقت.</div>
+          </div>
+          <span class="chip chipB"><i class="fa-solid fa-headset"></i> دعم</span>
+        </div>
+        <div class="miniCard space-y-2">
+          <div class="text-sm">تواصل معنا عبر البريد أو من خلال الشات داخل الطلب.</div>
+          <div class="flex flex-wrap gap-2">
+            <span class="chip chipS"><i class="fa-solid fa-envelope"></i> support@quickcart.app</span>
+            <span class="chip chipS"><i class="fa-solid fa-phone"></i> 15777</span>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -700,6 +1011,9 @@
       </button>
       <button id="navTrack" onclick="setMainTab('track')" class="btn btnS flex-1">
         <i class="fa-solid fa-route"></i> متابعة
+      </button>
+      <button id="navDiscover" onclick="setMainTab('discover')" class="btn btnS flex-1">
+        <i class="fa-solid fa-compass"></i> المزيد
       </button>
     </div>
   </div>
@@ -719,12 +1033,14 @@ const PLATFORM_FEE_EGP = 10;
 /* ================== GLOBALS ================== */
 let PI_USER = null;
 let PI_USERNAME = null;
+let PI_UID = null;
 let ACTIVE_ORDER = null;
 let CUSTOMER_LOCATION = null;
 let DELIVERY_LOCATION = null;
 let HAS_LOCATION_COLUMNS = true;
 let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
+let ACTIVE_RATING = 0;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -742,6 +1058,7 @@ function detectPi() {
 
 document.addEventListener('DOMContentLoaded', () => {
   detectPi();
+  initRatingStars();
   refreshRates();
   setInterval(fetchPiFromOKX, 30000);
   setInterval(fetchUsdEgp, 60000);
@@ -893,10 +1210,12 @@ async function piLogin() {
     const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
 
     const username = auth?.user?.username || auth?.username || null;
+    const uid = auth?.user?.uid || auth?.user?.id || auth?.uid || null;
     if (!username) throw new Error('لم يتم استلام username من Pi');
 
     PI_USER = auth;
     PI_USERNAME = username;
+    PI_UID = uid || username;
 
     document.getElementById('custName').innerText = PI_USERNAME;
     document.getElementById('delName').innerText = PI_USERNAME;
@@ -933,6 +1252,7 @@ async function piLogin() {
 
 function devLogin(){
   PI_USERNAME = 'dev_user_' + Math.floor(Math.random()*9999);
+  PI_UID = PI_USERNAME;
 
   document.getElementById('custName').innerText = PI_USERNAME;
   document.getElementById('delName').innerText = PI_USERNAME;
@@ -1007,7 +1327,7 @@ async function restoreActiveOrder(){
 }
 
 async function findActiveOrderForCustomer(orderId){
-  const activeStatuses = ['pending', 'accepted', 'shipping', 'arrived'];
+  const activeStatuses = ['pending', 'accepted', 'shipping', 'arrived', 'delivered'];
 
   if (orderId) {
     const { data } = await db.from('orders')
@@ -1057,6 +1377,11 @@ async function applyCustomerOrderState(order){
   document.getElementById('otp').innerText = order.otp_code || '';
   document.getElementById('otpBox').classList.toggle('hidden', !order.otp_code);
   document.getElementById('custAddressView').innerText = order.customer_address || '—';
+  if (order.status === 'delivered') {
+    await loadRatingState(order);
+  } else {
+    hideRating();
+  }
   const trackLink = document.getElementById('custTrackMapLink');
   if (typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
     trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
@@ -1064,6 +1389,94 @@ async function applyCustomerOrderState(order){
     trackLink.onclick = () => openMapUrl(trackLink.href);
   } else {
     trackLink.classList.add('hidden');
+  }
+}
+
+function hideRating(){
+  document.getElementById('custRating').classList.add('hidden');
+  document.getElementById('ratingThanks').classList.add('hidden');
+  document.getElementById('ratingSubmit').disabled = false;
+  document.getElementById('ratingSubmit').classList.remove('btnS');
+  document.getElementById('ratingSubmit').classList.add('btnA');
+  document.getElementById('ratingNote').value = '';
+  setRating(0);
+}
+
+function setRating(value){
+  ACTIVE_RATING = value;
+  const stars = document.querySelectorAll('#ratingStars .ratingStar');
+  stars.forEach((star) => {
+    const rating = Number(star.dataset.rating);
+    star.classList.toggle('active', rating <= value);
+  });
+}
+
+function initRatingStars(){
+  const stars = document.querySelectorAll('#ratingStars .ratingStar');
+  stars.forEach((star) => {
+    star.addEventListener('click', () => {
+      const rating = Number(star.dataset.rating);
+      setRating(rating);
+    });
+  });
+}
+
+async function loadRatingState(order){
+  if (!order?.id || !order?.delivery_id) return;
+  document.getElementById('custRating').classList.remove('hidden');
+  try {
+    const { data, error } = await db.from('delivery_ratings')
+      .select('id,rating')
+      .eq('order_id', order.id)
+      .eq('customer_pi_username', PI_USERNAME)
+      .limit(1);
+    if (error) throw error;
+    if (data && data.length) {
+      setRating(Number(data[0].rating) || 0);
+      document.getElementById('ratingThanks').classList.remove('hidden');
+      const submit = document.getElementById('ratingSubmit');
+      submit.disabled = true;
+      submit.classList.remove('btnA');
+      submit.classList.add('btnS');
+    } else {
+      document.getElementById('ratingThanks').classList.add('hidden');
+      document.getElementById('ratingSubmit').disabled = false;
+    }
+  } catch (e) {
+    console.warn('loadRatingState failed', e);
+  }
+}
+
+async function submitRating(){
+  try{
+    if (!ACTIVE_ORDER) return;
+    if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
+    if (ACTIVE_RATING < 1) return Swal.fire('اختار تقييم من 1 إلى 5');
+
+    const note = document.getElementById('ratingNote').value.trim();
+    const { data: order, error: orderErr } = await db.from('orders')
+      .select('delivery_id')
+      .eq('id', ACTIVE_ORDER)
+      .single();
+    if (orderErr) throw orderErr;
+
+    const { error } = await db.from('delivery_ratings').insert([{
+      order_id: ACTIVE_ORDER,
+      delivery_id: order?.delivery_id || null,
+      customer_pi_username: PI_USERNAME,
+      rating: ACTIVE_RATING,
+      comment: note || null
+    }]);
+    if (error) throw error;
+
+    document.getElementById('ratingThanks').classList.remove('hidden');
+    document.getElementById('ratingSubmit').disabled = true;
+    document.getElementById('ratingSubmit').classList.remove('btnA');
+    document.getElementById('ratingSubmit').classList.add('btnS');
+    Swal.fire({ icon:'success', title:'تم التقييم ✅' });
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
   }
 }
 
@@ -1238,6 +1651,20 @@ async function payAndCreate() {
     trackLink.onclick = () => openMapUrl(trackLink.href);
 
     Swal.close();
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'تم تأكيد الطلب ✅',
+      html: `
+        <div style="text-align:right">
+          <div>رقم الطلب: <b>${data?.[0]?.id || '—'}</b></div>
+          <div>كود التسليم: <b class="mono">${otp}</b></div>
+          <div style="margin-top:6px;font-size:12px;opacity:.75">
+            احتفظ بالكود لإكمال التسليم.
+          </div>
+        </div>
+      `
+    });
 
     listenStatus();
     startChat();
@@ -1572,9 +1999,8 @@ function listenStatus(){
       if(s === 'delivered'){
         Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام QuickCart' });
         loadCustomerHistory();
-        document.getElementById('custTrack').classList.add('hidden');
         document.getElementById('custChat').classList.add('hidden');
-        setActiveOrderId(null);
+        loadRatingState(payload.new);
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
           statusChannel = null;
@@ -1636,7 +2062,7 @@ async function finishWithOtp(){
 /* ================== WALLET (Pi) ================== */
 /**
  * ✅ أولاً: delivery_wallet.balance_pi
- * ✅ خصم المحجوز والمدفوع: withdraw_requests (approved + paid)
+ * ✅ خصم المسحوبات: withdrawals
  * ✅ fallback: حساب أرباح الدليفري من orders delivered (total_pi - platform_fee_pi)
  */
 function toNum(v) {
@@ -1668,19 +2094,18 @@ function calcDeliveryEarningsPi(order) {
   return 0;
 }
 
-async function getReservedWithdrawSum() {
-  // المحجوز + المدفوع
-  const { data, error } = await db.from('withdraw_requests')
-    .select('amount_pi,status')
-    .eq('delivery_id', PI_USERNAME)
-    .in('status', ['approved', 'paid'])
+async function getWithdrawnSum() {
+  if (!PI_UID) return 0;
+  const { data, error } = await db.from('withdrawals')
+    .select('amount')
+    .eq('pi_user_id', PI_UID)
     .limit(1000);
   
   if (error) throw error;
   
   let sum = 0;
   (data || []).forEach(w => {
-    sum += toNum(w.amount_pi);
+    sum += toNum(w.amount);
   });
   return sum;
 }
@@ -1689,8 +2114,8 @@ async function loadWalletPi() {
   try {
     if (!PI_USERNAME) return;
     
-    // 1) خصم المحجوز/المدفوع
-    const reservedSum = await getReservedWithdrawSum();
+    // 1) خصم المسحوبات
+    const withdrawnSum = await getWithdrawnSum();
     
     // 2) محاولة من delivery_wallet
     try {
@@ -1700,7 +2125,7 @@ async function loadWalletPi() {
         .maybeSingle();
       
       if (!error && data && typeof data.balance_pi !== 'undefined') {
-        const available = Math.max(0, toNum(data.balance_pi) - reservedSum);
+        const available = Math.max(0, toNum(data.balance_pi) - withdrawnSum);
         document.getElementById('walletPi').innerText = available.toFixed(6);
         return;
       }
@@ -1722,7 +2147,7 @@ async function loadWalletPi() {
       earned += calcDeliveryEarningsPi(o);
     });
     
-    const available = Math.max(0, earned - reservedSum);
+    const available = Math.max(0, earned - withdrawnSum);
     document.getElementById('walletPi').innerText = available.toFixed(6);
     
   } catch (e) {
@@ -1734,16 +2159,13 @@ async function loadWalletPi() {
 /* ================== WITHDRAW ================== */
 /**
  * ✅ Flow الصحيح:
- * 1) Insert withdraw_requests (pending) -> ناخد requestId
- * 2) Call /api/withdraw { requestId, deliveryId, username, amount, walletAddress }
- * 3) لو نجح: Update الطلب paid + txid (السيرفر بيعملها)
- * 4) لو فشل: نخلي الطلب pending + note بالسبب
+ * 1) Call /api/withdraw -> Netlify function (withdraw.js)
+ * 2) لو نجح: يظهر TX مباشرة
  */
 async function withdrawPi() {
-  let requestId = null;
-  
   try {
     if (!PI_USERNAME) return Swal.fire('سجّل دخول');
+    if (!PI_UID) return Swal.fire('تعذر قراءة هوية Pi، جرّب تسجيل الدخول مرة أخرى');
     
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
@@ -1774,53 +2196,26 @@ async function withdrawPi() {
     });
     if (!ok.isConfirmed) return;
     
-    Swal.fire({ title: 'جاري تجهيز طلب السحب...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-    
-    // 1) Insert pending request
-    const { data: ins, error: insErr } = await db.from('withdraw_requests')
-      .insert([{
-        delivery_id: PI_USERNAME,
-        amount_pi: amount,
-        wallet_address: walletAddress,
-        status: 'pending',
-        note: null,
-        txid: null
-      }])
-      .select('id')
-      .single();
-    
-    if (insErr) throw insErr;
-    requestId = ins?.id;
-    
     Swal.fire({ title: 'جاري تنفيذ التحويل على الشبكة...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-    
-    // 2) Call server function (Netlify redirect -> /.netlify/functions/withdraw)
+      
+    // Call server function (Netlify redirect -> /.netlify/functions/withdraw)
     const res = await fetch('/api/withdraw', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        requestId,
-        deliveryId: PI_USERNAME,
+        uid: PI_UID,
         username: PI_USERNAME,
         amount,
         walletAddress
       })
     });
-    
+      
     const out = await res.json().catch(() => ({}));
     if (!res.ok || !out?.success) {
       const msg = out?.error || out?.details || 'فشل السحب';
-      // 3) سجّل سبب الفشل في الطلب pending
-      try {
-        await db.from('withdraw_requests')
-          .update({ note: msg })
-          .eq('id', requestId)
-          .eq('delivery_id', PI_USERNAME);
-      } catch {}
       throw new Error(msg);
     }
-    
-    // السيرفر بيعمل UPDATE status=paid + txid
+      
     Swal.fire({ icon: 'success', title: 'تم السحب ✅', text: `TX: ${out.txid}` });
     
     document.getElementById('wdAmountPi').value = '';
@@ -1831,7 +2226,7 @@ async function withdrawPi() {
     
   } catch (e) {
     console.error(e);
-    Swal.fire({ icon: 'error', title: 'فشل طلب السحب', text: e?.message || 'حصل خwithdrawPi()طأ' });
+    Swal.fire({ icon: 'error', title: 'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
   }
 }
 
@@ -1839,15 +2234,16 @@ async function withdrawPi() {
 async function loadWithdrawHistory() {
   try {
     if (!PI_USERNAME) return;
-    
+    if (!PI_UID) return;
+      
     const box = document.getElementById('wdHistory');
     if (!box) return;
-    
+      
     box.innerHTML = `<div class="tiny muted">جاري التحميل...</div>`;
-    
-    const { data, error } = await db.from('withdraw_requests')
-      .select('id,amount_pi,wallet_address,status,created_at,note,txid')
-      .eq('delivery_id', PI_USERNAME)
+      
+    const { data, error } = await db.from('withdrawals')
+      .select('id,amount,wallet_address,created_at,txid')
+      .eq('pi_user_id', PI_UID)
       .order('created_at', { ascending: false })
       .limit(50);
     
@@ -1861,8 +2257,8 @@ async function loadWithdrawHistory() {
     box.innerHTML = data.map(w => `
       <div class="soft p-3 space-y-1">
         <div class="row">
-          <b class="mono text-purple-300">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
-          <span class="chip chipS">${escapeHtml(w.status)}</span>
+          <b class="mono text-purple-300">${Number(w.amount||0).toFixed(6)} Pi</b>
+          <span class="chip chipG">مكتمل</span>
         </div>
 
         <div class="tiny muted break-all">
@@ -1874,11 +2270,6 @@ async function loadWithdrawHistory() {
           <div class="tiny muted break-all">
             <b>TX:</b>
             <span class="mono">${escapeHtml(w.txid)}</span>
-          </div>` : ``}
-
-        ${w.note ? `
-          <div class="tiny" style="color:#fca5a5">
-            ملاحظة: ${escapeHtml(w.note)}
           </div>` : ``}
       </div>
     `).join('');
@@ -1963,8 +2354,13 @@ async function loadDeliveryHistory(){
 
     if(!data?.length){
       box.innerHTML = `<div class="tiny">لا يوجد طلبات مسجلة عليك بعد.</div>`;
+      const statOrders = document.getElementById('statOrders');
+      if (statOrders) statOrders.innerText = '0';
       return;
     }
+
+    const statOrders = document.getElementById('statOrders');
+    if (statOrders) statOrders.innerText = String(data.length);
 
     box.innerHTML = data.map(o => {
       const totalEgp = Number(o.total_price||0);
@@ -2037,12 +2433,17 @@ function updateRoleUI(){
 
 function updateMainTabUI(){
   const isHome = ACTIVE_MAIN_TAB === 'home';
+  const isTrack = ACTIVE_MAIN_TAB === 'track';
+  const isDiscover = ACTIVE_MAIN_TAB === 'discover';
   document.getElementById('homeTab').classList.toggle('hidden', !isHome);
-  document.getElementById('trackTab').classList.toggle('hidden', isHome);
+  document.getElementById('trackTab').classList.toggle('hidden', !isTrack);
+  document.getElementById('discoverTab').classList.toggle('hidden', !isDiscover);
   document.getElementById('navHome').classList.toggle('btnA', isHome);
   document.getElementById('navHome').classList.toggle('btnS', !isHome);
-  document.getElementById('navTrack').classList.toggle('btnA', !isHome);
-  document.getElementById('navTrack').classList.toggle('btnS', isHome);
+  document.getElementById('navTrack').classList.toggle('btnA', isTrack);
+  document.getElementById('navTrack').classList.toggle('btnS', !isTrack);
+  document.getElementById('navDiscover').classList.toggle('btnA', isDiscover);
+  document.getElementById('navDiscover').classList.toggle('btnS', !isDiscover);
 }
 
 /* ================== HELPERS ================== */
