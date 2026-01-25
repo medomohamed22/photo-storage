@@ -1642,6 +1642,33 @@ async function loadWalletPi(){
   try{
     if(!PI_USERNAME) return;
 
+    const toNumber = (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const calculateOrderEarningsPi = (order) => {
+      const snapshot = order?.pricing_snapshot || {};
+      const totalPi = toNumber(snapshot.total_pi);
+      const platformFeePi = toNumber(snapshot.platform_fee_pi);
+      if(totalPi > 0){
+        return Math.max(0, totalPi - platformFeePi);
+      }
+
+      const priceEgp = toNumber(order?.price);
+      const deliveryFeeEgp = toNumber(order?.delivery_fee);
+      const totalPriceEgp = toNumber(order?.total_price);
+      const platformFeeEgp = toNumber(order?.platform_fee);
+      const baseEgp = priceEgp || deliveryFeeEgp
+        ? priceEgp + deliveryFeeEgp
+        : Math.max(0, totalPriceEgp - platformFeeEgp);
+      const piPerEgp = toNumber(snapshot.pi_egp);
+      if(baseEgp > 0 && piPerEgp > 0){
+        return baseEgp / piPerEgp;
+      }
+      return 0;
+    };
+
     // 1) حاول من delivery_wallet
     try{
       const { data, error } = await db.from('delivery_wallet')
@@ -1682,7 +1709,7 @@ async function loadWalletPi(){
 
     // 2) fallback من orders delivered
     const { data: orders, error: e2 } = await db.from('orders')
-      .select('pricing_snapshot,status,delivery_id')
+      .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
       .eq('delivery_id', PI_USERNAME)
       .eq('status', 'delivered')
       .limit(500);
@@ -1691,10 +1718,7 @@ async function loadWalletPi(){
 
     let sum = 0;
     (orders||[]).forEach(o=>{
-      const totalPi = Number(o?.pricing_snapshot?.total_pi || 0);
-      const platformFeePi = Number(o?.pricing_snapshot?.platform_fee_pi || 0);
-      const profitPi = totalPi - platformFeePi;
-      if(!isNaN(profitPi)) sum += profitPi;
+      sum += calculateOrderEarningsPi(o);
     });
 
     const { data: approvedWithdraws } = await db.from('withdraw_requests')
