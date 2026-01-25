@@ -4,18 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>QuickCart | واجهة Pi (Talabat-style)</title>
-
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase + SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <!-- Pi SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
-  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
   <style>
@@ -282,7 +274,6 @@
 </head>
 
 <body class="safeBottom">
-  <!-- HEADER -->
   <header class="sticky top-0 z-50 topBar">
     <div class="px-3 pt-3 pb-3">
       <div class="max-w-lg mx-auto flex items-center justify-between gap-3">
@@ -312,7 +303,6 @@
   </header>
 
   <main class="max-w-lg mx-auto p-3 space-y-3">
-    <!-- LOGIN -->
     <div id="loginBox" class="glass p-4 text-center space-y-3">
       <div class="flex items-center justify-center gap-2">
         <span class="miniIcon"><i class="fa-solid fa-right-to-bracket"></i></span>
@@ -331,11 +321,7 @@
         دخول تجريبي (اختبار خارج Pi Browser)
       </button>
     </div>
-
-    <!-- ================= HOME TAB ================= -->
     <div id="homeTab" class="space-y-3">
-
-      <!-- STATUS + RATES -->
       <section class="glass p-4 space-y-3">
         <div class="secTitle">
           <b><i class="fa-solid fa-signal mr-1"></i> الحالة والأسعار</b>
@@ -379,8 +365,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ================= CUSTOMER (HOME) ================= -->
       <div id="customerHome" class="hidden space-y-3">
         <section class="glass p-4 space-y-3">
           <div class="secTitle">
@@ -427,8 +411,6 @@
 
             <textarea id="notes" class="mt-2" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
           </div>
-
-          <!-- INVOICE -->
           <div class="miniCard space-y-2">
             <div class="secTitle">
               <b><i class="fa-solid fa-receipt mr-1"></i> تفاصيل الحساب</b>
@@ -470,8 +452,6 @@
           </div>
         </section>
       </div>
-
-      <!-- ================= DELIVERY (HOME) ================= -->
       <div id="deliveryHome" class="hidden space-y-3">
         <section class="glass p-4 space-y-3">
           <div class="secTitle">
@@ -503,13 +483,8 @@
         <div id="ordersBox" class="space-y-2"></div>
       </div>
     </div>
-
-    <!-- ================= TRACK TAB ================= -->
     <div id="trackTab" class="hidden space-y-3">
-
-      <!-- ================= CUSTOMER (TRACK) ================= -->
       <div id="customerTrackTab" class="hidden space-y-3">
-        <!-- TRACK -->
         <section id="custTrack" class="hidden glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-route mr-1"></i> متابعة الطلب</b>
@@ -540,8 +515,6 @@
             </div>
           </div>
         </section>
-
-        <!-- CHAT -->
         <section id="custChat" class="hidden glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-comments mr-1"></i> الشات (لحظي)</b>
@@ -570,8 +543,6 @@
           </div>
           <div class="tiny muted">✅ = اتبعت | ✅✅ = اتقريت</div>
         </section>
-
-        <!-- CUSTOMER HISTORY -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي</b>
@@ -582,11 +553,7 @@
           <div id="custHistory" class="space-y-2 text-sm"></div>
         </section>
       </div>
-
-      <!-- ================= DELIVERY (TRACK) ================= -->
       <div id="deliveryTrackTab" class="hidden space-y-3">
-
-        <!-- DELIVERY CHAT -->
         <section id="delChat" class="hidden glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-headset mr-1"></i> شات الطلب (لحظي)</b>
@@ -641,8 +608,6 @@
             </button>
           </div>
         </section>
-
-        <!-- WALLET + WITHDRAW -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-wallet mr-1"></i> أرباحي المتاحة</b>
@@ -666,8 +631,6 @@
           </button>
           <div class="tiny muted">التحويل يتم مباشرة عند نجاح العملية</div>
         </section>
-
-        <!-- WITHDRAW HISTORY -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-list mr-1"></i> سجل السحب</b>
@@ -677,8 +640,6 @@
           </div>
           <div id="wdHistory" class="space-y-2 text-sm"></div>
         </section>
-
-        <!-- DELIVERY HISTORY -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي كدليفري</b>
@@ -691,8 +652,6 @@
       </div>
     </div>
   </main>
-
-  <!-- BOTTOM NAV -->
   <div id="bottomNav" class="bottomNav hidden">
     <div class="wrap">
       <button id="navHome" onclick="setMainTab('home')" class="btn btnA flex-1">
