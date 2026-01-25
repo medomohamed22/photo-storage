@@ -1835,7 +1835,62 @@ async function withdrawPi() {
   }
 }
 
+/* ================== WITHDRAW HISTORY ================== */
+async function loadWithdrawHistory() {
+  try {
+    if (!PI_USERNAME) return;
+    
+    const box = document.getElementById('wdHistory');
+    if (!box) return;
+    
+    box.innerHTML = `<div class="tiny muted">جاري التحميل...</div>`;
+    
+    const { data, error } = await db.from('withdraw_requests')
+      .select('id,amount_pi,wallet_address,status,created_at,note,txid')
+      .eq('delivery_id', PI_USERNAME)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    if (error) throw error;
+    
+    if (!data || !data.length) {
+      box.innerHTML = `<div class="tiny muted">لا يوجد طلبات سحب.</div>`;
+      return;
+    }
+    
+    box.innerHTML = data.map(w => `
+      <div class="soft p-3 space-y-1">
+        <div class="row">
+          <b class="mono text-purple-300">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
+          <span class="chip chipS">${escapeHtml(w.status)}</span>
+        </div>
 
+        <div class="tiny muted break-all">
+          <b>العنوان:</b>
+          <span class="mono">${escapeHtml(w.wallet_address || '-')}</span>
+        </div>
+
+        ${w.txid ? `
+          <div class="tiny muted break-all">
+            <b>TX:</b>
+            <span class="mono">${escapeHtml(w.txid)}</span>
+          </div>` : ``}
+
+        ${w.note ? `
+          <div class="tiny" style="color:#fca5a5">
+            ملاحظة: ${escapeHtml(w.note)}
+          </div>` : ``}
+      </div>
+    `).join('');
+    
+  } catch (e) {
+    console.error(e);
+    const box = document.getElementById('wdHistory');
+    if (box) {
+      box.innerHTML = `<div class="tiny" style="color:#fca5a5">فشل تحميل سجل السحب</div>`;
+    }
+  }
+}
 /* ================== HISTORY: CUSTOMER + DELIVERY ================== */
 async function loadCustomerHistory(){
   try{
