@@ -1635,153 +1635,206 @@ async function finishWithOtp(){
 
 /* ================== WALLET (Pi) ================== */
 /**
- * ✅ نحاول أولاً من جدول delivery_wallet.balance_pi
- * ✅ لو الجدول مش موجود/أو صف غير موجود → fallback: نجمع أرباحك من الطلبات delivered (delivery_fee_pi)
+ * ✅ أولاً: delivery_wallet.balance_pi
+ * ✅ خصم المحجوز والمدفوع: withdraw_requests (approved + paid)
+ * ✅ fallback: حساب أرباح الدليفري من orders delivered (total_pi - platform_fee_pi)
  */
-async function loadWalletPi(){
-  try{
-    if(!PI_USERNAME) return;
+function toNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
 
-    // 1) حاول من delivery_wallet
-    try{
+function calcDeliveryEarningsPi(order) {
+  const snap = order?.pricing_snapshot || {};
+  const totalPi = toNum(snap.total_pi);
+  const platformFeePi = toNum(snap.platform_fee_pi);
+  
+  // الأفضل: snapshot موجود
+  if (totalPi > 0) return Math.max(0, totalPi - platformFeePi);
+  
+  // fallback (لو snapshot ناقص)
+  const priceEgp = toNum(order?.price);
+  const deliveryFeeEgp = toNum(order?.delivery_fee);
+  const totalPriceEgp = toNum(order?.total_price);
+  const platformFeeEgp = toNum(order?.platform_fee);
+  
+  const baseEgp = (priceEgp || deliveryFeeEgp) ?
+    (priceEgp + deliveryFeeEgp) :
+    Math.max(0, totalPriceEgp - platformFeeEgp);
+  
+  const piEgp = toNum(snap.pi_egp);
+  if (baseEgp > 0 && piEgp > 0) return baseEgp / piEgp;
+  
+  return 0;
+}
+
+async function getReservedWithdrawSum() {
+  // المحجوز + المدفوع
+  const { data, error } = await db.from('withdraw_requests')
+    .select('amount_pi,status')
+    .eq('delivery_id', PI_USERNAME)
+    .in('status', ['approved', 'paid'])
+    .limit(1000);
+  
+  if (error) throw error;
+  
+  let sum = 0;
+  (data || []).forEach(w => {
+    sum += toNum(w.amount_pi);
+  });
+  return sum;
+}
+
+async function loadWalletPi() {
+  try {
+    if (!PI_USERNAME) return;
+    
+    // 1) خصم المحجوز/المدفوع
+    const reservedSum = await getReservedWithdrawSum();
+    
+    // 2) محاولة من delivery_wallet
+    try {
       const { data, error } = await db.from('delivery_wallet')
         .select('balance_pi')
         .eq('delivery_id', PI_USERNAME)
         .maybeSingle();
-
-      if(!error && data && typeof data.balance_pi !== 'undefined'){
-        const { data: approvedWithdraws } = await db.from('withdraw_requests')
-          .select('amount_pi,status')
-          .eq('delivery_id', PI_USERNAME)
-          .eq('status', 'approved')
-          .limit(500);
-
-        let approvedSum = 0;
-        (approvedWithdraws || []).forEach(w => {
-          const amount = Number(w.amount_pi || 0);
-          if(!isNaN(amount)) approvedSum += amount;
-        });
-
-        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum);
+      
+      if (!error && data && typeof data.balance_pi !== 'undefined') {
+        const available = Math.max(0, toNum(data.balance_pi) - reservedSum);
         document.getElementById('walletPi').innerText = available.toFixed(6);
         return;
       }
-    }catch(e){
+    } catch (_) {
       // تجاهل وكمّل fallback
     }
-
-    // 2) fallback من orders delivered
+    
+    // 3) fallback: من orders delivered
     const { data: orders, error: e2 } = await db.from('orders')
-      .select('pricing_snapshot,status,delivery_id')
+      .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
       .eq('delivery_id', PI_USERNAME)
       .eq('status', 'delivered')
-      .limit(500);
-
-    if(e2) throw e2;
-
-    let sum = 0;
-    (orders||[]).forEach(o=>{
-      const pi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
-      if(!isNaN(pi)) sum += pi;
+      .limit(1000);
+    
+    if (e2) throw e2;
+    
+    let earned = 0;
+    (orders || []).forEach(o => {
+      earned += calcDeliveryEarningsPi(o);
     });
-
-    const { data: approvedWithdraws } = await db.from('withdraw_requests')
-      .select('amount_pi,status')
-      .eq('delivery_id', PI_USERNAME)
-      .eq('status', 'approved')
-      .limit(500);
-
-    let approvedSum = 0;
-    (approvedWithdraws || []).forEach(w => {
-      const amount = Number(w.amount_pi || 0);
-      if(!isNaN(amount)) approvedSum += amount;
-    });
-
-    const available = Math.max(0, sum - approvedSum);
+    
+    const available = Math.max(0, earned - reservedSum);
     document.getElementById('walletPi').innerText = available.toFixed(6);
-
-  }catch(e){
+    
+  } catch (e) {
     console.warn(e);
     document.getElementById('walletPi').innerText = '0.000000';
   }
 }
 
 /* ================== WITHDRAW ================== */
+/**
+ * ✅ Flow الصحيح:
+ * 1) Insert withdraw_requests (pending) -> ناخد requestId
+ * 2) Call /api/withdraw { requestId, deliveryId, username, amount, walletAddress }
+ * 3) لو نجح: Update الطلب paid + txid (السيرفر بيعملها)
+ * 4) لو فشل: نخلي الطلب pending + note بالسبب
+ */
 async function withdrawPi() {
+  let requestId = null;
+  
   try {
     if (!PI_USERNAME) return Swal.fire('سجّل دخول');
-
+    
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
-    const wallet = (document.getElementById('wdWallet').value || '').trim();
-
+    const walletAddress = (document.getElementById('wdWallet').value || '').trim();
+    
     if (!amount || amount <= 0) return Swal.fire('اكتب كمية Pi صحيحة');
-    if (!wallet || wallet.length < 10) return Swal.fire('اكتب عنوان محفظة Pi صحيح');
-
-    // رصيد (من walletPi الظاهر)
+    if (!walletAddress || walletAddress.length < 10) return Swal.fire('اكتب عنوان محفظة Pi صحيح');
+    
     const available = parseFloat(document.getElementById('walletPi').innerText || "0") || 0;
     if (amount > available) return Swal.fire('المبلغ أكبر من الرصيد المتاح');
-
-    const { error } = await db.from('withdraw_requests').insert([{
-      delivery_id: PI_USERNAME,
-      amount_pi: amount,
-      wallet_address: wallet,
-      status: 'pending'
-    }]);
-    if (error) throw error;
-
-    Swal.fire({ icon: 'success', title: 'تم', text: 'تم إرسال طلب السحب للإدارة' });
-
+    
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: 'تأكيد السحب',
+      html: `
+        <div style="text-align:right">
+          <div>هتسحب: <b class="mono">${amount.toFixed(6)} Pi</b></div>
+          <div style="margin-top:6px">
+            إلى:
+            <span class="mono" style="font-size:12px;opacity:.85;display:block;word-break:break-all">
+              ${escapeHtml(walletAddress)}
+            </span>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'سحب الآن',
+      cancelButtonText: 'إلغاء'
+    });
+    if (!ok.isConfirmed) return;
+    
+    Swal.fire({ title: 'جاري تجهيز طلب السحب...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+    
+    // 1) Insert pending request
+    const { data: ins, error: insErr } = await db.from('withdraw_requests')
+      .insert([{
+        delivery_id: PI_USERNAME,
+        amount_pi: amount,
+        wallet_address: walletAddress,
+        status: 'pending',
+        note: null,
+        txid: null
+      }])
+      .select('id')
+      .single();
+    
+    if (insErr) throw insErr;
+    requestId = ins?.id;
+    
+    Swal.fire({ title: 'جاري تنفيذ التحويل على الشبكة...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+    
+    // 2) Call server function (Netlify redirect -> /.netlify/functions/withdraw)
+    const res = await fetch('/api/withdraw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requestId,
+        deliveryId: PI_USERNAME,
+        username: PI_USERNAME,
+        amount,
+        walletAddress
+      })
+    });
+    
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || !out?.success) {
+      const msg = out?.error || out?.details || 'فشل السحب';
+      // 3) سجّل سبب الفشل في الطلب pending
+      try {
+        await db.from('withdraw_requests')
+          .update({ note: msg })
+          .eq('id', requestId)
+          .eq('delivery_id', PI_USERNAME);
+      } catch {}
+      throw new Error(msg);
+    }
+    
+    // السيرفر بيعمل UPDATE status=paid + txid
+    Swal.fire({ icon: 'success', title: 'تم السحب ✅', text: `TX: ${out.txid}` });
+    
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
-
-    loadWithdrawHistory();
-
+    
+    await loadWalletPi();
+    await loadWithdrawHistory();
+    
   } catch (e) {
     console.error(e);
     Swal.fire({ icon: 'error', title: 'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
   }
 }
 
-async function loadWithdrawHistory(){
-  try{
-    if(!PI_USERNAME) return;
-    const box = document.getElementById('wdHistory');
-    box.innerHTML = `<div class="tiny">جاري التحميل...</div>`;
-
-    const { data, error } = await db.from('withdraw_requests')
-      .select('id,amount_pi,wallet_address,status,created_at,note')
-      .eq('delivery_id', PI_USERNAME)
-      .order('created_at', { ascending:false })
-      .limit(50);
-
-    if(error) throw error;
-
-    if(!data?.length){
-      box.innerHTML = `<div class="tiny">لا يوجد طلبات سحب.</div>`;
-      return;
-    }
-
-    box.innerHTML = data.map(w => `
-      <div class="soft p-3">
-        <div class="row">
-          <b class="mono text-purple-600">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
-          <span class="chip">${escapeHtml(w.status)}</span>
-        </div>
-        <div class="tiny mt-1 wdRow">
-  <span class="wdLabel">العنوان:</span>
-  <span class="wdValue mono" title="${escapeHtml(w.wallet_address||'-')}">
-    ${escapeHtml(w.wallet_address||'-')}
-  </span>
-</div>
-        ${w.note ? `<div class="tiny mt-1">ملاحظة: ${escapeHtml(w.note)}</div>` : ``}
-      </div>
-    `).join('');
-
-  }catch(e){
-    console.error(e);
-    document.getElementById('wdHistory').innerHTML = `<div class="tiny" style="color:#fca5a5">فشل تحميل سجل السحب</div>`;
-  }
-}
 
 /* ================== HISTORY: CUSTOMER + DELIVERY ================== */
 async function loadCustomerHistory(){
