@@ -45,6 +45,35 @@ const calculateOrderEarningsPi = (order) => {
   return 0;
 };
 
+const toNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const sumAmounts = (rows, key) => (rows || []).reduce((sum, row) => sum + toNumber(row?.[key]), 0);
+
+const calculateOrderEarningsPi = (order) => {
+  const snapshot = order?.pricing_snapshot || {};
+  const totalPi = toNumber(snapshot.total_pi);
+  const platformFeePi = toNumber(snapshot.platform_fee_pi);
+  if (totalPi > 0) {
+    return Math.max(0, totalPi - platformFeePi);
+  }
+
+  const priceEgp = toNumber(order?.price);
+  const deliveryFeeEgp = toNumber(order?.delivery_fee);
+  const totalPriceEgp = toNumber(order?.total_price);
+  const platformFeeEgp = toNumber(order?.platform_fee);
+  const baseEgp = priceEgp || deliveryFeeEgp
+    ? priceEgp + deliveryFeeEgp
+    : Math.max(0, totalPriceEgp - platformFeeEgp);
+  const piPerEgp = toNumber(snapshot.pi_egp);
+  if (baseEgp > 0 && piPerEgp > 0) {
+    return baseEgp / piPerEgp;
+  }
+  return 0;
+};
+
 exports.handler = async (event) => {
   // السماح فقط بطلبات POST
   if (event.httpMethod !== 'POST') {
@@ -99,14 +128,19 @@ exports.handler = async (event) => {
       .from('withdrawals')
       .select('amount')
       .eq('delivery_id', resolvedDeliveryId);
+ codex/create-sql-table-for-delivery-withdrawals-9zt5mr
     if (withdrawalsError) {
       return { statusCode: 500, body: JSON.stringify({ error: 'فشل قراءة السحوبات', details: withdrawalsError.message }) };
     }
     const { data: approvedRequests, error: approvedError } = await supabase
+=======
+    const { data: approvedRequests } = await supabas
+    main
       .from('withdraw_requests')
       .select('amount_pi')
       .eq('delivery_id', resolvedDeliveryId)
       .eq('status', 'approved');
+ codex/create-sql-table-for-delivery-withdrawals-9zt5mr
     if (approvedError) {
       return {
         statusCode: 500,
@@ -114,16 +148,22 @@ exports.handler = async (event) => {
       };
     }
     const { data: walletRow, error: walletError } = await supabase
+=======
+    const { data: walletRow } = await supabase
+ main
       .from('delivery_wallet')
       .select('balance_pi')
       .eq('delivery_id', resolvedDeliveryId)
       .maybeSingle();
+    codex/create-sql-table-for-delivery-withdrawals-9zt5mr
     if (walletError && walletError.code !== 'PGRST116') {
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'فشل قراءة رصيد المحفظة', details: walletError.message }),
       };
     }
+=======
+ main
 
     const totalEarned = (orders || []).reduce((sum, row) => sum + calculateOrderEarningsPi(row), 0);
     const totalWithdrawn = sumAmounts(withdrawals, 'amount');
