@@ -695,6 +695,7 @@ const PLATFORM_FEE_EGP = 10;
 /* ================== GLOBALS ================== */
 let PI_USER = null;
 let PI_USERNAME = null;
+let SUPABASE_AUTH_TOKEN = null;
 let ACTIVE_ORDER = null;
 let CUSTOMER_LOCATION = null;
 let DELIVERY_LOCATION = null;
@@ -855,6 +856,33 @@ function hasMissingLocationColumn(error){
 }
 
 /* ================== LOGIN ================== */
+async function ensureSupabaseAuth(){
+  if (!db?.auth) return;
+  try{
+    const { data: sessionData } = await db.auth.getSession();
+    let session = sessionData?.session || null;
+    if (!session){
+      const { data, error } = await db.auth.signInAnonymously();
+      if (error) throw error;
+      session = data?.session || null;
+    }
+    if (session && PI_USERNAME){
+      await db.auth.updateUser({
+        data: {
+          pi_username: PI_USERNAME,
+          delivery_id: PI_USERNAME,
+          username: PI_USERNAME,
+        },
+      });
+    }
+    const { data: refreshed } = await db.auth.getSession();
+    SUPABASE_AUTH_TOKEN = refreshed?.session?.access_token || session?.access_token || null;
+  }catch(e){
+    console.warn('supabase auth failed', e);
+    SUPABASE_AUTH_TOKEN = null;
+  }
+}
+
 async function piLogin() {
   try {
     if (!window.Pi || !Pi.authenticate) {
@@ -902,6 +930,7 @@ async function piLogin() {
     setMainTab('home');
     setRole('customer');
 
+    await ensureSupabaseAuth();
     await refreshRates();
     await restoreActiveOrder();
     loadOrders();
@@ -930,6 +959,7 @@ function devLogin(){
 
   document.getElementById('adminLink').classList.add('hidden');
 
+  ensureSupabaseAuth();
   setMainTab('home');
   setRole('customer');
 
@@ -1753,9 +1783,15 @@ async function withdrawPi() {
     const available = parseFloat(document.getElementById('walletPi').innerText || "0") || 0;
     if (amount > available) return Swal.fire('المبلغ أكبر من الرصيد المتاح');
 
+    await ensureSupabaseAuth();
+    const headers = { 'Content-Type': 'application/json' };
+    if (SUPABASE_AUTH_TOKEN) {
+      headers.Authorization = `Bearer ${SUPABASE_AUTH_TOKEN}`;
+    }
+
     const response = await fetch('/api/withdraw', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         deliveryId: PI_USERNAME,
         username: PI_USERNAME,
