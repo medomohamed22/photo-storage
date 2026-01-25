@@ -1789,7 +1789,11 @@ async function withdrawPi() {
       headers.Authorization = `Bearer ${SUPABASE_AUTH_TOKEN}`;
     }
 
+ codex-etyn7v
+    let response = await fetch('/api/withdraw', {
+=======
     const response = await fetch('/api/withdraw', {
+ main
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -1799,6 +1803,18 @@ async function withdrawPi() {
         walletAddress: wallet,
       }),
     });
+    if (response.status === 404) {
+      response = await fetch('/.netlify/functions/withdraw', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          deliveryId: PI_USERNAME,
+          username: PI_USERNAME,
+          amount: amount,
+          walletAddress: wallet,
+        }),
+      });
+    }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const hasDetails = payload?.details && payload?.details !== payload?.error;
