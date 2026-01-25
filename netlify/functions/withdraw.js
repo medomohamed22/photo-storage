@@ -8,15 +8,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 
-// NOTE: لو عندك مسار /horizon استخدمه في env
-// مثال:
-// PI_HORIZON_URL=https://api.mainnet.minepi.com
-// أو
-// PI_HORIZON_URL=https://api.mainnet.minepi.com/horizon
 const PI_HORIZON_URL = (process.env.PI_HORIZON_URL || 'https://api.mainnet.minepi.com').trim();
 const NETWORK_PASSPHRASE = (process.env.PI_NETWORK_PASSPHRASE || 'Pi Network').trim();
 
-// IMPORTANT: service role only on server
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 /* ================== RESPONSE HELPERS ================== */
@@ -31,6 +25,8 @@ const json = (statusCode, obj) => ({
   body: JSON.stringify(obj),
 });
 
+const asTrim = (v) => String(v ?? '').trim();
+
 const toNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -38,18 +34,17 @@ const toNumber = (v) => {
 
 const sumAmounts = (rows, key) => (rows || []).reduce((s, r) => s + toNumber(r?.[key]), 0);
 
-/**
- * دليفري = إجمالي الطلب - ربح الموقع (platform fee)
- * أفضل مصدر: pricing_snapshot.total_pi & pricing_snapshot.platform_fee_pi
- */
+/* ================== BUSINESS LOGIC ================== */
+// دليفري = إجمالي الطلب - ربح الموقع (platform fee)
 const calculateOrderEarningsPi = (order) => {
   const snap = order?.pricing_snapshot || {};
   const totalPi = toNumber(snap.total_pi);
   const platformFeePi = toNumber(snap.platform_fee_pi);
 
+  // snapshot أفضل
   if (totalPi > 0) return Math.max(0, totalPi - platformFeePi);
 
-  // fallback لو snapshot ناقص
+  // fallback
   const priceEgp = toNumber(order?.price);
   const deliveryFeeEgp = toNumber(order?.delivery_fee);
   const totalPriceEgp = toNumber(order?.total_price);
@@ -65,19 +60,14 @@ const calculateOrderEarningsPi = (order) => {
   return 0;
 };
 
-/* ================== STELLAR HELPERS ================== */
+/* ================== STELLAR ERROR MAP ================== */
 function mapHorizonError(err) {
-  // Stellar SDK errors
   const status = err?.response?.status;
 
   if (status === 404) {
-    // غالبًا:
-    // 1) PI_HORIZON_URL غلط (مش Horizon endpoint)
-    // 2) حساب محفظة النظام (source account) مش موجود/مش متفعّل على الشبكة دي
     return {
-      error: 'Horizon 404: الرابط غير صحيح أو حساب محفظة النظام غير موجود على هذه الشبكة',
-      details:
-        'تحقق من PI_HORIZON_URL (قد يحتاج /horizon) + تأكد أن APP_WALLET_SECRET تابع لنفس الشبكة ومفعّل.',
+      error: 'Horizon 404: الرابط غير صحيح أو حساب محفظة النظام غير موجود على الشبكة',
+      details: 'راجع PI_HORIZON_URL (قد يحتاج /horizon) + تأكد APP_WALLET_SECRET تابع لنفس الشبكة ومفعّل.',
     };
   }
 
@@ -85,19 +75,18 @@ function mapHorizonError(err) {
     const codes = err.response.data.extras.result_codes;
     const opCodes = codes.operations ? codes.operations.join(', ') : 'no_op_code';
 
-    let msg = `Blockchain Error: ${codes.transaction} (${opCodes})`;
+    const details = `Blockchain Error: ${codes.transaction} (${opCodes})`;
 
-    // رسائل أوضح
     if (codes.transaction === 'tx_insufficient_fee') {
-      return { error: 'رسوم الشبكة غير كافية حالياً، حاول مرة أخرى', details: msg };
+      return { error: 'رسوم الشبكة غير كافية حالياً، حاول مرة أخرى', details };
     }
     if (String(opCodes).includes('op_underfunded')) {
-      return { error: 'محفظة النظام لا تملك رصيد كافي', details: msg };
+      return { error: 'محفظة النظام لا تملك رصيد كافي', details };
     }
     if (String(opCodes).includes('op_no_destination')) {
-      return { error: 'عنوان المحفظة غير صحيح أو غير مُفعّل', details: msg };
+      return { error: 'عنوان المحفظة غير صحيح أو غير مُفعّل', details };
     }
-    return { error: 'فشلت المعاملة على الشبكة', details: msg };
+    return { error: 'فشلت المعاملة على الشبكة', details };
   }
 
   return { error: 'فشلت المعاملة', details: err?.message || 'Unknown error' };
@@ -115,9 +104,7 @@ async function updateRequestNote(requestId, deliveryId, note) {
 
 /* ================== HANDLER ================== */
 exports.handler = async (event) => {
-  // CORS preflight
   if (event.httpMethod === 'OPTIONS') return json(200, { ok: true });
-
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
   let requestId = null;
@@ -129,13 +116,13 @@ exports.handler = async (event) => {
 
     const body = JSON.parse(event.body || '{}');
 
-    requestId = (body.requestId || '').trim();
-    const deliveryId = (body.deliveryId || '').trim();
-    const username = (body.username || '').trim();
-    const walletAddress = (body.walletAddress || '').trim();
+    requestId = asTrim(body.requestId);
+    const deliveryId = asTrim(body.deliveryId);
+    const username = asTrim(body.username);
+    const walletAddress = asTrim(body.walletAddress);
     const withdrawAmount = Number.parseFloat(body.amount);
 
-    resolvedDeliveryId = (deliveryId || username || '').trim();
+    resolvedDeliveryId = asTrim(deliveryId || username);
 
     if (!requestId || !resolvedDeliveryId || !walletAddress || !Number.isFinite(withdrawAmount) || withdrawAmount <= 0) {
       return json(400, { error: 'بيانات ناقصة أو غير صحيحة' });
@@ -159,13 +146,12 @@ exports.handler = async (event) => {
       return json(400, { error: 'هذا الطلب تم التعامل معه بالفعل' });
     }
 
-    // تأكيد تطابق بيانات الطلب
     const reqAmount = toNumber(reqRow.amount_pi);
     if (reqAmount > 0 && Math.abs(reqAmount - withdrawAmount) > 1e-9) {
       return json(400, { error: 'قيمة السحب لا تطابق الطلب المسجل' });
     }
 
-    const reqWallet = (reqRow.wallet_address || '').trim();
+    const reqWallet = asTrim(reqRow.wallet_address);
     if (reqWallet && reqWallet !== walletAddress) {
       return json(400, { error: 'عنوان المحفظة لا يطابق الطلب المسجل' });
     }
@@ -178,7 +164,6 @@ exports.handler = async (event) => {
       .eq('status', 'delivered');
     if (e1) throw e1;
 
-    // محجوز/مسحوب: approved + paid
     const { data: reservedReqs, error: e2 } = await supabase
       .from('withdraw_requests')
       .select('amount_pi')
@@ -189,7 +174,6 @@ exports.handler = async (event) => {
     const totalEarned = (orders || []).reduce((sum, row) => sum + calculateOrderEarningsPi(row), 0);
     const reservedSum = sumAmounts(reservedReqs, 'amount_pi');
 
-    // لو عندك delivery_wallet فهو أدق
     const { data: walletRow, error: eWal } = await supabase
       .from('delivery_wallet')
       .select('balance_pi')
@@ -211,7 +195,6 @@ exports.handler = async (event) => {
     const server = new StellarSdk.Horizon.Server(PI_HORIZON_URL);
     const sourceKeys = StellarSdk.Keypair.fromSecret(APP_WALLET_SECRET);
 
-    // لو ده بيرمي 404 -> غالبًا Horizon URL غلط أو الحساب مش موجود على الشبكة
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
 
     const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
@@ -241,22 +224,17 @@ exports.handler = async (event) => {
       })
       .eq('id', requestId)
       .eq('delivery_id', resolvedDeliveryId)
-      .eq('status', 'pending'); // حماية ضد الدفع مرتين
+      .eq('status', 'pending');
 
     if (e3) throw e3;
 
-    return json(200, {
-      success: true,
-      txid: result.hash,
-      message: 'تم التحويل بنجاح',
-    });
+    return json(200, { success: true, txid: result.hash, message: 'تم التحويل بنجاح' });
 
   } catch (err) {
     console.error('withdraw error:', err);
 
     const mapped = mapHorizonError(err);
 
-    // سجّل سبب الفشل داخل نفس الطلب (ويظل pending)
     if (requestId && resolvedDeliveryId) {
       await updateRequestNote(requestId, resolvedDeliveryId, mapped.error);
     }
