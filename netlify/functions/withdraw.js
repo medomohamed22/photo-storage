@@ -14,6 +14,7 @@ const PI_HORIZON_URL = process.env.PI_HORIZON_URL || 'https://api.mainnet.minepi
 const NETWORK_PASSPHRASE = process.env.PI_NETWORK_PASSPHRASE || 'Pi Network';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY);
+const authSupabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -67,6 +68,22 @@ exports.handler = async (event) => {
         statusCode: 500,
         body: JSON.stringify({ error: 'APP_WALLET_SECRET غير مضبوط على السيرفر' }),
       };
+    }
+    if (SUPABASE_SERVICE_ROLE_KEY) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+      if (!token) {
+        return { statusCode: 401, body: JSON.stringify({ error: 'مطلوب تسجيل الدخول' }) };
+      }
+      const { data: authData, error: authError } = await authSupabase.auth.getUser(token);
+      if (authError || !authData?.user) {
+        return { statusCode: 401, body: JSON.stringify({ error: 'جلسة غير صالحة' }) };
+      }
+      const metadata = authData.user.user_metadata || {};
+      const expectedDeliveryId = metadata.pi_username || metadata.delivery_id || metadata.username;
+      if (!expectedDeliveryId || expectedDeliveryId !== resolvedDeliveryId) {
+        return { statusCode: 403, body: JSON.stringify({ error: 'غير مسموح لهذا الحساب' }) };
+      }
     }
 
     // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
