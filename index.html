@@ -1789,7 +1789,11 @@ async function withdrawPi() {
       headers.Authorization = `Bearer ${SUPABASE_AUTH_TOKEN}`;
     }
 
+ codex-etyn7v
     let response = await fetch('/api/withdraw', {
+=======
+    const response = await fetch('/api/withdraw', {
+ main
       method: 'POST',
       headers,
       body: JSON.stringify({
