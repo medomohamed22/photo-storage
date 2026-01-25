@@ -1,7 +1,7 @@
 {
   "name": "donate-way-pi",
   "version": "1.1.0",
-  "description": "تطبيق تبرعات شبكة باي مع خاصية السحب على Pi Testnet",
+  "description": "تطبيق تبرعات شبكة باي مع خاصية السحب ع",
   "main": "index.html",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
