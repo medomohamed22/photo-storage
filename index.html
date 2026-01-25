@@ -654,7 +654,7 @@
               الأرباح المتاحة:
               <b class="mono text-purple-300"><span id="walletPi">0.000000</span> Pi</b>
             </div>
-            <div class="tiny muted mt-1">السحب يتم مراجعته يدويًا من الإدارة</div>
+            <div class="tiny muted mt-1">السحب يتم تحويله فورًا عند توفر الرصيد</div>
           </div>
 
           <input id="wdAmountPi" type="number" step="0.000001" placeholder="كم Pi هتسحب؟" />
@@ -664,7 +664,7 @@
             <i class="fa-solid fa-hand-holding-dollar"></i>
             طلب سحب Pi
           </button>
-          <div class="tiny muted">سيتم مراجعة الطلب يدويًا من الإدارة قبل التحويل</div>
+          <div class="tiny muted">التحويل يتم مباشرة عند نجاح العملية</div>
         </section>
 
         <!-- WITHDRAW HISTORY -->
@@ -1655,6 +1655,10 @@ async function loadWalletPi(){
           .eq('delivery_id', PI_USERNAME)
           .eq('status', 'approved')
           .limit(500);
+        const { data: instantWithdraws } = await db.from('withdrawals')
+          .select('amount')
+          .eq('delivery_id', PI_USERNAME)
+          .limit(500);
 
         let approvedSum = 0;
         (approvedWithdraws || []).forEach(w => {
@@ -1662,7 +1666,13 @@ async function loadWalletPi(){
           if(!isNaN(amount)) approvedSum += amount;
         });
 
-        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum);
+        let instantSum = 0;
+        (instantWithdraws || []).forEach(w => {
+          const amount = Number(w.amount || 0);
+          if(!isNaN(amount)) instantSum += amount;
+        });
+
+        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum - instantSum);
         document.getElementById('walletPi').innerText = available.toFixed(6);
         return;
       }
@@ -1692,6 +1702,10 @@ async function loadWalletPi(){
       .eq('delivery_id', PI_USERNAME)
       .eq('status', 'approved')
       .limit(500);
+    const { data: instantWithdraws } = await db.from('withdrawals')
+      .select('amount')
+      .eq('delivery_id', PI_USERNAME)
+      .limit(500);
 
     let approvedSum = 0;
     (approvedWithdraws || []).forEach(w => {
@@ -1699,7 +1713,13 @@ async function loadWalletPi(){
       if(!isNaN(amount)) approvedSum += amount;
     });
 
-    const available = Math.max(0, sum - approvedSum);
+    let instantSum = 0;
+    (instantWithdraws || []).forEach(w => {
+      const amount = Number(w.amount || 0);
+      if(!isNaN(amount)) instantSum += amount;
+    });
+
+    const available = Math.max(0, sum - approvedSum - instantSum);
     document.getElementById('walletPi').innerText = available.toFixed(6);
 
   }catch(e){
@@ -1723,19 +1743,27 @@ async function withdrawPi() {
     const available = parseFloat(document.getElementById('walletPi').innerText || "0") || 0;
     if (amount > available) return Swal.fire('المبلغ أكبر من الرصيد المتاح');
 
-    const { error } = await db.from('withdraw_requests').insert([{
-      delivery_id: PI_USERNAME,
-      amount_pi: amount,
-      wallet_address: wallet,
-      status: 'pending'
-    }]);
-    if (error) throw error;
+    const response = await fetch('/api/withdraw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deliveryId: PI_USERNAME,
+        username: PI_USERNAME,
+        amount: amount,
+        walletAddress: wallet,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error || payload?.details || 'حصل خطأ في السحب');
+    }
 
-    Swal.fire({ icon: 'success', title: 'تم', text: 'تم إرسال طلب السحب للإدارة' });
+    Swal.fire({ icon: 'success', title: 'تم التحويل', text: payload?.message || 'تم التحويل بنجاح' });
 
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
 
+    loadWalletPi();
     loadWithdrawHistory();
 
   } catch (e) {
@@ -1750,8 +1778,8 @@ async function loadWithdrawHistory(){
     const box = document.getElementById('wdHistory');
     box.innerHTML = `<div class="tiny">جاري التحميل...</div>`;
 
-    const { data, error } = await db.from('withdraw_requests')
-      .select('id,amount_pi,wallet_address,status,created_at,note')
+    const { data, error } = await db.from('withdrawals')
+      .select('id,amount,wallet_address,created_at,txid')
       .eq('delivery_id', PI_USERNAME)
       .order('created_at', { ascending:false })
       .limit(50);
@@ -1766,8 +1794,8 @@ async function loadWithdrawHistory(){
     box.innerHTML = data.map(w => `
       <div class="soft p-3">
         <div class="row">
-          <b class="mono text-purple-600">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
-          <span class="chip">${escapeHtml(w.status)}</span>
+          <b class="mono text-purple-600">${Number(w.amount||0).toFixed(6)} Pi</b>
+          <span class="chip">تم</span>
         </div>
         <div class="tiny mt-1 wdRow">
   <span class="wdLabel">العنوان:</span>
@@ -1775,7 +1803,7 @@ async function loadWithdrawHistory(){
     ${escapeHtml(w.wallet_address||'-')}
   </span>
 </div>
-        ${w.note ? `<div class="tiny mt-1">ملاحظة: ${escapeHtml(w.note)}</div>` : ``}
+        ${w.txid ? `<div class="tiny mt-1">رقم العملية: <span class="mono">${escapeHtml(w.txid)}</span></div>` : ``}
       </div>
     `).join('');
 
