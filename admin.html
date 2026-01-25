@@ -133,6 +133,18 @@
       font-size:22px;
       letter-spacing:.3px;
     }
+    .statCard{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-height:120px;
+      justify-content:space-between;
+    }
+    .statValueRow{
+      display:flex;
+      align-items:baseline;
+      gap:8px;
+    }
 
     .seg{
       display:flex; gap:8px; flex-wrap:wrap;
@@ -169,35 +181,48 @@
 <div class="max-w-6xl mx-auto p-3 md:p-4 space-y-4">
 
   <!-- STATS -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-    <div class="glass p-4">
+  <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+    <div class="glass p-4 statCard">
       <div class="muted text-sm">إجمالي الطلبات</div>
       <div id="statOrders" class="kpi">—</div>
       <div class="text-[11px] muted mt-1">كل الحالات</div>
     </div>
 
-    <div class="glass p-4">
+    <div class="glass p-4 statCard">
       <div class="muted text-sm">Pi من الطلبات</div>
       <div id="statOrdersPi" class="kpi mono" style="color: var(--y)">—</div>
       <div class="text-[11px] muted mt-1">pricing_snapshot.total_pi</div>
     </div>
 
-    <div class="glass p-4">
+    <div class="glass p-4 statCard">
       <div class="muted text-sm">طلبات السحب</div>
       <div id="statWithdraws" class="kpi" style="color: var(--info)">—</div>
       <div class="text-[11px] muted mt-1">كل الحالات</div>
     </div>
 
-    <div class="glass p-4">
+    <div class="glass p-4 statCard">
       <div class="muted text-sm">Pi مسحوب</div>
       <div id="statWithdrawPi" class="kpi mono" style="color: var(--p2)">—</div>
       <div class="text-[11px] muted mt-1">withdraw_requests.amount_pi</div>
     </div>
 
-    <!-- NEW: SITE PROFIT -->
-    <div class="glass p-4">
+    <div class="glass p-4 statCard">
+      <div class="muted text-sm">أرباح التجار</div>
+      <div class="statValueRow">
+        <div id="statMerchantProfitEgp" class="kpi" style="color: var(--ok)">—</div>
+        <div class="muted text-sm">ج</div>
+      </div>
+      <div class="text-[12px]">
+        <span class="muted">≈</span>
+        <b id="statMerchantProfitPi" class="mono" style="color: var(--p2)">—</b>
+        <span class="muted">Pi</span>
+      </div>
+      <div class="text-[11px] muted">إجمالي أرباح التجار</div>
+    </div>
+
+    <div class="glass p-4 statCard">
       <div class="muted text-sm">أرباح الموقع</div>
-      <div class="flex items-baseline gap-2">
+      <div class="statValueRow">
         <div id="statSiteProfitEgp" class="kpi" style="color: var(--y)">—</div>
         <div class="muted text-sm">ج</div>
       </div>
@@ -277,6 +302,7 @@
             <th>الكابتن</th>
             <th>EGP</th>
             <th>Pi</th>
+            <th>ربح التاجر</th>
             <th>الحالة</th>
             <th>إجراء</th>
           </tr>
@@ -384,15 +410,38 @@ function badgeStatus(s){
   return `<span class="${base} ${cls}">${esc(s)}</span>`;
 }
 
+function calcMerchantProfitEgp(order){
+  const price = Number(order?.price || 0);
+  if(price > 0) return price;
+
+  const total = Number(order?.total_price || 0);
+  const deliveryFee = Number(order?.delivery_fee || 0);
+  const platformFee = Number(order?.platform_fee || 10);
+  const fallback = total - deliveryFee - platformFee;
+  return fallback > 0 ? fallback : Math.max(0, total - platformFee);
+}
+
+function sumMerchantProfitPi(orders){
+  let totalPi = 0;
+  (orders || []).forEach(o=>{
+    const piEgp = Number(o?.pricing_snapshot?.pi_egp || 0);
+    if(piEgp > 0){
+      totalPi += calcMerchantProfitEgp(o) / piEgp;
+    }
+  });
+  return totalPi;
+}
+
 function sumSiteProfitPi(orders){
-  // أرباح الموقع = platform_fee_egp لكل طلب (ثابت 10ج)
+  // أرباح الموقع = platform_fee_egp لكل طلب (ثابت 10ج أو من الطلب)
   // التحويل إلى Pi: platform_fee_egp / pricing_snapshot.pi_egp
   // لو pi_egp غير موجود => 0
   let totalPi = 0;
   (orders || []).forEach(o=>{
     const piEgp = Number(o?.pricing_snapshot?.pi_egp || 0);
+    const platformFee = Number(o?.platform_fee || 10);
     if(piEgp > 0){
-      totalPi += (10 / piEgp);
+      totalPi += (platformFee / piEgp);
     }
   });
   return totalPi;
@@ -400,7 +449,8 @@ function sumSiteProfitPi(orders){
 
 /* ========== STATS ========== */
 async function loadStats(){
-  const { data: orders, error: e1 } = await db.from('orders').select('status,pricing_snapshot');
+  const { data: orders, error: e1 } = await db.from('orders')
+    .select('status,pricing_snapshot,price,delivery_fee,total_price,platform_fee');
   const { data: wds, error: e2 } = await db.from('withdraw_requests').select('status,amount_pi');
 
   if(e1) console.warn(e1);
@@ -413,14 +463,19 @@ async function loadStats(){
   const totalWithdraws = wds?.length || 0;
   const withdrawPi = (wds||[]).reduce((sum,w)=> sum + (Number(w?.amount_pi)||0), 0);
 
-  // NEW: Site profit
-  const siteProfitEgp = totalOrders * 10;
+  const merchantProfitEgp = (orders||[]).reduce((sum,o)=> sum + calcMerchantProfitEgp(o), 0);
+  const merchantProfitPi = sumMerchantProfitPi(orders);
+
+  const siteProfitEgp = (orders||[]).reduce((sum,o)=> sum + (Number(o?.platform_fee || 10)), 0);
   const siteProfitPi = sumSiteProfitPi(orders);
 
   document.getElementById('statOrders').innerText = totalOrders;
   document.getElementById('statOrdersPi').innerText = ordersPi.toFixed(3);
   document.getElementById('statWithdraws').innerText = totalWithdraws;
   document.getElementById('statWithdrawPi').innerText = withdrawPi.toFixed(3);
+
+  document.getElementById('statMerchantProfitEgp').innerText = merchantProfitEgp.toFixed(0);
+  document.getElementById('statMerchantProfitPi').innerText = merchantProfitPi.toFixed(4);
 
   document.getElementById('statSiteProfitEgp').innerText = siteProfitEgp.toFixed(0);
   document.getElementById('statSiteProfitPi').innerText = siteProfitPi.toFixed(4);
@@ -432,7 +487,7 @@ async function loadOrders(){
   const q = document.getElementById('searchUser').value.trim().toLowerCase();
 
   let query = db.from('orders')
-    .select('id,created_at,product_name,order_type,customer_pi_username,delivery_id,total_price,status,pricing_snapshot')
+    .select('id,created_at,product_name,order_type,customer_pi_username,delivery_id,total_price,status,pricing_snapshot,price,delivery_fee,platform_fee')
     .order('created_at',{ascending:false})
     .limit(200);
 
@@ -443,7 +498,7 @@ async function loadOrders(){
 
   if(error){
     console.error(error);
-    tb.innerHTML = `<tr><td colspan="9" class="p-3 text-center" style="color:#fca5a5">خطأ في جلب الطلبات: ${esc(error.message)}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="10" class="p-3 text-center" style="color:#fca5a5">خطأ في جلب الطلبات: ${esc(error.message)}</td></tr>`;
     return;
   }
 
@@ -457,6 +512,7 @@ async function loadOrders(){
   tb.innerHTML = filtered.map(o=>{
     const pi = Number(o?.pricing_snapshot?.total_pi || 0);
     const egp = Number(o?.total_price || 0);
+    const merchantEgp = calcMerchantProfitEgp(o);
 
     return `
       <tr>
@@ -467,6 +523,7 @@ async function loadOrders(){
         <td>${esc(o.delivery_id || '-')}</td>
         <td class="mono">${egp.toFixed(2)}</td>
         <td class="mono" style="color:var(--y)">${pi ? pi.toFixed(3) : '—'}</td>
+        <td class="mono" style="color:var(--ok)">${merchantEgp.toFixed(2)} ج</td>
         <td>${badgeStatus(o.status)}</td>
         <td>
           <div class="flex gap-1 flex-wrap">
@@ -478,7 +535,7 @@ async function loadOrders(){
         </td>
       </tr>
     `;
-  }).join('') || `<tr><td colspan="9" class="p-3 text-center muted">لا توجد بيانات</td></tr>`;
+  }).join('') || `<tr><td colspan="10" class="p-3 text-center muted">لا توجد بيانات</td></tr>`;
 
   loadStats();
 }
