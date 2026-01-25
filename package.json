@@ -1,10 +1,20 @@
 {
-  "name": "photo-storage",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Netlify functions dependencies for photo-storage.",
+  "name": "donate-way-pi",
+  "version": "1.1.0",
+  "description": "تطبيق تبرعات شبكة باي مع خاصية السحب على Pi Testnet",
+  "main": "index.html",
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.0",
-    "stellar-sdk": "^13.3.0"
-  }
+    "@supabase/supabase-js": "^2.39.7",
+    "stellar-sdk": "^13.1.0"
+  },
+  "scripts": {
+    "test": "echo \"no tests\""
+  },
+  "keywords": [
+    "pi-network",
+    "stellar",
+    "donations",
+    "testnet"
+  ],
+  "license": "ISC"
 }
