@@ -382,7 +382,22 @@
               <span class="miniIcon"><i class="fa-solid fa-location-dot"></i></span>
             </div>
 
+ codex/update-index.html-for-order-processing-6obidk
+        <input id="prod" class="w-full p-3" placeholder="اسم المنتج" />
+        <input id="price" type="number" class="w-full p-3" placeholder="سعر المنتج بالجنيه المصري" oninput="recalcInvoice()" />
+        <input id="custAddress" class="w-full p-3" placeholder="العنوان بالتفصيل" />
+        <div class="soft p-3 space-y-2 text-sm">
+          <div class="row">
+            <span class="muted">موقعك الحالي</span>
+            <button class="chip" onclick="setCustomerLocation()">تحديد الموقع</button>
+          </div>
+          <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+          <a id="custMapLink" class="tiny text-purple-300 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح الموقع على Google Maps</a>
+        </div>
+        <textarea id="notes" class="w-full p-3" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
+=======
             <div class="divider"></div>
+ main
 
             <select id="orderType">
               <option value="any">نوع الطلب: أي حاجة</option>
@@ -427,7 +442,28 @@
               <div class="flex items-center justify-between"><span class="muted">رسوم التوصيل</span><b><span id="invDelFeeEgp">20</span> ج</b></div>
               <div class="flex items-center justify-between"><span class="muted">رسوم الموقع</span><b><span id="invPlatFeeEgp">10</span> ج</b></div>
 
+ codex/update-index.html-for-order-processing-6obidk
+      <!-- TRACK -->
+      <div id="custTrack" class="hidden glass p-4 space-y-2">
+        <div class="row">
+          <b>حالة الطلب:</b>
+          <b id="custStatus" class="text-orange-300">pending</b>
+        </div>
+        <div class="row text-sm">
+          <span class="muted">العنوان</span>
+          <b id="custAddressView">—</b>
+        </div>
+        <div class="row text-sm">
+          <span class="muted">الموقع</span>
+          <a id="custTrackMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+        </div>
+        <div id="otpBox" class="hidden text-sm">
+          كود التسليم: <b id="otp" class="text-orange-200 text-lg mono"></b>
+        </div>
+      </div>
+=======
               <div class="divider"></div>
+ main
 
               <div class="flex items-center justify-between">
                 <span class="font-black">الإجمالي</span>
@@ -481,7 +517,19 @@
           </div>
         </section>
 
-        <div id="ordersBox" class="space-y-2"></div>
+      <div class="glass p-4">
+        <div class="row">
+          <div class="text-sm">الكابتن: <b id="delName">—</b></div>
+          <button onclick="loadOrders()" class="chip">تحديث الطلبات</button>
+        </div>
+        <div class="soft p-3 mt-3 space-y-2 text-sm">
+          <div class="row">
+            <span class="muted">موقع الكابتن</span>
+            <button class="chip" onclick="setDeliveryLocation()">تحديد موقعي</button>
+          </div>
+          <div id="delLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+          <div class="tiny">سيظهر لك الطلبات على بعد 5 كم فقط.</div>
+        </div>
       </div>
     </div>
     <div id="trackTab" class="hidden space-y-3">
@@ -492,11 +540,18 @@
             <span class="chip chipP"><i class="fa-solid fa-circle-info"></i> Live</span>
           </div>
 
-          <div class="miniCard space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="muted text-sm">حالة الطلب</span>
-              <b id="custStatus" class="text-purple-300">pending</b>
-            </div>
+        <div class="soft p-3 text-sm space-y-1" id="delOrderDetails">
+          <div class="row"><span class="muted">المنتج</span><b id="dProd">—</b></div>
+          <div class="row"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+          <div class="row"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+          <div class="row"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
+          <div class="row"><span class="muted">الموقع</span><a id="dMapLink" class="text-purple-300 underline hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a></div>
+          <div class="row"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+          <div class="row"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+          <div class="border-t border-white/10 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-300"><span id="dTotalEgp">—</span> ج</b></div>
+          <div class="row"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-purple-300"><span id="dTotalPi">—</span> Pi</b></div>
+          <div class="tiny">ملاحظات: <span id="dNotes">—</span></div>
+        </div>
 
             <div class="flex items-center justify-between text-sm">
               <span class="muted">العنوان</span>
@@ -568,23 +623,13 @@
             </div>
           </div>
 
-          <div class="miniCard space-y-1" id="delOrderDetails">
-            <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
-            <div class="flex items-center justify-between">
-              <span class="muted">الموقع</span>
-              <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
-            </div>
-            <div class="divider"></div>
-            <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-            <div class="divider"></div>
-            <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-400"><span id="dTotalEgp">—</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-purple-300"><span id="dTotalPi">—</span> Pi</b></div>
-            <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
-          </div>
+      <!-- WALLET + WITHDRAW -->
+      <div class="glass p-4 space-y-2">
+        <b class="text-sm">أرباحي المتاحة (Pi)</b>
+        <div class="text-sm">
+          الأرباح المتاحة:
+          <b class="mono text-purple-300"><span id="walletPi">0.000000</span> Pi</b>
+        </div>
 
           <div id="chatD" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
 
@@ -683,8 +728,6 @@ let ACTIVE_ORDER = null;
 let CUSTOMER_LOCATION = null;
 let DELIVERY_LOCATION = null;
 let HAS_LOCATION_COLUMNS = true;
-let ACTIVE_ROLE = 'customer';
-let ACTIVE_MAIN_TAB = 'home';
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -1096,7 +1139,7 @@ async function payAndCreate() {
     const paymentResult = await new Promise((resolve, reject) => {
       Pi.createPayment({
         amount: amountPi,
-        memo: `QuickCart | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
+        memo: `Talabat Pro | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
         metadata: {
           product, orderType, prodEgp,
           deliveryFee: DELIVERY_FEE_EGP,
@@ -1287,7 +1330,7 @@ async function loadOrders(){
         <div class="soft p-3 text-sm space-y-1">
           <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
           ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
-          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-600 underline" target="_blank" rel="noopener noreferrer" href="${mapUrl}" onclick="return openMapUrl('${mapUrl}')">فتح الخريطة</a></div>` : ``}
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-purple-300 underline" target="_blank" rel="noopener noreferrer" href="${mapUrl}" onclick="return openMapUrl('${mapUrl}')">فتح الخريطة</a></div>` : ``}
           <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
           <div class="border-t border-purple-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500">${Number(totalEgp).toFixed(2)} ج</b></div>
@@ -1534,7 +1577,7 @@ function listenStatus(){
         loadCustomerHistory();
         document.getElementById('custTrack').classList.add('hidden');
         document.getElementById('custChat').classList.add('hidden');
-        setActiveOrderId(null);
+        ACTIVE_ORDER = null;
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
           statusChannel = null;
@@ -1581,7 +1624,7 @@ async function finishWithOtp(){
     await loadDeliveryHistory();
     await loadOrders();
     document.getElementById('delChat').classList.add('hidden');
-    setActiveOrderId(null);
+    ACTIVE_ORDER = null;
     if (chatChannel) {
       try { db.removeChannel(chatChannel); } catch {}
       chatChannel = null;
@@ -1642,10 +1685,6 @@ async function loadWalletPi(){
           .eq('delivery_id', PI_USERNAME)
           .eq('status', 'approved')
           .limit(500);
-        const { data: instantWithdraws } = await db.from('withdrawals')
-          .select('amount')
-          .eq('delivery_id', PI_USERNAME)
-          .limit(500);
 
         let approvedSum = 0;
         (approvedWithdraws || []).forEach(w => {
@@ -1653,13 +1692,7 @@ async function loadWalletPi(){
           if(!isNaN(amount)) approvedSum += amount;
         });
 
-        let instantSum = 0;
-        (instantWithdraws || []).forEach(w => {
-          const amount = Number(w.amount || 0);
-          if(!isNaN(amount)) instantSum += amount;
-        });
-
-        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum - instantSum);
+        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum);
         document.getElementById('walletPi').innerText = available.toFixed(6);
         return;
       }
@@ -1703,7 +1736,19 @@ async function loadWalletPi(){
       if(!isNaN(amount)) instantSum += amount;
     });
 
-    const available = Math.max(0, sum - approvedSum - instantSum);
+    const { data: approvedWithdraws } = await db.from('withdraw_requests')
+      .select('amount_pi,status')
+      .eq('delivery_id', PI_USERNAME)
+      .eq('status', 'approved')
+      .limit(500);
+
+    let approvedSum = 0;
+    (approvedWithdraws || []).forEach(w => {
+      const amount = Number(w.amount_pi || 0);
+      if(!isNaN(amount)) approvedSum += amount;
+    });
+
+    const available = Math.max(0, sum - approvedSum);
     document.getElementById('walletPi').innerText = available.toFixed(6);
 
   }catch(e){
