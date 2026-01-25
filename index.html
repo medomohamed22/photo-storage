@@ -1801,7 +1801,11 @@ async function withdrawPi() {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(payload?.error || payload?.details || 'حصل خطأ في السحب');
+      const hasDetails = payload?.details && payload?.details !== payload?.error;
+      const message = hasDetails
+        ? `${payload?.error || 'حصل خطأ في السحب'}: ${payload?.details}`
+        : (payload?.error || payload?.details || 'حصل خطأ في السحب');
+      throw new Error(message);
     }
 
     Swal.fire({ icon: 'success', title: 'تم التحويل', text: payload?.message || 'تم التحويل بنجاح' });
