@@ -711,7 +711,11 @@
 
   <script>
 /* ================== CONFIG ================== */
-Pi.init({ version: "2.0", sandbox: false });
+if (window.Pi && typeof Pi.init === 'function') {
+  Pi.init({ version: "2.0", sandbox: false });
+} else {
+  console.warn('Pi SDK غير متاح وقت التهيئة');
+}
 
 const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
