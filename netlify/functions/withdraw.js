@@ -5,17 +5,18 @@ const StellarSdk = require('stellar-sdk');
 const { createClient } = require('@supabase/supabase-js');
 
 /* ================== CONFIG ================== */
-// Supabase
+// ملاحظة هامة: تم إزالة القيم النصية (Hardcoded) لمنع أخطاء الأمان في Netlify
+// يجب التأكد من إضافة هذه المتغيرات في لوحة تحكم Netlify: Site Settings > Environment Variables
+
 const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // App wallet (TESTNET secret)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 
-// Pi TESTNET Horizon
-// ✅ الأفضل: /horizon
-const PI_HORIZON_URL = process.env.PI_HORIZON_URL || 'https://api.testnet.minepi.com/horizon';
-const NETWORK_PASSPHRASE = process.env.PI_NETWORK_PASSPHRASE || 'Pi Testnet';
+// Pi TESTNET Horizon & Passphrase
+const PI_HORIZON_URL = process.env.PI_HORIZON_URL;
+const NETWORK_PASSPHRASE = process.env.PI_NETWORK_PASSPHRASE;
 
 // Server-side Supabase client (service role)
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -50,8 +51,11 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
   try {
+    // التحقق من وجود المتغيرات الهامة قبل البدء
     if (!SUPABASE_SERVICE_ROLE_KEY) return json(500, { error: 'Missing SUPABASE_SERVICE_ROLE_KEY' });
     if (!APP_WALLET_SECRET) return json(500, { error: 'Missing APP_WALLET_SECRET' });
+    if (!PI_HORIZON_URL) return json(500, { error: 'Missing PI_HORIZON_URL' });
+    if (!NETWORK_PASSPHRASE) return json(500, { error: 'Missing PI_NETWORK_PASSPHRASE' });
 
     const body = safeParse(event.body);
     const uid = String(body.uid || '').trim();
@@ -93,7 +97,7 @@ exports.handler = async (event) => {
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
 
     const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: '100000', // زي كودك
+      fee: '100000',
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(
