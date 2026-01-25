@@ -4,10 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>QuickCart | واجهة Pi (Talabat-style)</title>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase + SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Pi SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
   <style>
@@ -105,15 +113,6 @@
     .chipB{ background: rgba(96,165,250,.14); border-color: rgba(96,165,250,.35); }
     .chipG{ background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); }
     .chipS{ background: rgba(255,255,255,.05); }
-    #roleToggle{
-      white-space:normal;
-    }
-    #roleToggle .roleToggleText{
-      display:flex;
-      flex-direction:column;
-      align-items:flex-start;
-      line-height:1.2;
-    }
 
     /* Buttons */
     .btn{
@@ -283,6 +282,7 @@
 </head>
 
 <body class="safeBottom">
+  <!-- HEADER -->
   <header class="sticky top-0 z-50 topBar">
     <div class="px-3 pt-3 pb-3">
       <div class="max-w-lg mx-auto flex items-center justify-between gap-3">
@@ -297,12 +297,8 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <button id="roleToggle" onclick="toggleRole()" class="chip chipS hidden" title="اضغط للتبديل بين العميل والدليفري">
-            <i class="fa-solid fa-people-arrows"></i>
-            <span class="roleToggleText">
-              <span>التبديل</span>
-              <span class="tiny muted">اضغط للتبديل</span>
-            </span>
+          <button id="roleToggle" onclick="toggleRole()" class="chip chipS hidden">
+            <i class="fa-solid fa-user"></i> User
           </button>
           <a id="adminLink" href="./admin.html" class="chip chipP hidden">
             <i class="fa-solid fa-shield-halved"></i> Admin
@@ -316,6 +312,7 @@
   </header>
 
   <main class="max-w-lg mx-auto p-3 space-y-3">
+    <!-- LOGIN -->
     <div id="loginBox" class="glass p-4 text-center space-y-3">
       <div class="flex items-center justify-center gap-2">
         <span class="miniIcon"><i class="fa-solid fa-right-to-bracket"></i></span>
@@ -334,7 +331,11 @@
         دخول تجريبي (اختبار خارج Pi Browser)
       </button>
     </div>
+
+    <!-- ================= HOME TAB ================= -->
     <div id="homeTab" class="space-y-3">
+
+      <!-- STATUS + RATES -->
       <section class="glass p-4 space-y-3">
         <div class="secTitle">
           <b><i class="fa-solid fa-signal mr-1"></i> الحالة والأسعار</b>
@@ -378,6 +379,8 @@
           </div>
         </div>
       </section>
+
+      <!-- ================= CUSTOMER (HOME) ================= -->
       <div id="customerHome" class="hidden space-y-3">
         <section class="glass p-4 space-y-3">
           <div class="secTitle">
@@ -424,6 +427,8 @@
 
             <textarea id="notes" class="mt-2" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
           </div>
+
+          <!-- INVOICE -->
           <div class="miniCard space-y-2">
             <div class="secTitle">
               <b><i class="fa-solid fa-receipt mr-1"></i> تفاصيل الحساب</b>
@@ -465,6 +470,8 @@
           </div>
         </section>
       </div>
+
+      <!-- ================= DELIVERY (HOME) ================= -->
       <div id="deliveryHome" class="hidden space-y-3">
         <section class="glass p-4 space-y-3">
           <div class="secTitle">
@@ -496,8 +503,13 @@
         <div id="ordersBox" class="space-y-2"></div>
       </div>
     </div>
+
+    <!-- ================= TRACK TAB ================= -->
     <div id="trackTab" class="hidden space-y-3">
+
+      <!-- ================= CUSTOMER (TRACK) ================= -->
       <div id="customerTrackTab" class="hidden space-y-3">
+        <!-- TRACK -->
         <section id="custTrack" class="hidden glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-route mr-1"></i> متابعة الطلب</b>
@@ -528,6 +540,8 @@
             </div>
           </div>
         </section>
+
+        <!-- CHAT -->
         <section id="custChat" class="hidden glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-comments mr-1"></i> الشات (لحظي)</b>
@@ -556,6 +570,8 @@
           </div>
           <div class="tiny muted">✅ = اتبعت | ✅✅ = اتقريت</div>
         </section>
+
+        <!-- CUSTOMER HISTORY -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي</b>
@@ -566,7 +582,11 @@
           <div id="custHistory" class="space-y-2 text-sm"></div>
         </section>
       </div>
+
+      <!-- ================= DELIVERY (TRACK) ================= -->
       <div id="deliveryTrackTab" class="hidden space-y-3">
+
+        <!-- DELIVERY CHAT -->
         <section id="delChat" class="hidden glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-headset mr-1"></i> شات الطلب (لحظي)</b>
@@ -575,7 +595,7 @@
                 <i class="fa-solid fa-motorcycle"></i> في الطريق
               </button>
               <button class="chip chipS" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">
-                <i class="fa-solid fa-ban"></i> غير متوف
+                <i class="fa-solid fa-ban"></i> غير متوفر
               </button>
             </div>
           </div>
@@ -621,6 +641,8 @@
             </button>
           </div>
         </section>
+
+        <!-- WALLET + WITHDRAW -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-wallet mr-1"></i> أرباحي المتاحة</b>
@@ -632,7 +654,7 @@
               الأرباح المتاحة:
               <b class="mono text-purple-300"><span id="walletPi">0.000000</span> Pi</b>
             </div>
-            <div class="tiny muted mt-1">السحب يتم تحويله فورًا عند توفر الرصيد</div>
+            <div class="tiny muted mt-1">السحب يتم مراجعته يدويًا من الإدارة</div>
           </div>
 
           <input id="wdAmountPi" type="number" step="0.000001" placeholder="كم Pi هتسحب؟" />
@@ -642,8 +664,10 @@
             <i class="fa-solid fa-hand-holding-dollar"></i>
             طلب سحب Pi
           </button>
-          <div class="tiny muted">التحويل يتم مباشرة عند نجاح العملية</div>
+          <div class="tiny muted">سيتم مراجعة الطلب يدويًا من الإدارة قبل التحويل</div>
         </section>
+
+        <!-- WITHDRAW HISTORY -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-list mr-1"></i> سجل السحب</b>
@@ -653,6 +677,8 @@
           </div>
           <div id="wdHistory" class="space-y-2 text-sm"></div>
         </section>
+
+        <!-- DELIVERY HISTORY -->
         <section class="glass p-4 space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي كدليفري</b>
@@ -665,6 +691,8 @@
       </div>
     </div>
   </main>
+
+  <!-- BOTTOM NAV -->
   <div id="bottomNav" class="bottomNav hidden">
     <div class="wrap">
       <button id="navHome" onclick="setMainTab('home')" class="btn btnA flex-1">
@@ -678,11 +706,7 @@
 
   <script>
 /* ================== CONFIG ================== */
-if (window.Pi && typeof Pi.init === 'function') {
-  Pi.init({ version: "2.0", sandbox: false });
-} else {
-  console.warn('Pi SDK غير متاح وقت التهيئة');
-}
+Pi.init({ version: "2.0", sandbox: false });
 
 const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
@@ -695,7 +719,6 @@ const PLATFORM_FEE_EGP = 10;
 /* ================== GLOBALS ================== */
 let PI_USER = null;
 let PI_USERNAME = null;
-let SUPABASE_AUTH_TOKEN = null;
 let ACTIVE_ORDER = null;
 let CUSTOMER_LOCATION = null;
 let DELIVERY_LOCATION = null;
@@ -730,20 +753,10 @@ async function refreshRates(){
   recalcInvoice();
 }
 
-async function fetchJsonWithFallback(url, fallbackUrl){
-  const res = await fetch(url, { cache: "no-store" });
-  if(res.ok) return res.json();
-  if(!fallbackUrl) throw new Error(`Fetch failed: ${res.status}`);
-  const fallbackRes = await fetch(fallbackUrl, { cache: "no-store" });
-  if(!fallbackRes.ok) throw new Error(`Fallback failed: ${fallbackRes.status}`);
-  return fallbackRes.json();
-}
-
 async function fetchPiFromOKX(){
   try{
-    const url = "https://www.okx.com/api/v5/market/ticker?instId=PI-USDT";
-    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const j = await fetchJsonWithFallback(url, proxy);
+    const r = await fetch("https://www.okx.com/api/v5/market/ticker?instId=PI-USDT", { cache: "no-store" });
+    const j = await r.json();
     const last = parseFloat(j?.data?.[0]?.last || "0");
     if(last > 0) PI_USDT = last;
 
@@ -751,15 +764,13 @@ async function fetchPiFromOKX(){
     updatePiEgpOne();
   }catch(e){
     console.warn('OKX PI ticker failed:', e);
-    document.getElementById('piUsdt').innerText = 'فشل';
   }
 }
 
 async function fetchUsdEgp(){
   try{
-    const url = "https://open.er-api.com/v6/latest/USD";
-    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const j = await fetchJsonWithFallback(url, proxy);
+    const r = await fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" });
+    const j = await r.json();
     const rate = parseFloat(j?.rates?.EGP || "0");
     if(rate > 0) USD_EGP = rate;
 
@@ -810,6 +821,7 @@ function openMapUrl(url){
   window.open(url, '_blank', 'noopener,noreferrer');
   return false;
 }
+
 async function setCustomerLocation(){
   try{
     const loc = await getCurrentLocation();
@@ -856,33 +868,6 @@ function hasMissingLocationColumn(error){
 }
 
 /* ================== LOGIN ================== */
-async function ensureSupabaseAuth(){
-  if (!db?.auth) return;
-  try{
-    const { data: sessionData } = await db.auth.getSession();
-    let session = sessionData?.session || null;
-    if (!session){
-      const { data, error } = await db.auth.signInAnonymously();
-      if (error) throw error;
-      session = data?.session || null;
-    }
-    if (session && PI_USERNAME){
-      await db.auth.updateUser({
-        data: {
-          pi_username: PI_USERNAME,
-          delivery_id: PI_USERNAME,
-          username: PI_USERNAME,
-        },
-      });
-    }
-    const { data: refreshed } = await db.auth.getSession();
-    SUPABASE_AUTH_TOKEN = refreshed?.session?.access_token || session?.access_token || null;
-  }catch(e){
-    console.warn('supabase auth failed', e);
-    SUPABASE_AUTH_TOKEN = null;
-  }
-}
-
 async function piLogin() {
   try {
     if (!window.Pi || !Pi.authenticate) {
@@ -930,7 +915,6 @@ async function piLogin() {
     setMainTab('home');
     setRole('customer');
 
-    await ensureSupabaseAuth();
     await refreshRates();
     await restoreActiveOrder();
     loadOrders();
@@ -959,7 +943,6 @@ function devLogin(){
 
   document.getElementById('adminLink').classList.add('hidden');
 
-  ensureSupabaseAuth();
   setMainTab('home');
   setRole('customer');
 
@@ -1239,6 +1222,7 @@ async function payAndCreate() {
     const { data, error } = insertResult;
 
     if (error) throw error;
+
     setActiveOrderId(data?.[0]?.id || null);
     setMainTab('track');
 
@@ -1658,33 +1642,6 @@ async function loadWalletPi(){
   try{
     if(!PI_USERNAME) return;
 
-    const toNumber = (value) => {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : 0;
-    };
-
-    const calculateOrderEarningsPi = (order) => {
-      const snapshot = order?.pricing_snapshot || {};
-      const totalPi = toNumber(snapshot.total_pi);
-      const platformFeePi = toNumber(snapshot.platform_fee_pi);
-      if(totalPi > 0){
-        return Math.max(0, totalPi - platformFeePi);
-      }
-
-      const priceEgp = toNumber(order?.price);
-      const deliveryFeeEgp = toNumber(order?.delivery_fee);
-      const totalPriceEgp = toNumber(order?.total_price);
-      const platformFeeEgp = toNumber(order?.platform_fee);
-      const baseEgp = priceEgp || deliveryFeeEgp
-        ? priceEgp + deliveryFeeEgp
-        : Math.max(0, totalPriceEgp - platformFeeEgp);
-      const piPerEgp = toNumber(snapshot.pi_egp);
-      if(baseEgp > 0 && piPerEgp > 0){
-        return baseEgp / piPerEgp;
-      }
-      return 0;
-    };
-
     // 1) حاول من delivery_wallet
     try{
       const { data, error } = await db.from('delivery_wallet')
@@ -1698,10 +1655,6 @@ async function loadWalletPi(){
           .eq('delivery_id', PI_USERNAME)
           .eq('status', 'approved')
           .limit(500);
-        const { data: instantWithdraws } = await db.from('withdrawals')
-          .select('amount')
-          .eq('delivery_id', PI_USERNAME)
-          .limit(500);
 
         let approvedSum = 0;
         (approvedWithdraws || []).forEach(w => {
@@ -1709,13 +1662,7 @@ async function loadWalletPi(){
           if(!isNaN(amount)) approvedSum += amount;
         });
 
-        let instantSum = 0;
-        (instantWithdraws || []).forEach(w => {
-          const amount = Number(w.amount || 0);
-          if(!isNaN(amount)) instantSum += amount;
-        });
-
-        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum - instantSum);
+        const available = Math.max(0, Number(data.balance_pi || 0) - approvedSum);
         document.getElementById('walletPi').innerText = available.toFixed(6);
         return;
       }
@@ -1725,7 +1672,7 @@ async function loadWalletPi(){
 
     // 2) fallback من orders delivered
     const { data: orders, error: e2 } = await db.from('orders')
-      .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
+      .select('pricing_snapshot,status,delivery_id')
       .eq('delivery_id', PI_USERNAME)
       .eq('status', 'delivered')
       .limit(500);
@@ -1734,17 +1681,14 @@ async function loadWalletPi(){
 
     let sum = 0;
     (orders||[]).forEach(o=>{
-      sum += calculateOrderEarningsPi(o);
+      const pi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
+      if(!isNaN(pi)) sum += pi;
     });
 
     const { data: approvedWithdraws } = await db.from('withdraw_requests')
       .select('amount_pi,status')
       .eq('delivery_id', PI_USERNAME)
       .eq('status', 'approved')
-      .limit(500);
-    const { data: instantWithdraws } = await db.from('withdrawals')
-      .select('amount')
-      .eq('delivery_id', PI_USERNAME)
       .limit(500);
 
     let approvedSum = 0;
@@ -1753,13 +1697,7 @@ async function loadWalletPi(){
       if(!isNaN(amount)) approvedSum += amount;
     });
 
-    let instantSum = 0;
-    (instantWithdraws || []).forEach(w => {
-      const amount = Number(w.amount || 0);
-      if(!isNaN(amount)) instantSum += amount;
-    });
-
-    const available = Math.max(0, sum - approvedSum - instantSum);
+    const available = Math.max(0, sum - approvedSum);
     document.getElementById('walletPi').innerText = available.toFixed(6);
 
   }catch(e){
@@ -1783,52 +1721,19 @@ async function withdrawPi() {
     const available = parseFloat(document.getElementById('walletPi').innerText || "0") || 0;
     if (amount > available) return Swal.fire('المبلغ أكبر من الرصيد المتاح');
 
-    await ensureSupabaseAuth();
-    const headers = { 'Content-Type': 'application/json' };
-    if (SUPABASE_AUTH_TOKEN) {
-      headers.Authorization = `Bearer ${SUPABASE_AUTH_TOKEN}`;
-    }
+    const { error } = await db.from('withdraw_requests').insert([{
+      delivery_id: PI_USERNAME,
+      amount_pi: amount,
+      wallet_address: wallet,
+      status: 'pending'
+    }]);
+    if (error) throw error;
 
- codex-etyn7v
-    let response = await fetch('/api/withdraw', {
-    const response = await fetch('/api/withdraw', {
- main
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        deliveryId: PI_USERNAME,
-        username: PI_USERNAME,
-        amount: amount,
-        walletAddress: wallet,
-      }),
-    });
-    if (response.status === 404) {
-      response = await fetch('/.netlify/functions/withdraw', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          deliveryId: PI_USERNAME,
-          username: PI_USERNAME,
-          amount: amount,
-          walletAddress: wallet,
-        }),
-      });
-    }
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const hasDetails = payload?.details && payload?.details !== payload?.error;
-      const message = hasDetails
-        ? `${payload?.error || 'حصل خطأ في السحب'}: ${payload?.details}`
-        : (payload?.error || payload?.details || 'حصل خطأ في السحب');
-      throw new Error(message);
-    }
-
-    Swal.fire({ icon: 'success', title: 'تم التحويل', text: payload?.message || 'تم التحويل بنجاح' });
+    Swal.fire({ icon: 'success', title: 'تم', text: 'تم إرسال طلب السحب للإدارة' });
 
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
 
-    loadWalletPi();
     loadWithdrawHistory();
 
   } catch (e) {
@@ -1843,8 +1748,8 @@ async function loadWithdrawHistory(){
     const box = document.getElementById('wdHistory');
     box.innerHTML = `<div class="tiny">جاري التحميل...</div>`;
 
-    const { data, error } = await db.from('withdrawals')
-      .select('id,amount,wallet_address,created_at,txid')
+    const { data, error } = await db.from('withdraw_requests')
+      .select('id,amount_pi,wallet_address,status,created_at,note')
       .eq('delivery_id', PI_USERNAME)
       .order('created_at', { ascending:false })
       .limit(50);
@@ -1859,8 +1764,8 @@ async function loadWithdrawHistory(){
     box.innerHTML = data.map(w => `
       <div class="soft p-3">
         <div class="row">
-          <b class="mono text-purple-600">${Number(w.amount||0).toFixed(6)} Pi</b>
-          <span class="chip">تم</span>
+          <b class="mono text-purple-600">${Number(w.amount_pi||0).toFixed(6)} Pi</b>
+          <span class="chip">${escapeHtml(w.status)}</span>
         </div>
         <div class="tiny mt-1 wdRow">
   <span class="wdLabel">العنوان:</span>
@@ -1868,7 +1773,7 @@ async function loadWithdrawHistory(){
     ${escapeHtml(w.wallet_address||'-')}
   </span>
 </div>
-        ${w.txid ? `<div class="tiny mt-1">رقم العملية: <span class="mono">${escapeHtml(w.txid)}</span></div>` : ``}
+        ${w.note ? `<div class="tiny mt-1">ملاحظة: ${escapeHtml(w.note)}</div>` : ``}
       </div>
     `).join('');
 
@@ -1956,8 +1861,7 @@ async function loadDeliveryHistory(){
     box.innerHTML = data.map(o => {
       const totalEgp = Number(o.total_price||0);
       const totalPi = Number(o?.pricing_snapshot?.total_pi || (egpToPi(totalEgp) || 0));
-      const platformFeePi = Number(o?.pricing_snapshot?.platform_fee_pi || 0);
-      const profitPi = totalPi - platformFeePi;
+      const profitPi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
       const s = o.status || 'pending';
 
       return `
@@ -2007,14 +1911,7 @@ function setMainTab(tab){
 
 function updateRoleUI(){
   const isCustomer = ACTIVE_ROLE === 'customer';
-  const roleLabel = isCustomer ? 'واجهة العميل' : 'واجهة الدليفري';
-  const nextRole = isCustomer ? 'الدليفري' : 'العميل';
-  const roleToggle = document.getElementById('roleToggle');
-  roleToggle.innerHTML = `<i class="fa-solid fa-people-arrows"></i>
-    <span class="roleToggleText">
-      <span>${roleLabel}</span>
-      <span class="tiny muted">اضغط للتبديل إلى ${nextRole}</span>
-    </span>`;
+  document.getElementById('roleToggle').innerText = isCustomer ? 'User' : 'Delivery';
   document.getElementById('customerHome').classList.toggle('hidden', !isCustomer);
   document.getElementById('deliveryHome').classList.toggle('hidden', isCustomer);
   document.getElementById('customerTrackTab').classList.toggle('hidden', !isCustomer);
