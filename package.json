@@ -1,0 +1,10 @@
+{
+  "name": "photo-storage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Netlify functions dependencies for photo-storage.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0",
+    "stellar-sdk": "^13.3.0"
+  }
+}
