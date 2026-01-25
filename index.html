@@ -38,7 +38,6 @@
       overflow-x: hidden;
     }
 
-    /* الخلفية الجمالية */
     .bg-gradient-mesh {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
       background: 
@@ -46,14 +45,12 @@
         radial-gradient(circle at 85% 30%, rgba(34, 197, 94, 0.08), transparent 25%);
     }
 
-    /* كلاسات الزجاج */
     .glass {
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
       border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 
     .glass-header {
@@ -62,7 +59,6 @@
       border-bottom: 1px solid var(--glass-border);
     }
 
-    /* الأزرار والمدخلات */
     .btn {
       transition: transform 0.1s, box-shadow 0.2s;
       border-radius: 16px;
@@ -78,14 +74,8 @@
       padding: 12px 16px;
       width: 100%;
       outline: none;
-      transition: 0.3s;
-    }
-    .input-box:focus {
-      border-color: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
     }
 
-    /* شريط التنقل السفلي */
     .bottom-nav {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -93,48 +83,24 @@
       backdrop-filter: blur(15px);
       border-top: 1px solid var(--glass-border);
       height: calc(var(--nav-height) + env(safe-area-inset-bottom));
-      padding-bottom: env(safe-area-inset-bottom);
       display: flex;
       justify-content: space-around;
       align-items: center;
       z-index: 100;
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
     }
     .nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       color: var(--text-muted);
       font-size: 11px;
-      gap: 4px;
-      width: 60px;
       transition: 0.3s;
     }
-    .nav-item i { font-size: 20px; margin-bottom: 2px; transition: 0.3s; }
     .nav-item.active { color: var(--primary-light); }
-    .nav-item.active i { transform: translateY(-3px); text-shadow: 0 5px 15px rgba(139, 92, 246, 0.5); }
 
-    /* تحسينات القوائم */
-    .order-card {
-      position: relative;
-      overflow: hidden;
-      transition: 0.3s;
-    }
-    .order-card::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-      background: var(--primary);
-    }
-
-    /* رسوميات */
-    .coin-spin { animation: spin 4s linear infinite; }
-    @keyframes spin { 100% { transform: rotateY(360deg); } }
-
-    /* إخفاء الصفحات للتبديل */
-    .view-section { display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .view-section { display: none; opacity: 0; }
     .view-section.active { display: block; opacity: 1; animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
   </style>
 </head>
 <body>
@@ -142,45 +108,27 @@
   <div class="bg-gradient-mesh"></div>
 
   <div id="loginOverlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#07051a] p-6 text-center">
-    <div class="mb-6 relative">
-      <div class="absolute inset-0 bg-purple-600 blur-2xl opacity-20 rounded-full"></div>
-      <i class="fa-solid fa-basket-shopping text-6xl text-white relative z-10"></i>
-    </div>
     <h1 class="text-3xl font-black mb-1">QuickCart</h1>
     <p class="text-gray-400 text-sm mb-8">اطلب، ادفع بـ Pi، واستلم.</p>
-
-    <div id="loadingSpinner" class="hidden flex-col items-center">
-      <div class="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p class="text-sm text-purple-300">جاري الاتصال...</p>
-    </div>
-
-    <div id="loginBtns" class="w-full max-w-xs space-y-3">
-      <button onclick="piLogin()" class="btn w-full py-4 bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-lg shadow-purple-900/50 flex items-center justify-center gap-3 text-lg">
-        <i class="fa-brands fa-pied-piper-alt text-xl"></i>
-        <span>تسجيل دخول بـ Pi</span>
+    <div id="loadingSpinner" class="hidden mb-4 animate-spin w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full"></div>
+    <div id="loginBtns" class="w-full max-w-xs">
+      <button onclick="piLogin()" class="btn w-full py-4 bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-lg">
+        تسجيل دخول بـ Pi
       </button>
-      <button onclick="devLogin()" class="text-gray-500 text-xs underline mt-4">دخول تجريبي (للمطورين)</button>
     </div>
   </div>
 
-  <header class="fixed top-0 left-0 right-0 h-[60px] glass-header z-40 flex items-center justify-between px-4 safe-top">
+  <header class="fixed top-0 left-0 right-0 h-[60px] glass-header z-40 flex items-center justify-between px-4">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white shadow-lg">
-        <i class="fa-solid fa-basket-shopping text-xs"></i>
-      </div>
+      <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white"><i class="fa-solid fa-basket-shopping text-xs"></i></div>
       <div>
         <h1 class="text-sm font-bold leading-tight">QuickCart</h1>
-        <div class="text-[10px] text-emerald-400 flex items-center gap-1">
-          <i class="fa-solid fa-circle text-[6px]"></i>
-          <span id="headerRate">1 Pi ≈ جارِ الحساب...</span>
-        </div>
+        <div id="headerRate" class="text-[10px] text-emerald-400">1 Pi ≈ جارِ الحساب...</div>
       </div>
     </div>
-    <div class="flex items-center gap-2">
-      <button onclick="switchMode()" id="modeSwitchBtn" class="glass px-3 py-1.5 text-xs font-bold text-purple-300 flex items-center gap-2">
-        <i class="fa-solid fa-repeat"></i> <span id="modeText">Delivery</span>
-      </button>
-    </div>
+    <button onclick="switchMode()" id="modeSwitchBtn" class="glass px-3 py-1.5 text-xs font-bold text-purple-300">
+      <i class="fa-solid fa-repeat"></i> <span id="modeText">توصيل</span>
+    </button>
   </header>
 
   <main class="pt-[75px] px-4 pb-4 max-w-md mx-auto relative">
@@ -188,739 +136,212 @@
     <div id="view-c-home" class="view-section active">
       <div class="glass p-5 mb-5 bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-purple-500/30">
         <h2 class="text-xl font-bold mb-1">أهلاً <span id="cName" class="text-purple-300">...</span> 👋</h2>
-        <p class="text-xs text-gray-300 mb-3">جعان؟ ولا محتاج طلبات للبيت؟</p>
-        <div class="flex gap-2">
-          <div class="bg-black/30 px-3 py-1 rounded-lg text-xs flex items-center gap-2">
-            <i class="fa-solid fa-wallet text-yellow-500"></i>
-            <span id="piBalanceDisplay">-- Pi</span>
-          </div>
-        </div>
+        <div class="bg-black/30 px-3 py-1 rounded-lg text-xs w-max mt-2"><i class="fa-solid fa-wallet text-yellow-500 mr-1"></i> <span id="piBalanceDisplay">-- Pi</span></div>
       </div>
 
       <div class="space-y-4">
-        <h3 class="font-bold text-sm text-gray-400">بدء طلب جديد</h3>
-        
         <div class="glass p-4 space-y-3">
           <select id="orderType" class="input-box bg-[#0f0a24]">
             <option value="market">🛒 سوبر ماركت</option>
             <option value="restaurant">🍔 مطعم</option>
-            <option value="pharmacy">💊 صيدلية</option>
-            <option value="any">📦 توصيل أي شيء</option>
           </select>
-
-          <input id="prod" type="text" placeholder="ماذا تريد أن تطلب؟ (مثال: وجبة برجر)" class="input-box" />
-          
+          <input id="prod" type="text" placeholder="ماذا تريد أن تطلب؟" class="input-box" />
           <div class="flex gap-2">
-            <input id="price" type="number" placeholder="السعر المتوقع (ج.م)" class="input-box w-2/3" oninput="recalcInvoice()" />
-            <div class="input-box w-1/3 flex items-center justify-center text-sm text-gray-400 bg-white/5">
-              <span id="livePiPrice">0 Pi</span>
-            </div>
+            <input id="price" type="number" placeholder="السعر (ج.م)" class="input-box w-2/3" oninput="recalcInvoice()" />
+            <div class="input-box w-1/3 flex items-center justify-center text-xs text-gray-400" id="livePiPrice">0 Pi</div>
           </div>
-
-          <div class="relative">
-            <input id="custAddress" type="text" placeholder="عنوان التوصيل بالتفصيل" class="input-box pr-10" />
-            <button onclick="setCustomerLocation()" class="absolute top-1/2 left-2 -translate-y-1/2 text-purple-400 p-2">
-              <i class="fa-solid fa-crosshairs"></i>
-            </button>
-          </div>
-          <div id="locStatus" class="text-[10px] text-gray-500 text-left px-1">لم يتم تحديد الموقع GPS</div>
-          
-          <textarea id="notes" placeholder="ملاحظات إضافية للكابتن..." class="input-box h-20"></textarea>
+          <input id="custAddress" type="text" placeholder="عنوان التوصيل بالتفصيل" class="input-box" />
+          <textarea id="notes" placeholder="ملاحظات إضافية..." class="input-box h-20"></textarea>
         </div>
 
         <div class="glass p-4 bg-white/5 border border-dashed border-gray-600/50">
-          <div class="flex justify-between text-xs mb-2 text-gray-400">
-            <span>المنتج</span> <span id="invProd">0.00 ج</span>
-          </div>
-          <div class="flex justify-between text-xs mb-2 text-gray-400">
-            <span>توصيل + خدمة</span> <span id="invFees">30.00 ج</span>
-          </div>
-          <div class="h-px bg-gray-700 my-2"></div>
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-sm">الإجمالي</span>
-            <div class="text-right">
-              <div class="font-black text-emerald-400 text-lg"><span id="invTotalEgp">0</span> ج.م</div>
-              <div class="text-xs text-purple-400 font-mono"><span id="invTotalPi">0.000000</span> Pi</div>
-            </div>
-          </div>
+          <div class="flex justify-between text-xs mb-1"><span>الإجمالي (ج.م)</span> <span id="invTotalEgp">0</span></div>
+          <div class="flex justify-between font-bold text-purple-400"><span>الإجمالي (Pi)</span> <span id="invTotalPi">0.00</span></div>
         </div>
 
-        <button onclick="payAndCreate()" class="btn w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/50 flex justify-center items-center gap-2">
-          <span>تأكيد ودفع</span>
-          <i class="fa-solid fa-arrow-left"></i>
-        </button>
+        <button onclick="payAndCreate()" class="btn w-full py-4 bg-emerald-600 text-white shadow-lg">تأكيد ودفع عبر Pi</button>
       </div>
     </div>
 
     <div id="view-c-orders" class="view-section">
-      <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-clock-rotate-left text-purple-500"></i> نشاطي
-      </h3>
-      
-      <div id="activeOrderContainer" class="hidden mb-6">
-        <div class="glass p-1 border-l-4 border-l-yellow-500 relative overflow-hidden">
-          <div class="absolute top-0 left-0 bg-yellow-500/20 px-3 py-1 rounded-br-lg text-[10px] text-yellow-300 font-bold">جاري التنفيذ</div>
-          <div class="p-4 pt-8">
-            <h4 class="font-bold text-lg" id="trackProdName">--</h4>
-            <div class="flex items-center gap-2 mt-1 mb-3">
-              <span class="text-xs bg-white/10 px-2 py-0.5 rounded text-gray-300" id="trackStatus">Pending</span>
-              <span class="text-xs font-mono text-purple-300" id="trackOtp">OTP: ****</span>
-            </div>
-            
-            <div class="glass bg-black/40 h-48 overflow-y-auto p-3 mb-3 text-sm space-y-2 rounded-xl" id="chatC"></div>
-            <div class="flex gap-2">
-              <input id="msgC" type="text" class="input-box py-2 text-sm" placeholder="كلم الكابتن..." />
-              <button onclick="sendMsg('customer')" class="btn bg-purple-600 text-white w-10 h-10 rounded-xl flex items-center justify-center">
-                <i class="fa-solid fa-paper-plane text-xs"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+      <h3 class="font-bold text-lg mb-4">طلباتي النشطة</h3>
+      <div id="activeOrderContainer" class="hidden mb-6 glass p-4 border-l-4 border-yellow-500">
+          <h4 class="font-bold" id="trackProdName">--</h4>
+          <p class="text-xs text-gray-400" id="trackStatus">Status</p>
+          <p class="text-sm font-mono text-purple-400 mt-2" id="trackOtp">OTP: ****</p>
       </div>
-
-      <div id="custHistoryList" class="space-y-3 pb-20"></div>
+      <div id="custHistoryList" class="space-y-3"></div>
     </div>
-
 
     <div id="view-d-home" class="view-section">
-      <div class="flex justify-between items-end mb-4">
-        <div>
-          <h2 class="font-bold text-xl">طلبات متاحة</h2>
-          <p class="text-xs text-gray-400">الطلبات القريبة منك (5 كم)</p>
-        </div>
-        <button onclick="setDeliveryLocation()" class="glass px-3 py-2 text-xs text-emerald-400">
-          <i class="fa-solid fa-location-dot"></i> تحديث موقعي
-        </button>
-      </div>
-
-      <div id="ordersBox" class="space-y-3 pb-20">
-        <div class="text-center py-10 text-gray-500 text-sm">جاري البحث عن طلبات...</div>
-      </div>
-    </div>
-
-    <div id="view-d-active" class="view-section">
-      <div id="noActiveJob" class="text-center py-20 opacity-50">
-        <i class="fa-solid fa-motorcycle text-5xl mb-4"></i>
-        <p>لا يوجد طلب نشط حالياً</p>
-        <button onclick="switchView('view-d-home')" class="text-purple-400 text-sm mt-2 underline">اذهب للسوق</button>
-      </div>
-
-      <div id="activeJobContent" class="hidden">
-        <div class="glass p-4 mb-4 border-l-4 border-l-emerald-500">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="font-bold text-lg" id="dProdName">--</h3>
-              <p class="text-xs text-gray-400 mb-2" id="dAddress">--</p>
-            </div>
-            <a id="dMapBtn" href="#" target="_blank" class="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center hover:bg-blue-600 hover:text-white transition">
-              <i class="fa-solid fa-location-arrow"></i>
-            </a>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-2 mt-4">
-            <div class="glass bg-white/5 p-2 text-center rounded-lg">
-              <div class="text-[10px] text-gray-400">تحصيل (كاش)</div>
-              <div class="font-bold text-emerald-400" id="dCashCollect">0 ج</div>
-            </div>
-            <div class="glass bg-white/5 p-2 text-center rounded-lg">
-              <div class="text-[10px] text-gray-400">ربحك (Pi)</div>
-              <div class="font-bold text-purple-400 font-mono" id="dProfitPi">0</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass p-3 mb-4">
-          <div class="glass bg-black/40 h-56 overflow-y-auto p-3 mb-3 text-sm space-y-2 rounded-xl" id="chatD"></div>
-          <div class="flex gap-2">
-            <input id="msgD" type="text" class="input-box py-2 text-sm" placeholder="رد على العميل..." />
-            <button onclick="sendMsg('delivery')" class="btn bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center">
-              <i class="fa-solid fa-paper-plane text-xs"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="setOrderStatus('arrived')" class="btn bg-gray-700 py-3 text-sm">
-            <i class="fa-solid fa-bell"></i> وصلت للموقع
-          </button>
-          <button onclick="finishWithOtp()" class="btn bg-emerald-600 text-white py-3 text-sm">
-            <i class="fa-solid fa-check-circle"></i> تسليم (OTP)
-          </button>
-        </div>
-      </div>
+      <h2 class="font-bold text-xl mb-4">طلبات متاحة</h2>
+      <div id="ordersBox" class="space-y-3"></div>
     </div>
 
     <div id="view-d-wallet" class="view-section">
-      <div class="glass p-6 text-center mb-6 relative overflow-hidden">
-        <div class="absolute -right-6 -top-6 w-24 h-24 bg-purple-600 blur-3xl opacity-30 rounded-full"></div>
-        <div class="text-sm text-gray-400 mb-1">رصيدك المتاح</div>
-        <div class="text-3xl font-black font-mono text-white mb-1"><span id="walletPi">0.000000</span> <span class="text-lg text-purple-400">Pi</span></div>
-        <div class="text-[10px] text-gray-500">شامل العمولات المخصومة</div>
-      </div>
-
-      <div class="glass p-5 space-y-4">
-        <h3 class="font-bold border-b border-gray-700 pb-2 mb-2">طلب سحب الرصيد</h3>
-        
-        <input id="wdAmountPi" type="number" step="0.000001" placeholder="المبلغ المراد سحبه (Pi)" class="input-box" />
-        <input id="wdWallet" type="text" placeholder="عنوان المحفظة (Public Key)" class="input-box text-xs font-mono" />
-        
-        <button onclick="withdrawPi()" class="btn w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-900/40">
-          سحب الآن <i class="fa-solid fa-money-bill-transfer ml-2"></i>
-        </button>
-        <p class="text-[10px] text-gray-500 text-center">يتم مراجعة الطلب آلياً عبر withdraw.js</p>
-      </div>
-
-      <div class="mt-6">
-        <h4 class="font-bold text-sm mb-3">سجل العمليات</h4>
-        <div id="wdHistory" class="space-y-2"></div>
-      </div>
+        <div class="glass p-6 text-center mb-6">
+            <div class="text-sm text-gray-400">رصيدك المتاح</div>
+            <div class="text-3xl font-black font-mono text-white"><span id="walletPi">0.00</span> Pi</div>
+        </div>
+        <div class="glass p-5 space-y-4">
+            <input id="wdAmountPi" type="number" placeholder="المبلغ (Pi)" class="input-box" />
+            <input id="wdWallet" type="text" placeholder="عنوان محفظتك (G...)" class="input-box text-xs" />
+            <button onclick="withdrawPi()" class="btn w-full py-3 bg-purple-600 text-white">سحب الآن</button>
+        </div>
     </div>
 
   </main>
 
   <nav class="bottom-nav">
-    <div id="nav-c-home" class="nav-item active" onclick="switchView('view-c-home')">
-      <i class="fa-solid fa-utensils"></i>
-      <span>اطلب</span>
-    </div>
-    <div id="nav-c-orders" class="nav-item" onclick="switchView('view-c-orders')">
-      <i class="fa-solid fa-list-check"></i>
-      <span>طلباتي</span>
-    </div>
-
-    <div id="nav-d-home" class="nav-item hidden" onclick="switchView('view-d-home')">
-      <i class="fa-solid fa-basket-shopping"></i>
-      <span>السوق</span>
-    </div>
-    <div id="nav-d-active" class="nav-item hidden" onclick="switchView('view-d-active')">
-      <i class="fa-solid fa-route"></i>
-      <span>نشط</span>
-    </div>
-    <div id="nav-d-wallet" class="nav-item hidden" onclick="switchView('view-d-wallet')">
-      <i class="fa-solid fa-wallet"></i>
-      <span>محفظتي</span>
-    </div>
+    <div id="nav-c-home" class="nav-item active" onclick="switchView('view-c-home')"><i class="fa-solid fa-utensils"></i><span>اطلب</span></div>
+    <div id="nav-c-orders" class="nav-item" onclick="switchView('view-c-orders')"><i class="fa-solid fa-list-check"></i><span>طلباتي</span></div>
+    <div id="nav-d-home" class="nav-item hidden" onclick="switchView('view-d-home')"><i class="fa-solid fa-basket-shopping"></i><span>السوق</span></div>
+    <div id="nav-d-wallet" class="nav-item hidden" onclick="switchView('view-d-wallet')"><i class="fa-solid fa-wallet"></i><span>محفظتي</span></div>
   </nav>
 
-  <script src="./withdraw.js"></script>
-
   <script>
-    /* ================== CONFIG & STATE ================== */
+    /* ================== CONFIG ================== */
     Pi.init({ version: "2.0", sandbox: false });
     const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+    const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'; // مفتاح العرض فقط
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let PI_USER = null;
-    let ACTIVE_ROLE = 'customer'; // customer | delivery
-    let CURRENT_VIEW = 'view-c-home';
+    let ACTIVE_ROLE = 'customer';
     let PI_USDT = 0, USD_EGP = 0;
     const DELIVERY_FEE = 20, PLATFORM_FEE = 10;
-    let ACTIVE_ORDER_ID = null;
-    let CUSTOMER_LOC = null, DELIVERY_LOC = null;
-    
-    // Channels
-    let chatChannel = null;
-    let statusChannel = null;
 
-    /* ================== INIT ================== */
-    document.addEventListener('DOMContentLoaded', () => {
-      // Check Login
-      setTimeout(() => {
-        // If logged in via SDK cache or similar logic could go here, 
-        // for now we show login overlay.
-      }, 500);
-      
-      refreshRates();
-      setInterval(refreshRates, 60000);
-    });
-
-    /* ================== VIEW & NAV LOGIC ================== */
-    function switchMode() {
-      if(!PI_USER) return;
-      ACTIVE_ROLE = (ACTIVE_ROLE === 'customer') ? 'delivery' : 'customer';
-      
-      // Update Button Text
-      const btn = document.getElementById('modeSwitchBtn');
-      const txt = document.getElementById('modeText');
-      if(ACTIVE_ROLE === 'customer') {
-        txt.innerText = 'كن كابتن';
-        btn.classList.replace('text-emerald-400', 'text-purple-300');
-        switchView('view-c-home');
-      } else {
-        txt.innerText = 'كن عميل';
-        btn.classList.replace('text-purple-300', 'text-emerald-400');
-        switchView('view-d-home');
-      }
-      updateBottomNav();
-    }
-
-    function updateBottomNav() {
-      const cItems = ['nav-c-home', 'nav-c-orders'];
-      const dItems = ['nav-d-home', 'nav-d-active', 'nav-d-wallet'];
-
-      cItems.forEach(id => document.getElementById(id).classList.toggle('hidden', ACTIVE_ROLE !== 'customer'));
-      dItems.forEach(id => document.getElementById(id).classList.toggle('hidden', ACTIVE_ROLE !== 'delivery'));
-    }
-
-    function switchView(viewId) {
-      // Hide all
-      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-      // Show Target
-      document.getElementById(viewId).classList.add('active');
-      CURRENT_VIEW = viewId;
-
-      // Update Active Nav Icon
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      const navId = viewId.replace('view-', 'nav-');
-      const navEl = document.getElementById(navId);
-      if(navEl) navEl.classList.add('active');
-
-      // Load Data based on view
-      if(viewId === 'view-d-home') loadMarketOrders();
-      if(viewId === 'view-d-wallet') loadWalletData();
-      if(viewId === 'view-c-orders') loadCustomerActivity();
-      if(viewId === 'view-d-active') restoreActiveJobUI();
-    }
-
-    /* ================== AUTH & LOGIN ================== */
+    /* ================== AUTH ================== */
     async function piLogin() {
       try {
         document.getElementById('loadingSpinner').classList.remove('hidden');
-        document.getElementById('loginBtns').classList.add('hidden');
-        
-        const scopes = ['username', 'payments'];
-        const auth = await Pi.authenticate(scopes, onIncompletePayment);
+        const auth = await Pi.authenticate(['username', 'payments'], onIncompletePayment);
         PI_USER = auth.user;
-        
-        onLoginSuccess();
-      } catch (e) {
-        console.error(e);
-        Swal.fire('Error', e.message, 'error');
-        document.getElementById('loadingSpinner').classList.add('hidden');
-        document.getElementById('loginBtns').classList.remove('hidden');
-      }
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('cName').innerText = PI_USER.username;
+        refreshRates();
+      } catch (e) { Swal.fire('Error', e.message, 'error'); }
     }
 
-    function devLogin() {
-      PI_USER = { username: 'dev_user_' + Math.floor(Math.random()*1000), uid: 'dev_uid' };
-      onLoginSuccess();
-    }
+    function onIncompletePayment(payment) { /* Pi Network logic */ }
 
-    async function onLoginSuccess() {
-      document.getElementById('loginOverlay').classList.add('hidden');
-      document.getElementById('cName').innerText = PI_USER.username;
-      
-      // Check for active orders
-      await checkActiveOrders();
-      updateBottomNav();
-      switchView('view-c-home'); // Default
-    }
-
-    function onIncompletePayment(payment) { /* Handle incomplete */ }
-
-    /* ================== RATES & MATH ================== */
+    /* ================== CORE LOGIC ================== */
     async function refreshRates() {
       try {
-        // Mocking APIs for stability in demo
         const r1 = await fetch("https://open.er-api.com/v6/latest/USD").then(r=>r.json());
         USD_EGP = r1.rates.EGP;
-        
         const r2 = await fetch("https://www.okx.com/api/v5/market/ticker?instId=PI-USDT").then(r=>r.json());
         PI_USDT = parseFloat(r2.data[0].last);
-
-        const onePiEgp = PI_USDT * USD_EGP;
-        document.getElementById('headerRate').innerText = `1 Pi ≈ ${onePiEgp.toFixed(2)} EGP`;
-      } catch(e) { console.log('Rates Error', e); }
+        const rate = PI_USDT * USD_EGP;
+        document.getElementById('headerRate').innerText = `1 Pi ≈ ${rate.toFixed(2)} EGP`;
+      } catch(e) {}
     }
 
-    function egpToPi(egp) {
-      if(!PI_USDT || !USD_EGP) return 0;
-      return egp / (PI_USDT * USD_EGP);
-    }
+    function egpToPi(egp) { return egp / (PI_USDT * USD_EGP || 1); }
 
     function recalcInvoice() {
       const price = parseFloat(document.getElementById('price').value || 0);
-      const fees = DELIVERY_FEE + PLATFORM_FEE;
-      const total = price + fees;
+      const total = price + DELIVERY_FEE + PLATFORM_FEE;
       const piVal = egpToPi(total);
-      
-      document.getElementById('invProd').innerText = price.toFixed(2) + ' ج';
-      document.getElementById('invFees').innerText = fees.toFixed(2) + ' ج';
       document.getElementById('invTotalEgp').innerText = total.toFixed(2);
       document.getElementById('invTotalPi').innerText = piVal.toFixed(6);
       document.getElementById('livePiPrice').innerText = egpToPi(price).toFixed(4) + ' Pi';
     }
 
-    /* ================== LOCATION ================== */
-    async function getLoc() {
-      return new Promise((res, rej) => {
-        if(!navigator.geolocation) return rej('No Geo');
-        navigator.geolocation.getCurrentPosition(p => res({lat: p.coords.latitude, lng: p.coords.longitude}), rej);
-      });
-    }
-
-    async function setCustomerLocation() {
-      try {
-        const loc = await getLoc();
-        CUSTOMER_LOC = loc;
-        document.getElementById('locStatus').innerText = `✅ تم التحديد: ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
-        document.getElementById('locStatus').classList.add('text-green-400');
-      } catch(e) { Swal.fire('تنبيه', 'يجب تفعيل GPS', 'warning'); }
-    }
-    
-    async function setDeliveryLocation() {
-      try {
-        const loc = await getLoc();
-        DELIVERY_LOC = loc;
-        Swal.fire('تم', 'تم تحديث موقعك بنجاح', 'success');
-        loadMarketOrders(); // Reload with distance
-      } catch(e) { Swal.fire('Error', 'GPS Required', 'error'); }
-    }
-
-    /* ================== CUSTOMER LOGIC ================== */
+    /* ================== PAYMENT (MAIN UPDATE) ================== */
     async function payAndCreate() {
-      if(!CUSTOMER_LOC) return Swal.fire('الموقع مطلوب', 'حدد موقعك أولاً', 'warning');
       const prod = document.getElementById('prod').value;
       const price = parseFloat(document.getElementById('price').value);
-      if(!prod || !price) return Swal.fire('بيانات ناقصة', '', 'warning');
+      const addr = document.getElementById('custAddress').value;
+      if(!prod || !price || !addr) return Swal.fire('بيانات ناقصة', '', 'warning');
 
       const totalEgp = price + DELIVERY_FEE + PLATFORM_FEE;
       const totalPi = egpToPi(totalEgp);
-      const amountPiStr = totalPi.toFixed(6);
 
-      // 1. Pi Payment SDK
       try {
-        /* Here we would call Pi.createPayment. 
-           For UI Demo, we simulate success.
-        */
-        Swal.fire({title: 'جاري الدفع...', didOpen:()=>Swal.showLoading()});
-        
-        // Simulate API delay
-        await new Promise(r => setTimeout(r, 1500));
-        
-        // 2. Insert to DB
-        const otp = Math.floor(1000 + Math.random() * 9000);
-        const { data, error } = await db.from('orders').insert([{
-          customer_pi_username: PI_USER.username,
-          product_name: prod,
-          order_type: document.getElementById('orderType').value,
-          price: price,
-          delivery_fee: DELIVERY_FEE,
-          platform_fee: PLATFORM_FEE,
-          total_price: totalEgp,
-          status: 'pending',
-          otp_code: otp,
-          customer_lat: CUSTOMER_LOC.lat,
-          customer_lng: CUSTOMER_LOC.lng,
-          customer_address: document.getElementById('custAddress').value,
-          notes: document.getElementById('notes').value,
-          pricing_snapshot: { total_pi: totalPi, pi_usdt: PI_USDT }
-        }]).select();
+        await Pi.createPayment({
+          amount: parseFloat(totalPi.toFixed(6)),
+          memo: `QuickCart: ${prod}`,
+          metadata: { 
+            username: PI_USER.username, 
+            product_name: prod, 
+            total_egp: totalEgp,
+            address: addr,
+            notes: document.getElementById('notes').value,
+            lat: 0, lng: 0 // يمكن تحديثها بـ GPS
+          },
+        }, {
+          onReadyForServerApproval: (paymentId) => {
+            return fetch('/api/pi/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId })
+            }).then(res => res.json());
+          },
+          onReadyForServerCompletion: (paymentId, txid) => {
+            return fetch('/api/pi/complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId, txid })
+            }).then(res => res.json());
+          },
+          onCancel: (pId) => { console.log("Cancelled", pId); },
+          onError: (err) => { Swal.fire('خطأ في الدفع', err.message, 'error'); }
+        });
 
-        if(error) throw error;
-        
-        Swal.fire('تم الطلب!', 'طلبك قيد الانتظار الآن', 'success');
-        ACTIVE_ORDER_ID = data[0].id;
-        
-        // Reset Inputs
-        document.getElementById('prod').value = '';
-        document.getElementById('price').value = '';
-        
+        Swal.fire('تم الدفع!', 'تم إنشاء الطلب بنجاح', 'success');
         switchView('view-c-orders');
         loadCustomerActivity();
+      } catch (err) { console.error(err); }
+    }
 
-      } catch(e) {
-        console.error(e);
-        Swal.fire('خطأ', 'فشل إنشاء الطلب', 'error');
-      }
+    /* ================== UI HELPERS ================== */
+    function switchView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const navEl = document.getElementById(viewId.replace('view-', 'nav-'));
+      if(navEl) navEl.classList.add('active');
+    }
+
+    function switchMode() {
+      ACTIVE_ROLE = (ACTIVE_ROLE === 'customer') ? 'delivery' : 'customer';
+      document.getElementById('modeText').innerText = (ACTIVE_ROLE === 'customer') ? 'توصيل' : 'عميل';
+      
+      const cItems = ['nav-c-home', 'nav-c-orders'];
+      const dItems = ['nav-d-home', 'nav-d-wallet'];
+      cItems.forEach(id => document.getElementById(id).classList.toggle('hidden', ACTIVE_ROLE !== 'customer'));
+      dItems.forEach(id => document.getElementById(id).classList.toggle('hidden', ACTIVE_ROLE !== 'delivery'));
+      
+      switchView(ACTIVE_ROLE === 'customer' ? 'view-c-home' : 'view-d-home');
     }
 
     async function loadCustomerActivity() {
-      const box = document.getElementById('custHistoryList');
-      const trackBox = document.getElementById('activeOrderContainer');
-      box.innerHTML = '<div class="text-center text-xs text-gray-500">تحميل...</div>';
-
-      // Load Active
-      const { data: active } = await db.from('orders')
-        .select('*').eq('customer_pi_username', PI_USER.username)
-        .in('status', ['pending', 'accepted', 'shipping', 'arrived'])
-        .maybeSingle();
-
-      if(active) {
-        trackBox.classList.remove('hidden');
-        document.getElementById('trackProdName').innerText = active.product_name;
-        document.getElementById('trackStatus').innerText = active.status.toUpperCase();
-        document.getElementById('trackOtp').innerText = 'OTP: ' + active.otp_code;
-        ACTIVE_ORDER_ID = active.id;
-        startChat('customer');
-        listenStatus();
-      } else {
-        trackBox.classList.add('hidden');
-      }
-
-      // Load History
-      const { data: history } = await db.from('orders')
-        .select('*').eq('customer_pi_username', PI_USER.username)
-        .in('status', ['delivered', 'canceled'])
-        .order('created_at', {ascending: false}).limit(10);
+      const { data } = await db.from('orders').select('*')
+        .eq('customer_pi_username', PI_USER.username).order('created_at', {ascending: false});
       
-      box.innerHTML = history.map(o => `
-        <div class="glass p-3 flex justify-between items-center opacity-70">
-          <div>
-            <div class="font-bold text-sm">${o.product_name}</div>
-            <div class="text-[10px] text-gray-400">${new Date(o.created_at).toLocaleDateString()}</div>
-          </div>
-          <div class="text-xs ${o.status==='delivered'?'text-green-400':'text-red-400'}">${o.status}</div>
+      const box = document.getElementById('custHistoryList');
+      box.innerHTML = data.map(o => `
+        <div class="glass p-3 flex justify-between items-center opacity-80">
+          <div><div class="font-bold text-sm">${o.product_name}</div><div class="text-[10px] text-gray-500">${o.status}</div></div>
+          <div class="text-xs font-bold text-emerald-400">${o.total_price} ج</div>
         </div>
       `).join('');
     }
 
-    /* ================== DELIVERY LOGIC ================== */
-    async function loadMarketOrders() {
-      const box = document.getElementById('ordersBox');
-      box.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-purple-500 mx-auto block text-center"></i>';
-
-      const { data, error } = await db.from('orders')
-        .select('*').eq('status', 'pending').order('created_at', {ascending: false});
-
-      if(!data || data.length === 0) {
-        box.innerHTML = '<div class="text-center py-10 text-gray-500">لا توجد طلبات معلقة حالياً</div>';
-        return;
-      }
-
-      box.innerHTML = data.map(o => {
-        const dist = (DELIVERY_LOC && o.customer_lat) ? calcDist(DELIVERY_LOC.lat, DELIVERY_LOC.lng, o.customer_lat, o.customer_lng).toFixed(1) + ' km' : '--';
-        const profit = egpToPi(o.delivery_fee).toFixed(4); // Approx
-        
-        return `
-        <div class="glass p-4 order-card bg-white/5">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <span class="bg-purple-900/50 text-purple-300 text-[10px] px-2 py-1 rounded border border-purple-500/20">${o.order_type}</span>
-              <h3 class="font-bold text-base mt-1">${o.product_name}</h3>
-            </div>
-            <div class="text-right">
-              <div class="font-bold text-emerald-400 text-lg">${o.total_price} ج</div>
-              <div class="text-[10px] text-gray-400">تحصيل كاش</div>
-            </div>
-          </div>
-          
-          <div class="flex items-center gap-4 text-xs text-gray-400 mb-3">
-            <span><i class="fa-solid fa-location-dot"></i> ${dist}</span>
-            <span><i class="fa-solid fa-coins text-yellow-500"></i> ربح: ${profit} Pi</span>
-          </div>
-
-          <button onclick="acceptOrder('${o.id}')" class="btn w-full py-2 bg-purple-600 text-white text-sm">
-            قبول الطلب
-          </button>
-        </div>
-        `;
-      }).join('');
-    }
-
-    async function acceptOrder(id) {
-      if(!PI_USER) return;
-      
-      const { error } = await db.rpc('accept_order_once', {
-        p_order_id: id, p_delivery_id: PI_USER.username
-      });
-
-      if(error) {
-        Swal.fire('عفواً', 'تم قبول الطلب من كابتن آخر', 'error');
-        loadMarketOrders();
-      } else {
-        ACTIVE_ORDER_ID = id;
-        checkActiveOrders(); // will redirect to active view
-      }
-    }
-
-    /* ================== SHARED & HELPERS ================== */
-    async function checkActiveOrders() {
-      // Check Delivery Active
-      const { data: dJob } = await db.from('orders')
-        .select('*').eq('delivery_id', PI_USER.username)
-        .in('status', ['accepted', 'shipping', 'arrived']).maybeSingle();
-
-      if(dJob) {
-        ACTIVE_ORDER_ID = dJob.id;
-        document.getElementById('noActiveJob').classList.add('hidden');
-        document.getElementById('activeJobContent').classList.remove('hidden');
-        
-        document.getElementById('dProdName').innerText = dJob.product_name;
-        document.getElementById('dAddress').innerText = dJob.customer_address;
-        document.getElementById('dCashCollect').innerText = dJob.total_price + ' ج';
-        document.getElementById('dProfitPi').innerText = egpToPi(dJob.delivery_fee).toFixed(4); // approx
-        document.getElementById('dMapBtn').href = `https://www.google.com/maps?q=${dJob.customer_lat},${dJob.customer_lng}`;
-        
-        startChat('delivery');
-      } else {
-        document.getElementById('noActiveJob').classList.remove('hidden');
-        document.getElementById('activeJobContent').classList.add('hidden');
-      }
-    }
-
-    function restoreActiveJobUI() {
-      checkActiveOrders();
-    }
-
-    // Chat
-    function startChat(role) {
-      if(!ACTIVE_ORDER_ID) return;
-      const box = role === 'customer' ? document.getElementById('chatC') : document.getElementById('chatD');
-      box.innerHTML = '';
-      
-      if(chatChannel) supabase.removeChannel(chatChannel);
-      
-      // Load old msgs
-      db.from('chat_messages').select('*').eq('order_id', ACTIVE_ORDER_ID).order('created_at').then(({data}) => {
-        data?.forEach(m => appendMsg(m, role, box));
-      });
-
-      // Subscribe
-      chatChannel = db.channel('chat-'+ACTIVE_ORDER_ID)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'chat_messages', filter:`order_id=eq.${ACTIVE_ORDER_ID}`}, 
-        payload => appendMsg(payload.new, role, box)
-      ).subscribe();
-    }
-
-    function appendMsg(msg, myRole, box) {
-      const isMe = msg.sender === myRole;
-      const div = document.createElement('div');
-      div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
-      div.innerHTML = `
-        <div class="px-3 py-2 rounded-xl text-xs max-w-[80%] ${isMe ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-700 text-white rounded-bl-none'}">
-          ${msg.message_text}
-        </div>
-      `;
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    async function sendMsg(role) {
-      const inp = role === 'customer' ? document.getElementById('msgC') : document.getElementById('msgD');
-      const txt = inp.value.trim();
-      if(!txt || !ACTIVE_ORDER_ID) return;
-
-      await db.from('chat_messages').insert([{
-        order_id: ACTIVE_ORDER_ID, sender: role, message_text: txt
-      }]);
-      inp.value = '';
-    }
-
-    function listenStatus() {
-      if(!ACTIVE_ORDER_ID) return;
-      if(statusChannel) supabase.removeChannel(statusChannel);
-      statusChannel = db.channel('status-'+ACTIVE_ORDER_ID)
-        .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders', filter:`id=eq.${ACTIVE_ORDER_ID}`}, 
-        payload => {
-           const s = payload.new.status;
-           document.getElementById('trackStatus').innerText = s.toUpperCase();
-           if(s === 'delivered') {
-             Swal.fire('تم التوصيل', 'شكراً لاستخدامك التطبيق', 'success');
-             document.getElementById('activeOrderContainer').classList.add('hidden');
-           }
-        }).subscribe();
-    }
-
-    /* ================== ACTIONS ================== */
-    async function setOrderStatus(st) {
-       await db.from('orders').update({status:st}).eq('id', ACTIVE_ORDER_ID);
-       Swal.fire('تم التحديث', 'تم إبلاغ العميل', 'success');
-    }
-
-    async function finishWithOtp() {
-      const { value: otp } = await Swal.fire({
-        title: 'أدخل كود التسليم (OTP)',
-        input: 'text',
-        inputPlaceholder: 'الكود من تطبيق العميل'
-      });
-      
-      if(otp) {
-        const { error } = await db.rpc('complete_delivery', {
-          p_order_id: ACTIVE_ORDER_ID, p_otp: otp, p_delivery_id: PI_USER.username
-        });
-        
-        if(error) Swal.fire('خطأ', 'الكود غير صحيح', 'error');
-        else {
-          Swal.fire('مبروك!', 'تم إنهاء الطلب وإضافة الرصيد', 'success');
-          checkActiveOrders();
-        }
-      }
-    }
-
-    /* ================== WALLET & WITHDRAW ================== */
-    async function loadWalletData() {
-      // 1. Get Balance from view/table
-      // For Demo: Sum delivered orders fees
-      const { data } = await db.from('orders').select('pricing_snapshot')
-        .eq('delivery_id', PI_USER.username).eq('status', 'delivered');
-      
-      let total = 0;
-      data?.forEach(o => {
-        // Assuming snapshot has delivery_fee_pi, otherwise calc it
-        if(o.pricing_snapshot?.delivery_fee_pi) total += o.pricing_snapshot.delivery_fee_pi;
-        else total += 0.1; // fallback dummy
-      });
-      
-      document.getElementById('walletPi').innerText = total.toFixed(6);
-
-      // Load History
-      const { data: hist } = await db.from('withdraw_requests')
-        .select('*').eq('delivery_id', PI_USER.username).order('created_at', {ascending:false});
-        
-      const histBox = document.getElementById('wdHistory');
-      if(hist && hist.length) {
-        histBox.innerHTML = hist.map(w => `
-          <div class="glass p-3 flex justify-between text-xs">
-            <div>
-              <div class="font-mono font-bold text-purple-300">${w.amount_pi} Pi</div>
-              <div class="text-gray-500">${new Date(w.created_at).toLocaleDateString()}</div>
-            </div>
-            <span class="${w.status==='paid'?'text-emerald-400':'text-yellow-400'}">${w.status}</span>
-          </div>
-        `).join('');
-      } else {
-        histBox.innerHTML = '<div class="text-center text-xs text-gray-500">لا توجد عمليات سحب</div>';
-      }
-    }
-
-    // ربط الدالة بملف withdraw.js الخارجي
-    // سنفترض أن الملف الخارجي يحتوي على دالة processWithdrawRequest
-    // ولكن لضمان عمل الكود سأضع اللوجيك هنا، ويمكنك نقله للملف.
+    // سحب الرصيد للكابتن
     async function withdrawPi() {
-      const amount = parseFloat(document.getElementById('wdAmountPi').value);
-      const wallet = document.getElementById('wdWallet').value;
-      
-      if(!amount || !wallet) return Swal.fire('خطأ', 'تأكد من البيانات', 'warning');
-      
-      // هنا يتم استدعاء اللوجيك الخاص بـ withdraw.js
-      // إذا كان الملف موجوداً وفيه دالة withdraw:
-      if(typeof window.initiateWithdrawal === 'function') {
-         window.initiateWithdrawal(PI_USER.username, amount, wallet);
-         return;
-      }
+        const amount = document.getElementById('wdAmountPi').value;
+        const wallet = document.getElementById('wdWallet').value;
+        if(!amount || !wallet) return;
 
-      // Default logic if file not loaded
-      const { error } = await db.from('withdraw_requests').insert([{
-        delivery_id: PI_USER.username,
-        amount_pi: amount,
-        wallet_address: wallet,
-        status: 'pending'
-      }]);
-      
-      if(error) Swal.fire('خطأ', error.message, 'error');
-      else {
-        Swal.fire('تم الطلب', 'سيتم مراجعة الطلب وتحويل Pi قريباً', 'success');
-        loadWalletData();
-      }
-    }
+        const res = await fetch('/.netlify/functions/withdraw', {
+            method: 'POST',
+            body: JSON.stringify({ uid: PI_USER.username, walletAddress: wallet, amount: amount })
+        }).then(r => r.json());
 
-    function calcDist(lat1, lon1, lat2, lon2) {
-      // Haversine formula
-      var R = 6371; var dLat = (lat2-lat1) * Math.PI/180; var dLon = (lon2-lon1) * Math.PI/180;
-      var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c;
+        if(res.success) Swal.fire('نجاح', 'تم التحويل لمحفظتك', 'success');
+        else Swal.fire('فشل', res.details, 'error');
     }
   </script>
 </body>
