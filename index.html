@@ -453,7 +453,6 @@
       </button>
     </div>
 
-<!-- ================= HOME TAB ================= -->
 <div id="homeTab" class="pageShell">
 
       <!-- STATUS + RATES -->
@@ -501,7 +500,6 @@
         </div>
       </section>
 
-      <!-- ================= CUSTOMER (HOME) ================= -->
       <div id="customerHome" class="hidden space-y-3">
     <section class="glass pageSection space-y-3">
           <div class="secTitle">
@@ -640,7 +638,6 @@
         </section>
       </div>
 
-      <!-- ================= DELIVERY (HOME) ================= -->
       <div id="deliveryHome" class="hidden space-y-3">
     <section class="glass pageSection space-y-3">
           <div class="secTitle">
@@ -696,10 +693,8 @@
       </div>
     </div>
 
-    <!-- ================= TRACK TAB ================= -->
     <div id="trackTab" class="hidden pageShell">
 
-      <!-- ================= CUSTOMER (TRACK) ================= -->
       <div id="customerTrackTab" class="hidden space-y-3">
         <!-- TRACK -->
         <section id="custTrack" class="hidden glass pageSection space-y-2">
@@ -798,7 +793,6 @@
         </section>
       </div>
 
-      <!-- ================= DELIVERY (TRACK) ================= -->
       <div id="deliveryTrackTab" class="hidden space-y-3">
 
         <!-- DELIVERY CHAT -->
@@ -906,7 +900,6 @@
       </div>
     </div>
 
-    <!-- ================= DISCOVER TAB ================= -->
     <div id="discoverTab" class="hidden pageShell">
       <section class="glass pageSection space-y-3">
         <div class="sectionHeader">
@@ -1019,18 +1012,15 @@
   </div>
 
   <script>
-/* ================== CONFIG ================== */
 Pi.init({ version: "2.0", sandbox: false });
 
 const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ================== FEES ================== */
 const DELIVERY_FEE_EGP = 20;
 const PLATFORM_FEE_EGP = 10;
 
-/* ================== GLOBALS ================== */
 let PI_USER = null;
 let PI_USERNAME = null;
 let PI_UID = null;
@@ -1042,11 +1032,9 @@ let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
 
-/* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
 let USD_EGP = 0;     // 1 USD in EGP
 
-/* ================== DETECT ================== */
 function detectPi() {
   const hasPi = typeof window.Pi !== 'undefined';
   const ua = (navigator.userAgent || '').toLowerCase();
@@ -1064,7 +1052,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(fetchUsdEgp, 60000);
 });
 
-/* ================== RATES ================== */
 async function refreshRates(){
   await Promise.allSettled([fetchPiFromOKX(), fetchUsdEgp()]);
   recalcInvoice();
@@ -1110,7 +1097,6 @@ function egpToPi(egp){
   return egp / piEgp;
 }
 
-/* ================== LOCATION ================== */
 function getCurrentLocation(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -1184,7 +1170,6 @@ function hasMissingLocationColumn(error){
   return msg.includes('customer_lat') || msg.includes('customer_lng') || msg.includes('customer_address');
 }
 
-/* ================== LOGIN ================== */
 async function piLogin() {
   try {
     if (!window.Pi || !Pi.authenticate) {
@@ -1279,7 +1264,6 @@ function onIncompletePaymentFound(payment) {
   console.log('incomplete payment found:', payment);
 }
 
-/* ================== RESTORE ACTIVE ORDER ================== */
 function activeOrderStorageKey(){
   return PI_USERNAME ? `qc_active_order_${PI_USERNAME}` : 'qc_active_order';
 }
@@ -1480,7 +1464,6 @@ async function submitRating(){
   }
 }
 
-/* ================== INVOICE UI ================== */
 function recalcInvoice(){
   const prodEgp = parseFloat(document.getElementById('price').value || "0") || 0;
   const totalEgp = prodEgp + DELIVERY_FEE_EGP + PLATFORM_FEE_EGP;
@@ -1493,7 +1476,6 @@ function recalcInvoice(){
   document.getElementById('invTotalPi').innerText = totalPi ? totalPi.toFixed(6) : '0.000000';
 }
 
-/* ================== CUSTOMER: PAY + CREATE ORDER ================== */
 async function payAndCreate() {
   try {
     if (!PI_USERNAME) return Swal.fire('لازم تسجل دخول الأول');
@@ -1676,7 +1658,6 @@ async function payAndCreate() {
   }
 }
 
-/* ================== DELIVERY: LOAD + ACCEPT (RPC Lock) ================== */
 async function loadOrders(){
   try{
     const box = document.getElementById('ordersBox');
@@ -1849,7 +1830,6 @@ async function loadOrderDetailsForDelivery(orderId){
   document.getElementById('dNotes').innerText = data.notes ? data.notes : '—';
 }
 
-/* ================== CHAT: text + image + seen ================== */
 let chatChannel = null;
 
 function startChat(){
@@ -1946,8 +1926,10 @@ function quick(role, txt){
 }
 
 function appendMsg(m){
+  const senderLabel = m.sender === 'customer' ? 'العميل' : 'الكابتن';
   const bubble = `
     <div class="msg ${m.sender==='customer'?'c':'d'}">
+      <div class="tiny muted">${senderLabel}</div>
       ${m.message_text ? escapeHtml(m.message_text) : ''}
       ${m.image_url ? `<img src="${m.image_url}" class="mt-2 rounded-xl border border-purple-100" />` : ''}
       <div class="mt-1 tiny">${m.seen_at ? '✅✅' : '✅'}</div>
@@ -1973,7 +1955,6 @@ async function markSeen(viewerRole){
   }
 }
 
-/* ================== STATUS ================== */
 let statusChannel = null;
 
 function listenStatus(){
@@ -2013,7 +1994,6 @@ function listenStatus(){
     }).subscribe();
 }
 
-/* ================== DELIVERY STATUS + OTP ================== */
 async function setOrderStatus(st){
   if(!ACTIVE_ORDER) return Swal.fire('اختر طلب أولاً');
   await db.from('orders').update({ status: st }).eq('id', ACTIVE_ORDER);
@@ -2059,7 +2039,6 @@ async function finishWithOtp(){
   }
 }
 
-/* ================== WALLET (Pi) ================== */
 /**
  * ✅ أولاً: delivery_wallet.balance_pi
  * ✅ خصم المسحوبات: withdrawals
@@ -2156,7 +2135,6 @@ async function loadWalletPi() {
   }
 }
 
-/* ================== WITHDRAW ================== */
 /**
  * ✅ Flow الصحيح:
  * 1) Call /api/withdraw -> Netlify function (withdraw.js)
@@ -2230,7 +2208,6 @@ async function withdrawPi() {
   }
 }
 
-/* ================== WITHDRAW HISTORY ================== */
 async function loadWithdrawHistory() {
   try {
     if (!PI_USERNAME) return;
@@ -2282,7 +2259,6 @@ async function loadWithdrawHistory() {
     }
   }
 }
-/* ================== HISTORY: CUSTOMER + DELIVERY ================== */
 async function loadCustomerHistory(){
   try{
     if(!PI_USERNAME) return;
@@ -2398,7 +2374,6 @@ async function loadDeliveryHistory(){
   }
 }
 
-/* ================== UI ================== */
 function toggleRole(){
   setRole(ACTIVE_ROLE === 'customer' ? 'delivery' : 'customer');
 }
@@ -2446,7 +2421,6 @@ function updateMainTabUI(){
   document.getElementById('navDiscover').classList.toggle('btnS', !isDiscover);
 }
 
-/* ================== HELPERS ================== */
 function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
