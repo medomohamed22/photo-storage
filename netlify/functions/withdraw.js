@@ -8,9 +8,9 @@ const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
 // 2. إعدادات المحفظة (من متغيرات البيئة - Environment Variables)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 
-// 3. إعدادات شبكة Pi Testnet
-const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
-const NETWORK_PASSPHRASE = 'Pi Testnet';
+// 3. إعدادات شبكة Pi (الافتراضي Mainnet مع إمكانية التبديل عبر env)
+const PI_HORIZON_URL = process.env.PI_HORIZON_URL || 'https://api.mainnet.minepi.com';
+const NETWORK_PASSPHRASE = process.env.PI_NETWORK_PASSPHRASE || 'Pi Network';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
