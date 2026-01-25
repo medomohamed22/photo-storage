@@ -8,11 +8,40 @@ const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
 // 2. إعدادات المحفظة (من متغيرات البيئة - Environment Variables)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 
-// 3. إعدادات شبكة Pi Testnet
-const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
-const NETWORK_PASSPHRASE = 'Pi Testnet';
+// 3. إعدادات شبكة Pi (الافتراضي Mainnet مع إمكانية التبديل عبر env)
+const PI_HORIZON_URL = process.env.PI_HORIZON_URL || 'https://api.mainnet.minepi.com';
+const NETWORK_PASSPHRASE = process.env.PI_NETWORK_PASSPHRASE || 'Pi Network';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const toNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const sumAmounts = (rows, key) => (rows || []).reduce((sum, row) => sum + toNumber(row?.[key]), 0);
+
+const calculateOrderEarningsPi = (order) => {
+  const snapshot = order?.pricing_snapshot || {};
+  const totalPi = toNumber(snapshot.total_pi);
+  const platformFeePi = toNumber(snapshot.platform_fee_pi);
+  if (totalPi > 0) {
+    return Math.max(0, totalPi - platformFeePi);
+  }
+
+  const priceEgp = toNumber(order?.price);
+  const deliveryFeeEgp = toNumber(order?.delivery_fee);
+  const totalPriceEgp = toNumber(order?.total_price);
+  const platformFeeEgp = toNumber(order?.platform_fee);
+  const baseEgp = priceEgp || deliveryFeeEgp
+    ? priceEgp + deliveryFeeEgp
+    : Math.max(0, totalPriceEgp - platformFeeEgp);
+  const piPerEgp = toNumber(snapshot.pi_egp);
+  if (baseEgp > 0 && piPerEgp > 0) {
+    return baseEgp / piPerEgp;
+  }
+  return 0;
+};
 
 exports.handler = async (event) => {
   // السماح فقط بطلبات POST
@@ -33,22 +62,31 @@ exports.handler = async (event) => {
     // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
     const { data: orders } = await supabase
       .from('orders')
-      .select('pricing_snapshot,status,delivery_id')
+      .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
       .eq('delivery_id', resolvedDeliveryId)
       .eq('status', 'delivered');
     const { data: withdrawals } = await supabase
       .from('withdrawals')
       .select('amount')
       .eq('delivery_id', resolvedDeliveryId);
+    const { data: approvedRequests } = await supabase
+      .from('withdraw_requests')
+      .select('amount_pi')
+      .eq('delivery_id', resolvedDeliveryId)
+      .eq('status', 'approved');
+    const { data: walletRow } = await supabase
+      .from('delivery_wallet')
+      .select('balance_pi')
+      .eq('delivery_id', resolvedDeliveryId)
+      .maybeSingle();
 
-    const totalEarned = (orders || []).reduce((sum, row) => {
-      const totalPi = parseFloat(row?.pricing_snapshot?.total_pi || 0);
-      const platformFeePi = parseFloat(row?.pricing_snapshot?.platform_fee_pi || 0);
-      const deliveryProfit = totalPi - platformFeePi;
-      return sum + (isNaN(deliveryProfit) ? 0 : deliveryProfit);
-    }, 0);
-    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount), 0) : 0;
-    const currentBalance = totalEarned - totalWithdrawn;
+    const totalEarned = (orders || []).reduce((sum, row) => sum + calculateOrderEarningsPi(row), 0);
+    const totalWithdrawn = sumAmounts(withdrawals, 'amount');
+    const approvedWithdrawn = sumAmounts(approvedRequests, 'amount_pi');
+    const walletBalance = walletRow?.balance_pi !== undefined ? toNumber(walletRow.balance_pi) : null;
+    const currentBalance = walletBalance !== null
+      ? walletBalance - totalWithdrawn - approvedWithdrawn
+      : totalEarned - totalWithdrawn - approvedWithdrawn;
 
     if (currentBalance < withdrawAmount) {
       return { statusCode: 400, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
