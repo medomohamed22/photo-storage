@@ -16,6 +16,13 @@
   status = 200
   force = true
 
+# التوجيه الجديد لعملية السحب (Withdraw)
+[[redirects]]
+  from = "/api/withdraw"
+  to = "/.netlify/functions/withdraw"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/check-auth"
   to = "/.netlify/functions/check-auth"

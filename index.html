@@ -1681,8 +1681,10 @@ async function loadWalletPi(){
 
     let sum = 0;
     (orders||[]).forEach(o=>{
-      const pi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
-      if(!isNaN(pi)) sum += pi;
+      const totalPi = Number(o?.pricing_snapshot?.total_pi || 0);
+      const platformFeePi = Number(o?.pricing_snapshot?.platform_fee_pi || 0);
+      const profitPi = totalPi - platformFeePi;
+      if(!isNaN(profitPi)) sum += profitPi;
     });
 
     const { data: approvedWithdraws } = await db.from('withdraw_requests')
@@ -1861,7 +1863,8 @@ async function loadDeliveryHistory(){
     box.innerHTML = data.map(o => {
       const totalEgp = Number(o.total_price||0);
       const totalPi = Number(o?.pricing_snapshot?.total_pi || (egpToPi(totalEgp) || 0));
-      const profitPi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
+      const platformFeePi = Number(o?.pricing_snapshot?.platform_fee_pi || 0);
+      const profitPi = totalPi - platformFeePi;
       const s = o.status || 'pending';
 
       return `
