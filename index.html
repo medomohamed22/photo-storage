@@ -1476,6 +1476,9 @@ async function rejectDeliveryCaptain(){
   }
 }
 
+  setRating(0);
+}
+
 async function refreshCustomerStatus(){
   try{
     if (!PI_USERNAME || !ACTIVE_ORDER) return;
@@ -1535,6 +1538,7 @@ async function loadRatingState(order){
       document.getElementById('custChat').classList.add('hidden');
       setActiveOrderId(null);
       RATING_ORDER_ID = null;
+      document.getElementById('custRating').classList.add('hidden');
       if (chatPollTimer) clearInterval(chatPollTimer);
       if (statusPollTimer) clearInterval(statusPollTimer);
     } else {
@@ -1578,6 +1582,7 @@ async function submitRating(){
     document.getElementById('custChat').classList.add('hidden');
     setActiveOrderId(null);
     RATING_ORDER_ID = null;
+    document.getElementById('custRating').classList.add('hidden');
     if (chatPollTimer) clearInterval(chatPollTimer);
     if (statusPollTimer) clearInterval(statusPollTimer);
   }catch(e){
@@ -2092,6 +2097,7 @@ function listenStatus(){
   if (statusPollTimer) clearInterval(statusPollTimer);
   refreshCustomerStatus();
   statusPollTimer = setInterval(refreshCustomerStatus, 1000);
+  statusPollTimer = setInterval(refreshCustomerStatus, 15000);
 
   statusChannel = db.channel('order-status-' + ACTIVE_ORDER)
     .on('postgres_changes', {
@@ -2168,6 +2174,41 @@ function listenDeliveryStatus(){
           chatChannel = null;
         }
         if (chatPollTimer) clearInterval(chatPollTimer);
+      }
+    }).subscribe();
+}
+
+function listenDeliveryStatus(){
+  if(!ACTIVE_ORDER) return;
+
+  if (deliveryStatusChannel) {
+    try { db.removeChannel(deliveryStatusChannel); } catch {}
+    deliveryStatusChannel = null;
+  }
+
+  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      const s = payload.new.status || 'pending';
+      const statusEl = document.getElementById('dStatus');
+      if (statusEl) statusEl.innerText = s;
+
+      if (s === 'delivered') {
+        document.getElementById('delChat').classList.add('hidden');
+        setActiveOrderId(null);
+        loadOrders();
+        loadWalletPi();
+        loadDeliveryHistory();
+        if (deliveryStatusChannel) {
+          try { db.removeChannel(deliveryStatusChannel); } catch {}
+          deliveryStatusChannel = null;
+        }
+        if (chatChannel) {
+          try { db.removeChannel(chatChannel); } catch {}
+          chatChannel = null;
+        }
       }
     }).subscribe();
 }
