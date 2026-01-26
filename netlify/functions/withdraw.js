@@ -1,9 +1,9 @@
 const StellarSdk = require('stellar-sdk');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1) Supabase (Service Role Key لازم يكون موجود في Netlify env)
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// 1. إعدادات قاعدة البيانات (Supabase)
+const SUPABASE_URL = process.env.SUPABASE_URL; 
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 
 // 2) App wallet secret (محفظة النظام اللي هتدفع منها)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
@@ -12,38 +12,26 @@ const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
 const NETWORK_PASSPHRASE = 'Pi Testnet';
 
-const json = (statusCode, payload) => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  },
-  body: JSON.stringify(payload),
-});
+const headers = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
 
-function isValidAmount(n) {
-  return Number.isFinite(n) && n > 0;
-}
-
-// Stellar public key check (اختياري لكنه مفيد)
-function isValidStellarPublicKey(address) {
-  try {
-    return StellarSdk.StrKey.isValidEd25519PublicKey(address);
-  } catch (_) {
-    return false;
-  }
+function clampBalance(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, num);
 }
 
 exports.handler = async (event) => {
-  // CORS preflight
+  // السماح فقط بطلبات POST
   if (event.httpMethod === 'OPTIONS') {
-    return json(200, { ok: true });
+    return { statusCode: 200, headers };
   }
-
   if (event.httpMethod !== 'POST') {
-    return json(405, { error: 'Method Not Allowed' });
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
   try {
@@ -81,29 +69,35 @@ exports.handler = async (event) => {
       .select('amount_pi')
       .eq('delivery_id', uid);
 
-    if (earnErr) {
-      return json(500, { error: 'Database error reading earnings', details: earnErr.message });
+    // التحقق من المدخلات
+    if (!uid || !amount || !walletAddress) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'بيانات ناقصة' }) };
+    }
+    if (!Number.isFinite(withdrawAmount) || withdrawAmount <= 0) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'قيمة السحب غير صحيحة' }) };
+    }
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'إعدادات قاعدة البيانات غير متوفرة' }) };
     }
 
-    const { data: withdrawals, error: wdErr } = await supabase
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
+    const { data: earnings } = await supabase
+      .from('delivery_earnings')
+      .select('amount_pi')
+      .eq('delivery_pi_user_id', uid);
+    const { data: withdrawals } = await supabase
       .from('withdrawals')
       .select('amount')
       .eq('pi_user_id', uid);
 
-    if (wdErr) {
-      return json(500, { error: 'Database error reading withdrawals', details: wdErr.message });
-    }
-
-    const totalEarned = (earnings || []).reduce((sum, row) => sum + Number(row.amount_pi || 0), 0);
-    const totalWithdrawn = (withdrawals || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
-    const currentBalance = totalEarned - totalWithdrawn;
+    const totalEarned = earnings ? earnings.reduce((sum, row) => sum + parseFloat(row.amount_pi || 0), 0) : 0;
+    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) : 0;
+    const currentBalance = clampBalance(totalEarned - totalWithdrawn);
 
     if (currentBalance < withdrawAmount) {
-      return json(400, {
-        error: 'رصيد حسابك غير كافٍ',
-        balance: Number(currentBalance.toFixed(7)),
-        requested: Number(withdrawAmount.toFixed(7)),
-      });
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
     }
 
     // --- 2) تنفيذ التحويل على Pi Testnet ---
@@ -126,30 +120,34 @@ exports.handler = async (event) => {
       .setTimeout(30)
       .build();
 
-    tx.sign(sourceKeys);
+    // توقيع المعاملة
+    transaction.sign(sourceKeys);
 
-    const result = await server.submitTransaction(tx);
+    // إرسال المعاملة للبلوكشين
+    const result = await server.submitTransaction(transaction);
 
-    // --- 3) تسجيل السحب في Supabase ---
-    const { error: insertErr } = await supabase.from('withdrawals').insert([
-      {
-        pi_user_id: uid,
-        username: username,
-        amount: withdrawAmount,
-        wallet_address: walletAddress,
-        txid: result.hash,
-      },
-    ]);
+    // --- خطوة 3: تسجيل العملية بنجاح في Supabase ---
+    await supabase.from('withdrawals').insert([{
+      pi_user_id: uid,
+      username: username,
+      amount: withdrawAmount,
+      wallet_address: walletAddress,
+      txid: result.hash
+    }]);
 
-    if (insertErr) {
-      // التحويل حصل بالفعل على الشبكة، بس التسجيل فشل
-      return json(200, {
-        success: true,
-        txid: result.hash,
-        message: 'تم التحويل بنجاح (لكن فشل تسجيل العملية في قاعدة البيانات)',
-        db_error: insertErr.message,
-      });
-    }
+    const balanceAfter = clampBalance(currentBalance - withdrawAmount);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ 
+        success: true, 
+        txid: result.hash, 
+        balance_before: currentBalance,
+        withdrawn: withdrawAmount,
+        balance_after: balanceAfter
+      })
+    };
 
     return json(200, {
       success: true,
@@ -185,6 +183,10 @@ exports.handler = async (event) => {
     console.error(errorResponse.details);
     console.error('--- ERROR LOG END ---');
 
-    return json(500, errorResponse);
+    return { 
+      statusCode: 500, 
+      headers,
+      body: JSON.stringify(errorResponse) 
+    };
   }
 };
