@@ -1408,7 +1408,6 @@ async function applyCustomerOrderState(order){
     document.getElementById('custTrack').classList.add('hidden');
     document.getElementById('custChat').classList.add('hidden');
     document.getElementById('custRating').classList.remove('hidden');
-    setActiveOrderId(null);
     await loadRatingState(order);
   } else {
     hideRating();
@@ -2060,7 +2059,6 @@ function listenStatus(){
         document.getElementById('custChat').classList.add('hidden');
         document.getElementById('custTrack').classList.add('hidden');
         document.getElementById('custRating').classList.remove('hidden');
-        setActiveOrderId(null);
         loadRatingState(payload.new);
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
@@ -2107,6 +2105,41 @@ function listenDeliveryStatus(){
           chatChannel = null;
         }
         if (chatPollTimer) clearInterval(chatPollTimer);
+      }
+    }).subscribe();
+}
+
+function listenDeliveryStatus(){
+  if(!ACTIVE_ORDER) return;
+
+  if (deliveryStatusChannel) {
+    try { db.removeChannel(deliveryStatusChannel); } catch {}
+    deliveryStatusChannel = null;
+  }
+
+  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      const s = payload.new.status || 'pending';
+      const statusEl = document.getElementById('dStatus');
+      if (statusEl) statusEl.innerText = s;
+
+      if (s === 'delivered') {
+        document.getElementById('delChat').classList.add('hidden');
+        setActiveOrderId(null);
+        loadOrders();
+        loadWalletPi();
+        loadDeliveryHistory();
+        if (deliveryStatusChannel) {
+          try { db.removeChannel(deliveryStatusChannel); } catch {}
+          deliveryStatusChannel = null;
+        }
+        if (chatChannel) {
+          try { db.removeChannel(chatChannel); } catch {}
+          chatChannel = null;
+        }
       }
     }).subscribe();
 }
