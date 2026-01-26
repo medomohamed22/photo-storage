@@ -836,6 +836,7 @@
           </div>
 
           <div class="miniCard space-y-1" id="delOrderDetails">
+            <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
             <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd">—</b></div>
             <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
             <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
@@ -1338,6 +1339,7 @@ async function restoreActiveOrder(){
     document.getElementById('delChat').classList.remove('hidden');
     startChat();
     markSeen('delivery');
+    listenDeliveryStatus();
     return;
   }
 
@@ -1813,6 +1815,7 @@ async function acceptOrder(id){
 
     startChat();
     markSeen('delivery');
+    listenDeliveryStatus();
     loadDeliveryHistory();
 
   }catch(e){
@@ -1823,14 +1826,14 @@ async function acceptOrder(id){
 
 async function loadOrderDetailsForDelivery(orderId){
   let result = await db.from('orders')
-    .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,customer_address,customer_lat,customer_lng')
+    .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,customer_address,customer_lat,customer_lng,status')
     .eq('id', orderId)
     .single();
 
   if(result.error && hasMissingLocationColumn(result.error)) {
     HAS_LOCATION_COLUMNS = false;
     result = await db.from('orders')
-      .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price')
+      .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status')
       .eq('id', orderId)
       .single();
   }
@@ -1843,6 +1846,7 @@ async function loadOrderDetailsForDelivery(orderId){
   const totalEgp = (data.total_price ?? ((data.price||0)+delFee+platFee));
   const totalPi = egpToPi(totalEgp);
 
+  document.getElementById('dStatus').innerText = data.status || 'pending';
   document.getElementById('dProd').innerText = data.product_name || '—';
   document.getElementById('dType').innerText = data.order_type || 'any';
   document.getElementById('dProdEgp').innerText = Number(data.price||0).toFixed(2);
@@ -1993,6 +1997,7 @@ async function markSeen(viewerRole){
 
 /* ================== STATUS ================== */
 let statusChannel = null;
+let deliveryStatusChannel = null;
 
 function listenStatus(){
   if(!ACTIVE_ORDER) return;
@@ -2029,6 +2034,41 @@ function listenStatus(){
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
           statusChannel = null;
+        }
+        if (chatChannel) {
+          try { db.removeChannel(chatChannel); } catch {}
+          chatChannel = null;
+        }
+      }
+    }).subscribe();
+}
+
+function listenDeliveryStatus(){
+  if(!ACTIVE_ORDER) return;
+
+  if (deliveryStatusChannel) {
+    try { db.removeChannel(deliveryStatusChannel); } catch {}
+    deliveryStatusChannel = null;
+  }
+
+  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      const s = payload.new.status || 'pending';
+      const statusEl = document.getElementById('dStatus');
+      if (statusEl) statusEl.innerText = s;
+
+      if (s === 'delivered') {
+        document.getElementById('delChat').classList.add('hidden');
+        setActiveOrderId(null);
+        loadOrders();
+        loadWalletPi();
+        loadDeliveryHistory();
+        if (deliveryStatusChannel) {
+          try { db.removeChannel(deliveryStatusChannel); } catch {}
+          deliveryStatusChannel = null;
         }
         if (chatChannel) {
           try { db.removeChannel(chatChannel); } catch {}
@@ -2076,6 +2116,10 @@ async function finishWithOtp(){
     if (chatChannel) {
       try { db.removeChannel(chatChannel); } catch {}
       chatChannel = null;
+    }
+    if (deliveryStatusChannel) {
+      try { db.removeChannel(deliveryStatusChannel); } catch {}
+      deliveryStatusChannel = null;
     }
 
   }catch(e){
