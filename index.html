@@ -459,14 +459,24 @@ CHANGELOG (Top 10 UI/UX Updates)
       flex-direction:column;
       gap:10px;
       height: calc(100vh - 220px);
-      flex:1 1 auto;
-      min-height:0;
     }
     .chatScroll{
       flex:1;
       min-height:180px;
       overflow-y:auto;
       overscroll-behavior: contain;
+    }
+    .chatComposer{
+      display:flex;
+      gap:6px;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-top:1px solid rgba(16,185,129,.12);
+      padding-top:8px;
+      padding-bottom: env(safe-area-inset-bottom);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
     .chatStickyHeader{
       position: sticky;
@@ -478,48 +488,17 @@ CHANGELOG (Top 10 UI/UX Updates)
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    .orderCard{
-    }
-    .orderCardHeader{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      padding-bottom:8px;
-      margin-bottom:10px;
-      border-bottom:1px solid rgba(16,185,129,.12);
-    }
-    .chatCard{
+    #delChat{
       display:flex;
       flex-direction:column;
-      gap:10px;
-      height: 56vh;
+      height: calc(100vh - 220px);
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
       overflow: hidden;
     }
-    .chatCardHeader{
-      font-weight:900;
-      font-size:13px;
-      padding-bottom:8px;
-      border-bottom:1px solid rgba(16,185,129,.12);
-    }
-    .chatScrollArea{
+    #chatD{
       flex:1 1 auto;
       overflow-y:auto;
-      padding:10px;
-      border-radius:14px;
-      background: rgba(255,255,255,.75);
-      border:1px solid rgba(16,185,129,.10);
-    }
-    .chatComposerBar{
-      position: sticky;
-      bottom: 0;
-      background: rgba(255,255,255,.95);
-      border-top:1px solid rgba(16,185,129,.12);
-      padding-top:8px;
-      backdrop-filter: blur(8px);
-    }
-    #delChat{
-      padding-bottom: calc(110px + env(safe-area-inset-bottom));
+      padding-bottom:12px;
     }
 
     /* Bottom nav - app style */
@@ -1151,8 +1130,8 @@ CHANGELOG (Top 10 UI/UX Updates)
 
         <!-- DELIVERY CHAT -->
         <section id="delChat" class="hidden glass pageSection space-y-3">
-          <div class="miniCard orderCard">
-            <div class="orderCardHeader">
+          <div class="miniCard space-y-2">
+            <div class="secTitle">
               <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
               <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
             </div>
@@ -1178,23 +1157,29 @@ CHANGELOG (Top 10 UI/UX Updates)
 
           <div class="miniCard chatCard">
             <div class="chatCardHeader">الشات مع العميل</div>
-            <div id="chatD" class="chatScrollArea flex flex-col gap-2"></div>
-            <div class="chatComposerBar">
-              <div class="flex gap-2 items-center">
-                <input id="msgD" class="flex-1" placeholder="رسالة..." />
-                <label class="chip chipS cursor-pointer">
-                  <i class="fa-regular fa-image"></i>
-                  <input type="file" id="imgD" accept="image/*" class="hidden" />
-                  صورة
-                </label>
-                <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
-                  <i class="fa-solid fa-arrow-up"></i>
-                </button>
-              </div>
+            <div class="flex gap-2">
+              <button class="chip chipS" onclick="quick('delivery','أنا في الطريق 🛵')">
+                <i class="fa-solid fa-motorcycle"></i> في الطريق
+              </button>
+              <button class="chip chipS" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">
+                <i class="fa-solid fa-ban"></i> غير متوفر
+              </button>
+            </div>
+            <div id="chatD" class="flex flex-col gap-2"></div>
+            <div class="chatComposer items-center">
+              <input id="msgD" class="flex-1" placeholder="رسالة..." />
+              <label class="chip chipS cursor-pointer">
+                <i class="fa-regular fa-image"></i>
+                <input type="file" id="imgD" accept="image/*" class="hidden" />
+                صورة
+              </label>
+              <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
             </div>
           </div>
 
-          <div class="miniCard actionsCard">
+          <div class="miniCard">
             <div class="secTitle">
               <b><i class="fa-solid fa-headset mr-1"></i> إجراءات الطلب</b>
             </div>
@@ -2392,6 +2377,7 @@ function startChat(){
     }, (payload) => {
       if (payload.new?.order_id !== ACTIVE_ORDER) return;
       appendMsg(payload.new, ACTIVE_ROLE);
+      scrollChatToBottom(ACTIVE_ROLE);
       markSeen(currentRole());
     })
     .subscribe();
@@ -2411,7 +2397,7 @@ async function loadMessages(){
     safeDom('chatD') && (safeDom('chatD').innerHTML = '');
   }
   (data||[]).forEach((msg) => appendMsg(msg, ACTIVE_ROLE));
-  scrollChatToBottom();
+  scrollChatToBottom(ACTIVE_ROLE);
 
   markSeen(currentRole());
 }
@@ -2486,14 +2472,25 @@ function appendMsg(m, targetRole){
   } else {
     safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
   }
-  scrollChatToBottom();
+  scrollChatToBottom(targetRole);
 }
 
-function scrollChatToBottom(){
-  const el = document.getElementById('chatD');
+function scrollChatToBottom(role){
+  const el = role === 'delivery'
+    ? document.getElementById('chatD')
+    : document.getElementById('chatC');
+
   if (!el) return;
   requestAnimationFrame(() => {
     el.scrollTop = el.scrollHeight;
+  });
+}
+
+function scrollChatToBottom(role){
+  const target = role === 'customer' ? safeDom('chatC') : safeDom('chatD');
+  if (!target) return;
+  requestAnimationFrame(() => {
+    target.scrollTop = target.scrollHeight;
   });
 }
 
