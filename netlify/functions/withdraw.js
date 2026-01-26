@@ -18,6 +18,7 @@ const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 // Pi TESTNET Horizon & Passphrase
 const PI_HORIZON_URL = process.env.PI_HORIZON_URL;
 const NETWORK_PASSPHRASE = process.env.PI_NETWORK_PASSPHRASE;
+const PI_PLATFORM_API_URL = process.env.PI_PLATFORM_API_URL || 'https://api.minepi.com/v2/me';
 
 // Server-side Supabase client (service role)
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -28,7 +29,7 @@ const json = (statusCode, obj) => ({
   headers: {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST,OPTIONS',
   },
   body: JSON.stringify(obj),
@@ -41,6 +42,80 @@ const safeParse = (s) => {
 const toNum = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+};
+
+const isValidStellarAddress = (address) => /^G[A-Z2-7]{55}$/.test(address);
+
+const calcDeliveryEarningsPi = (order) => {
+  const snap = order?.pricing_snapshot || {};
+  const totalPi = toNum(snap.total_pi);
+  const platformFeePi = toNum(snap.platform_fee_pi);
+
+  if (totalPi > 0) return Math.max(0, totalPi - platformFeePi);
+
+  const priceEgp = toNum(order?.price);
+  const deliveryFeeEgp = toNum(order?.delivery_fee);
+  const totalPriceEgp = toNum(order?.total_price);
+  const platformFeeEgp = toNum(order?.platform_fee);
+
+  const baseEgp = (priceEgp || deliveryFeeEgp)
+    ? (priceEgp + deliveryFeeEgp)
+    : Math.max(0, totalPriceEgp - platformFeeEgp);
+
+  const piEgp = toNum(snap.pi_egp);
+  if (baseEgp > 0 && piEgp > 0) return baseEgp / piEgp;
+
+  return 0;
+};
+
+const getAuthToken = (event) => {
+  const header = event.headers?.authorization || event.headers?.Authorization || '';
+  if (!header.startsWith('Bearer ')) return '';
+  return header.replace('Bearer ', '').trim();
+};
+
+const resolveIdentity = async (token) => {
+  if (!token) return { error: 'Missing auth token' };
+
+  if (PI_PLATFORM_API_URL) {
+    try {
+      const resp = await fetch(PI_PLATFORM_API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const uid = data?.uid || data?.user?.uid || data?.user?.id;
+        const username = data?.username || data?.user?.username;
+        if (uid && username) return { uid: String(uid), username: String(username) };
+      }
+    } catch (err) {
+      console.warn('Pi API verify failed:', err?.message || err);
+    }
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (!error && data?.user) {
+      const uid = data.user.id;
+      const username = data.user.user_metadata?.username || data.user.user_metadata?.pi_username;
+      if (uid && username) return { uid: String(uid), username: String(username) };
+    }
+  } catch (err) {
+    console.warn('Supabase auth verify failed:', err?.message || err);
+  }
+
+  return { error: 'Unauthorized' };
+};
+
+const getNetworkFee = async (server) => {
+  try {
+    const stats = await server.feeStats();
+    const raw = Number(stats?.fee_charged?.max || stats?.last_ledger_base_fee);
+    if (Number.isFinite(raw) && raw > 0) return String(Math.max(100, Math.floor(raw)));
+  } catch (err) {
+    console.warn('feeStats failed:', err?.message || err);
+  }
+  return '100000';
 };
 
 /* ================== HANDLER ================== */
@@ -59,46 +134,125 @@ exports.handler = async (event) => {
     if (!NETWORK_PASSPHRASE) return json(500, { error: 'Missing PI_NETWORK_PASSPHRASE' });
 
     const body = safeParse(event.body);
-    const uid = String(body.uid || '').trim();
-    const username = String(body.username || '').trim();
+    const token = getAuthToken(event);
+    const identity = await resolveIdentity(token);
+    if (identity.error) return json(401, { error: 'غير مصرح', details: identity.error });
+
+    const uid = identity.uid;
+    const username = identity.username;
     const walletAddress = String(body.walletAddress || '').trim();
     const withdrawAmount = Number.parseFloat(body.amount);
 
-    if (!uid || !walletAddress || !Number.isFinite(withdrawAmount) || withdrawAmount <= 0) {
+    if (!walletAddress || !Number.isFinite(withdrawAmount)) {
+      return json(400, { error: 'بيانات ناقصة أو غير صحيحة' });
+    }
+    if (!isValidStellarAddress(walletAddress)) {
+      return json(400, { error: 'عنوان المحفظة غير صحيح' });
+    }
+    if (withdrawAmount < 0.01) {
+      return json(400, { error: 'الحد الأدنى للسحب 0.010000 Pi' });
+    }
+    if (!uid || !username) {
       return json(400, { error: 'بيانات ناقصة أو غير صحيحة' });
     }
 
-    /* ---------- 1) Balance check (donations - withdrawals) ---------- */
-    const { data: donations, error: e1 } = await supabase
-      .from('donations')
-      .select('amount')
-      .eq('pi_user_id', uid);
+    const now = Date.now();
+    const tenMinAgo = new Date(now - 10 * 60 * 1000).toISOString();
+    const oneMinAgo = new Date(now - 60 * 1000).toISOString();
 
-    if (e1) throw e1;
+    const { count: rateCount, error: rateErr } = await supabase
+      .from('withdrawals')
+      .select('id', { count: 'exact', head: true })
+      .eq('pi_user_id', uid)
+      .gte('created_at', tenMinAgo);
+
+    if (rateErr) throw rateErr;
+    if ((rateCount || 0) >= 3) {
+      return json(429, { error: 'تم تجاوز الحد الأقصى للسحب، حاول لاحقًا' });
+    }
+
+    const { data: dupes, error: dupErr } = await supabase
+      .from('withdrawals')
+      .select('id')
+      .eq('pi_user_id', uid)
+      .eq('wallet_address', walletAddress)
+      .eq('amount', withdrawAmount)
+      .gte('created_at', oneMinAgo)
+      .limit(1);
+
+    if (dupErr) throw dupErr;
+    if ((dupes || []).length) {
+      return json(409, { error: 'طلب مكرر، حاول بعد دقيقة' });
+    }
+
+    let walletBalance = null;
+    try {
+      const { data: walletRow, error: walletErr } = await supabase
+        .from('delivery_wallet')
+        .select('balance_pi')
+        .eq('delivery_id', username)
+        .maybeSingle();
+      if (!walletErr && walletRow && walletRow.balance_pi !== null) {
+        walletBalance = toNum(walletRow.balance_pi);
+      }
+    } catch (err) {
+      console.warn('delivery_wallet lookup failed:', err?.message || err);
+    }
+
+    if (walletBalance === null) {
+      const { data: orders, error: ordersErr } = await supabase
+        .from('orders')
+        .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
+        .eq('delivery_id', username)
+        .eq('status', 'delivered')
+        .limit(2000);
+
+      if (ordersErr) throw ordersErr;
+      walletBalance = (orders || []).reduce((sum, order) => sum + calcDeliveryEarningsPi(order), 0);
+    }
 
     const { data: withdrawals, error: e2 } = await supabase
       .from('withdrawals')
-      .select('amount')
-      .eq('pi_user_id', uid);
+      .select('amount,status')
+      .eq('pi_user_id', uid)
+      .or('status.is.null,status.in.(pending,sent)');
 
     if (e2) throw e2;
 
-    const totalDonated = (donations || []).reduce((s, r) => s + toNum(r.amount), 0);
     const totalWithdrawn = (withdrawals || []).reduce((s, r) => s + toNum(r.amount), 0);
-    const currentBalance = totalDonated - totalWithdrawn;
+    const currentBalance = Math.max(0, walletBalance - totalWithdrawn);
 
     if (currentBalance + 1e-12 < withdrawAmount) {
       return json(400, { error: 'رصيد حسابك غير كافٍ' });
     }
+
+    const { data: inserted, error: insertErr } = await supabase.from('withdrawals').insert([{
+      pi_user_id: uid,
+      username,
+      amount: withdrawAmount,
+      wallet_address: walletAddress,
+      status: 'pending',
+    }]).select('id').single();
+
+    if (insertErr) throw insertErr;
 
     /* ---------- 2) Stellar transfer (Pi Testnet) ---------- */
     const server = new StellarSdk.Horizon.Server(PI_HORIZON_URL);
 
     const sourceKeys = StellarSdk.Keypair.fromSecret(APP_WALLET_SECRET);
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
+    const sourceBalance = toNum(
+      sourceAccount.balances?.find((b) => b.asset_type === 'native')?.balance,
+    );
+    if (sourceBalance < withdrawAmount + 1) {
+      await supabase.from('withdrawals')
+        .update({ status: 'failed', error_message: 'System wallet insufficient funds' })
+        .eq('id', inserted.id);
+      return json(400, { error: 'محفظة النظام تحتاج شحن رصيد' });
+    }
 
     const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: '100000',
+      fee: await getNetworkFee(server),
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(
@@ -112,18 +266,18 @@ exports.handler = async (event) => {
       .build();
 
     tx.sign(sourceKeys);
-    const result = await server.submitTransaction(tx);
-
-    /* ---------- 3) Log withdrawal in Supabase ---------- */
-    const { error: e3 } = await supabase.from('withdrawals').insert([{
-      pi_user_id: uid,
-      username: username || null,
-      amount: withdrawAmount,
-      wallet_address: walletAddress,
-      txid: result.hash,
-    }]);
-
-    if (e3) throw e3;
+    let result;
+    try {
+      result = await server.submitTransaction(tx);
+      await supabase.from('withdrawals')
+        .update({ status: 'sent', txid: result.hash, error_message: null })
+        .eq('id', inserted.id);
+    } catch (submitErr) {
+      await supabase.from('withdrawals')
+        .update({ status: 'failed', error_message: submitErr?.message || 'submit_failed' })
+        .eq('id', inserted.id);
+      throw submitErr;
+    }
 
     return json(200, {
       success: true,
