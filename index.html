@@ -1778,23 +1778,22 @@ function updateCustomerTimeline(status){
 }
 
 async function applyCustomerOrderState(order){
-  const status = normalizeStatus(order.status || 'pending');
+  const statusNormalized = String(order.status || '').trim().toLowerCase();
   safeDom('custTrack')?.classList.remove('hidden');
   safeDom('custChat')?.classList.remove('hidden');
-  if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
-  updateCustomerTimeline(status || 'pending');
+  if (safeDom('custStatus')) safeDom('custStatus').innerText = statusNormalized || 'pending';
+  updateCustomerTimeline(statusNormalized || 'pending');
   if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
   safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
   if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
 
-  if (['delivered','completed'].includes(status)) {
+  if (statusNormalized === 'delivered') {
     safeDom('custTrack')?.classList.add('hidden');
     safeDom('custChat')?.classList.add('hidden');
     setMainTab('track');
     const rating = safeDom('custRating');
     rating?.classList.remove('hidden');
     rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setActiveOrderId(null);
     if (statusPollTimer) clearInterval(statusPollTimer);
     if (statusChannel) {
       try { db.removeChannel(statusChannel); } catch {}
@@ -1805,6 +1804,7 @@ async function applyCustomerOrderState(order){
       chatChannel = null;
     }
     await loadRatingState(order);
+    setActiveOrderId(null);
   } else {
     hideRating();
   }
@@ -2501,25 +2501,27 @@ function listenStatus(){
       filter: `id=eq.${orderId}`
     }, (payload) => {
       try{
-        if (ACTIVE_ORDER !== orderId) {
+        if (!ACTIVE_ORDER || ACTIVE_ORDER !== orderId) {
           console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
           return;
         }
-        const s = normalizeStatus(payload.new.status);
-        safeDom('custStatus') && (safeDom('custStatus').innerText = s);
-        updateCustomerTimeline(s);
+        const statusNormalized = String(payload.new.status || '').trim().toLowerCase();
+        safeDom('custStatus') && (safeDom('custStatus').innerText = statusNormalized);
+        updateCustomerTimeline(statusNormalized);
 
-        if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
+        if(['accepted','shipping','arrived','delivered'].includes(statusNormalized)){
           safeDom('custChat')?.classList.remove('hidden');
         }
 
-        if(['delivered','completed'].includes(s)){
+        if(statusNormalized === 'delivered'){
           console.log('[listenStatus] delivered detected', payload.new.id);
           Swal.fire({
-            icon:'success',
-            title:'تم التسليم ✅',
-            text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
-            confirmButtonText:'قيّم الآن'
+            toast: true,
+            position: 'top',
+            timer: 2000,
+            showConfirmButton: false,
+            icon: 'success',
+            title: 'تم التسليم ✅'
           });
           loadCustomerHistory();
           safeDom('custChat')?.classList.add('hidden');
@@ -2528,7 +2530,6 @@ function listenStatus(){
           const rating = safeDom('custRating');
           rating?.classList.remove('hidden');
           rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActiveOrderId(null);
           loadRatingState(payload.new);
           if (statusChannel) {
             try { db.removeChannel(statusChannel); } catch {}
@@ -2540,6 +2541,7 @@ function listenStatus(){
           }
           if (chatPollTimer) clearInterval(chatPollTimer);
           if (statusPollTimer) clearInterval(statusPollTimer);
+          setActiveOrderId(null);
         }
       } catch (err){
         console.error('[listenStatus] UI update failed', err);
