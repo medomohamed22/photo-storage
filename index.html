@@ -767,6 +767,7 @@
               <button type="button" class="ratingStar" data-rating="4"><i class="fa-solid fa-star"></i></button>
               <button type="button" class="ratingStar" data-rating="5"><i class="fa-solid fa-star"></i></button>
             </div>
+            <div id="ratingValue" class="tiny muted">اختر تقييمك.</div>
             <textarea id="ratingNote" placeholder="ملاحظة اختيارية للدليفري"></textarea>
             <button id="ratingSubmit" class="btn btnA w-full" onclick="submitRating()">
               إرسال التقييم
@@ -1397,6 +1398,9 @@ async function applyCustomerOrderState(order){
   document.getElementById('otpBox').classList.toggle('hidden', !order.otp_code);
   document.getElementById('custAddressView').innerText = order.customer_address || '—';
   if (order.status === 'delivered') {
+    document.getElementById('custTrack').classList.add('hidden');
+    document.getElementById('custChat').classList.add('hidden');
+    document.getElementById('custRating').classList.remove('hidden');
     await loadRatingState(order);
   } else {
     hideRating();
@@ -1418,6 +1422,7 @@ function hideRating(){
   document.getElementById('ratingSubmit').classList.remove('btnS');
   document.getElementById('ratingSubmit').classList.add('btnA');
   document.getElementById('ratingNote').value = '';
+  document.getElementById('ratingValue').innerText = 'اختر تقييمك.';
   setRating(0);
 }
 
@@ -1428,6 +1433,8 @@ function setRating(value){
     const rating = Number(star.dataset.rating);
     star.classList.toggle('active', rating <= value);
   });
+  const label = value ? `تقييمك الحالي: ${value} نجوم` : 'اختر تقييمك.';
+  document.getElementById('ratingValue').innerText = label;
 }
 
 function initRatingStars(){
@@ -1457,6 +1464,9 @@ async function loadRatingState(order){
       submit.disabled = true;
       submit.classList.remove('btnA');
       submit.classList.add('btnS');
+      document.getElementById('custTrack').classList.add('hidden');
+      document.getElementById('custChat').classList.add('hidden');
+      setActiveOrderId(null);
     } else {
       document.getElementById('ratingThanks').classList.add('hidden');
       document.getElementById('ratingSubmit').disabled = false;
@@ -1493,6 +1503,9 @@ async function submitRating(){
     document.getElementById('ratingSubmit').classList.remove('btnA');
     document.getElementById('ratingSubmit').classList.add('btnS');
     Swal.fire({ icon:'success', title:'تم التقييم ✅' });
+    document.getElementById('custTrack').classList.add('hidden');
+    document.getElementById('custChat').classList.add('hidden');
+    setActiveOrderId(null);
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
@@ -2002,9 +2015,16 @@ function listenStatus(){
       }
 
       if(s === 'delivered'){
-        Swal.fire({ icon:'success', title:'تم التسليم ✅', text:'شكراً لاستخدام QuickCart' });
+        Swal.fire({
+          icon:'success',
+          title:'تم التسليم ✅',
+          text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
+          confirmButtonText:'قيّم الآن'
+        });
         loadCustomerHistory();
         document.getElementById('custChat').classList.add('hidden');
+        document.getElementById('custTrack').classList.add('hidden');
+        document.getElementById('custRating').classList.remove('hidden');
         loadRatingState(payload.new);
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
