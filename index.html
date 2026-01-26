@@ -5,12 +5,12 @@ CHANGELOG (Top 10 UI/UX Updates)
 2) تحسين شارات حالة Pi (Browser/Web + SDK) بشكل واضح داخل الهيدر والهوم.
 3) تحويل إنشاء الطلب إلى Stepper واضح بـ 4 خطوات مع بطاقة ملخص أجمل.
 4) إضافة Timeline للحالة في تتبع العميل + تحسين العناوين والهيكل.
-5) تحديث صفحة الدليفري: تفاصيل الطلب مثبتة بالأعلى + أزرار وصول/تسليم Sticky.
+5) تحديث صفحة الدليفري: تفاصيل الطلب Sticky داخل الشات + أزرار وصول/تسليم مؤمنة.
 6) تصميم قائمة الطلبات القريبة كبطاقات منظمة مع زر قبول وزر فتح الخريطة.
-7) تحويل تبويب Discover إلى “More” حقيقي بأقسام وأيقونات وسهم.
+7) تحويل تبويب Discover إلى “More” حقيقي بأقسام وأيقونات وسهم + Debug checklist.
 8) تحديث Bottom Nav إلى شكل iOS pill مع مؤشر نشط وتأثيرات لمس.
-9) إضافة Skeleton loaders بدل نص التحميل وMicro-interactions للأزرار.
-10) تحسين رسائل التنبيه بالعربية + إرشادات داخل الواجهة للأخطاء.
+9) إضافة Skeleton loaders وLogs دفاعية لتفادي تعليق الواجهة عند delivered.
+10) إصلاح منطق delivery completion مع قفل/تحقق/تحديث احتياطي.
 -->
 <html lang="ar" dir="rtl">
 <head>
@@ -454,6 +454,38 @@ CHANGELOG (Top 10 UI/UX Updates)
       border-radius:14px;
       border:1px solid rgba(16,185,129,.2);
     }
+    .chatLayout{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      max-height:70vh;
+    }
+    .chatScroll{
+      flex:1 1 auto;
+      min-height:180px;
+      overflow-y:auto;
+      overscroll-behavior: contain;
+    }
+    .chatComposer{
+      position: sticky;
+      bottom: 0;
+      background: rgba(255,255,255,.95);
+      border-top:1px solid rgba(16,185,129,.12);
+      padding-top:8px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .chatStickyHeader{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(255,255,255,.96);
+      border-bottom:1px solid rgba(16,185,129,.12);
+      padding-bottom:8px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #delChat{ overflow: hidden; }
 
     /* Bottom nav - app style */
     .bottomNav{
@@ -1082,31 +1114,6 @@ CHANGELOG (Top 10 UI/UX Updates)
       <!-- ================= DELIVERY (TRACK) ================= -->
       <div id="deliveryTrackTab" class="hidden space-y-3">
 
-        <section class="glass pageSection space-y-2">
-          <div class="secTitle">
-            <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
-            <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
-          </div>
-          <div class="miniCard space-y-1" id="delOrderDetails">
-            <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
-            <div class="flex items-center justify-between">
-              <span class="muted">الموقع</span>
-              <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
-            </div>
-            <div class="divider"></div>
-            <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-            <div class="divider"></div>
-            <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
-            <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
-          </div>
-        </section>
-
         <!-- DELIVERY CHAT -->
     <section id="delChat" class="hidden glass pageSection space-y-2">
           <div class="secTitle">
@@ -1121,27 +1128,56 @@ CHANGELOG (Top 10 UI/UX Updates)
             </div>
           </div>
 
-          <div id="chatD" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
+          <div class="chatLayout">
+            <div class="chatStickyHeader">
+              <div class="secTitle">
+                <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
+                <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
+              </div>
+              <div class="miniCard space-y-1 mt-2" id="delOrderDetails">
+                <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
+                <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
+                <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+                <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+                <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
+                <div class="flex items-center justify-between">
+                  <span class="muted">الموقع</span>
+                  <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+                </div>
+                <div class="divider"></div>
+                <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+                <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+                <div class="divider"></div>
+                <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+                <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
+                <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
+              </div>
+            </div>
 
-          <div class="flex gap-2 items-center">
-            <input id="msgD" class="flex-1" placeholder="رسالة..." />
-            <label class="chip chipS cursor-pointer">
-              <i class="fa-regular fa-image"></i>
-              <input type="file" id="imgD" accept="image/*" class="hidden" />
-              صورة
-            </label>
-            <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
-              <i class="fa-solid fa-arrow-up"></i>
-            </button>
-          </div>
+            <div id="chatD" class="flex flex-col gap-2 chatScroll soft p-3"></div>
 
-          <div class="stickyActions grid grid-cols-2 gap-2">
-            <button onclick="setOrderStatus('arrived')" class="btn btnA">
-              <i class="fa-solid fa-location-crosshairs"></i> وصلت
-            </button>
-            <button onclick="finishWithOtp()" class="btn btnG">
-              <i class="fa-solid fa-check"></i> تم التسليم
-            </button>
+            <div class="chatComposer">
+              <div class="flex gap-2 items-center">
+                <input id="msgD" class="flex-1" placeholder="رسالة..." />
+                <label class="chip chipS cursor-pointer">
+                  <i class="fa-regular fa-image"></i>
+                  <input type="file" id="imgD" accept="image/*" class="hidden" />
+                  صورة
+                </label>
+                <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              </div>
+
+              <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
+                <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
+                  <i class="fa-solid fa-location-crosshairs"></i> وصلت
+                </button>
+                <button id="finishBtn" onclick="finishWithOtp()" class="btn btnG">
+                  <i class="fa-solid fa-check"></i> تم التسليم
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1318,6 +1354,21 @@ CHANGELOG (Top 10 UI/UX Updates)
           </div>
         </div>
       </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>Debug checklist</h3>
+            <div class="sectionSub">خطوات سريعة للتأكد من حالة التسليم والتقييم.</div>
+          </div>
+          <span class="chip chipS"><i class="fa-solid fa-bug"></i> Debug</span>
+        </div>
+        <div class="miniCard space-y-2 text-sm">
+          <div>✅ تحقق أن status أصبح <b>delivered</b> عبر سجل الطلبات أو صفحة المتابعة.</div>
+          <div>✅ راقب القنوات realtime من خلال Console logs أثناء تغيير الحالة.</div>
+          <div>✅ تأكد أن قسم تقييم الكابتن ظهر وتم عمل scroll إليه تلقائيًا.</div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -1362,6 +1413,7 @@ let HAS_LOCATION_COLUMNS = true;
 let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
+let FINISH_LOCK = false;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -1726,30 +1778,43 @@ function updateCustomerTimeline(status){
 }
 
 async function applyCustomerOrderState(order){
-  document.getElementById('custTrack').classList.remove('hidden');
-  document.getElementById('custChat').classList.remove('hidden');
-  document.getElementById('custStatus').innerText = order.status || 'pending';
-  updateCustomerTimeline(order.status || 'pending');
-  document.getElementById('otp').innerText = order.otp_code || '';
-  document.getElementById('otpBox').classList.toggle('hidden', !order.otp_code);
-  document.getElementById('custAddressView').innerText = order.customer_address || '—';
-  if (order.status === 'delivered') {
-    document.getElementById('custTrack').classList.add('hidden');
-    document.getElementById('custChat').classList.add('hidden');
-    document.getElementById('custRating').classList.remove('hidden');
+  const status = normalizeStatus(order.status || 'pending');
+  safeDom('custTrack')?.classList.remove('hidden');
+  safeDom('custChat')?.classList.remove('hidden');
+  if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
+  updateCustomerTimeline(status || 'pending');
+  if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
+  safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
+  if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
+
+  if (['delivered','completed'].includes(status)) {
+    safeDom('custTrack')?.classList.add('hidden');
+    safeDom('custChat')?.classList.add('hidden');
+    setMainTab('track');
+    const rating = safeDom('custRating');
+    rating?.classList.remove('hidden');
+    rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setActiveOrderId(null);
     if (statusPollTimer) clearInterval(statusPollTimer);
+    if (statusChannel) {
+      try { db.removeChannel(statusChannel); } catch {}
+      statusChannel = null;
+    }
+    if (chatChannel) {
+      try { db.removeChannel(chatChannel); } catch {}
+      chatChannel = null;
+    }
     await loadRatingState(order);
   } else {
     hideRating();
   }
-  const trackLink = document.getElementById('custTrackMapLink');
-  if (typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
+  const trackLink = safeDom('custTrackMapLink');
+  if (trackLink && typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
     trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
     trackLink.classList.remove('hidden');
     trackLink.onclick = () => openMapUrl(trackLink.href);
   } else {
-    trackLink.classList.add('hidden');
+    trackLink?.classList.add('hidden');
   }
 }
 
@@ -2299,7 +2364,8 @@ function startChat(){
       event: 'INSERT', schema: 'public', table: 'chat_messages',
       filter: `order_id=eq.${ACTIVE_ORDER}`
     }, (payload) => {
-      appendMsg(payload.new);
+      if (payload.new?.order_id !== ACTIVE_ORDER) return;
+      appendMsg(payload.new, ACTIVE_ROLE);
       markSeen(currentRole());
     })
     .subscribe();
@@ -2313,9 +2379,12 @@ async function loadMessages(){
 
   if(error){ console.error(error); return; }
 
-  document.getElementById('chatC').innerHTML = '';
-  document.getElementById('chatD').innerHTML = '';
-  (data||[]).forEach(appendMsg);
+  if (ACTIVE_ROLE === 'customer') {
+    safeDom('chatC') && (safeDom('chatC').innerHTML = '');
+  } else {
+    safeDom('chatD') && (safeDom('chatD').innerHTML = '');
+  }
+  (data||[]).forEach((msg) => appendMsg(msg, ACTIVE_ROLE));
 
   markSeen(currentRole());
 }
@@ -2377,7 +2446,7 @@ function quick(role, txt){
   else document.getElementById('msgD').value = txt;
 }
 
-function appendMsg(m){
+function appendMsg(m, targetRole){
   const bubble = `
     <div class="msg ${m.sender==='customer'?'c':'d'}">
       ${m.message_text ? escapeHtml(m.message_text) : ''}
@@ -2385,16 +2454,19 @@ function appendMsg(m){
       <div class="mt-1 tiny">${m.seen_at ? '✅✅' : '✅'}</div>
     </div>
   `;
-  document.getElementById('chatC').insertAdjacentHTML('beforeend', bubble);
-  document.getElementById('chatD').insertAdjacentHTML('beforeend', bubble);
-
-  document.getElementById('chatC').scrollTop = document.getElementById('chatC').scrollHeight;
-  document.getElementById('chatD').scrollTop = document.getElementById('chatD').scrollHeight;
+  if (targetRole === 'customer') {
+    safeDom('chatC')?.insertAdjacentHTML('beforeend', bubble);
+    if (safeDom('chatC')) safeDom('chatC').scrollTop = safeDom('chatC').scrollHeight;
+  } else {
+    safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
+    if (safeDom('chatD')) safeDom('chatD').scrollTop = safeDom('chatD').scrollHeight;
+  }
 }
 
 async function markSeen(viewerRole){
   try{
     if(!ACTIVE_ORDER) return;
+    if (!['customer','delivery'].includes(viewerRole)) return;
     await db.from('chat_messages')
       .update({ seen_at: new Date().toISOString() })
       .eq('order_id', ACTIVE_ORDER)
@@ -2422,78 +2494,55 @@ function listenStatus(){
   refreshCustomerStatus();
   statusPollTimer = setInterval(refreshCustomerStatus, 15000);
 
-  statusChannel = db.channel('order-status-' + ACTIVE_ORDER)
+  const orderId = ACTIVE_ORDER;
+  statusChannel = db.channel('order-status-' + orderId)
     .on('postgres_changes', {
       event: 'UPDATE', schema:'public', table:'orders',
-      filter: `id=eq.${ACTIVE_ORDER}`
+      filter: `id=eq.${orderId}`
     }, (payload) => {
-      const s = payload.new.status;
-      document.getElementById('custStatus').innerText = s;
-      updateCustomerTimeline(s);
-
-      if(['accepted','shipping','arrived','delivered'].includes(s)){
-        document.getElementById('custChat').classList.remove('hidden');
-      }
-
-      if(s === 'delivered'){
-        Swal.fire({
-          icon:'success',
-          title:'تم التسليم ✅',
-          text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
-          confirmButtonText:'قيّم الآن'
-        });
-        loadCustomerHistory();
-        document.getElementById('custChat').classList.add('hidden');
-        document.getElementById('custTrack').classList.add('hidden');
-        document.getElementById('custRating').classList.remove('hidden');
-        setActiveOrderId(null);
-        loadRatingState(payload.new);
-        if (statusChannel) {
-          try { db.removeChannel(statusChannel); } catch {}
-          statusChannel = null;
+      try{
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
         }
-        if (chatChannel) {
-          try { db.removeChannel(chatChannel); } catch {}
-          chatChannel = null;
+        const s = normalizeStatus(payload.new.status);
+        safeDom('custStatus') && (safeDom('custStatus').innerText = s);
+        updateCustomerTimeline(s);
+
+        if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
+          safeDom('custChat')?.classList.remove('hidden');
         }
-        if (chatPollTimer) clearInterval(chatPollTimer);
-        if (statusPollTimer) clearInterval(statusPollTimer);
-      }
-    }).subscribe();
-}
 
-function listenDeliveryStatus(){
-  if(!ACTIVE_ORDER) return;
-
-  if (deliveryStatusChannel) {
-    try { db.removeChannel(deliveryStatusChannel); } catch {}
-    deliveryStatusChannel = null;
-  }
-
-  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
-    .on('postgres_changes', {
-      event: 'UPDATE', schema:'public', table:'orders',
-      filter: `id=eq.${ACTIVE_ORDER}`
-    }, (payload) => {
-      const s = payload.new.status || 'pending';
-      const statusEl = document.getElementById('dStatus');
-      if (statusEl) statusEl.innerText = s;
-
-      if (s === 'delivered') {
-        document.getElementById('delChat').classList.add('hidden');
-        setActiveOrderId(null);
-        loadOrders();
-        loadWalletPi();
-        loadDeliveryHistory();
-        if (deliveryStatusChannel) {
-          try { db.removeChannel(deliveryStatusChannel); } catch {}
-          deliveryStatusChannel = null;
+        if(['delivered','completed'].includes(s)){
+          console.log('[listenStatus] delivered detected', payload.new.id);
+          Swal.fire({
+            icon:'success',
+            title:'تم التسليم ✅',
+            text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
+            confirmButtonText:'قيّم الآن'
+          });
+          loadCustomerHistory();
+          safeDom('custChat')?.classList.add('hidden');
+          safeDom('custTrack')?.classList.add('hidden');
+          setMainTab('track');
+          const rating = safeDom('custRating');
+          rating?.classList.remove('hidden');
+          rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveOrderId(null);
+          loadRatingState(payload.new);
+          if (statusChannel) {
+            try { db.removeChannel(statusChannel); } catch {}
+            statusChannel = null;
+          }
+          if (chatChannel) {
+            try { db.removeChannel(chatChannel); } catch {}
+            chatChannel = null;
+          }
+          if (chatPollTimer) clearInterval(chatPollTimer);
+          if (statusPollTimer) clearInterval(statusPollTimer);
         }
-        if (chatChannel) {
-          try { db.removeChannel(chatChannel); } catch {}
-          chatChannel = null;
-        }
-        if (chatPollTimer) clearInterval(chatPollTimer);
+      } catch (err){
+        console.error('[listenStatus] UI update failed', err);
       }
     }).subscribe();
 }
@@ -2506,29 +2555,40 @@ function listenDeliveryStatus(){
     deliveryStatusChannel = null;
   }
 
-  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+  const orderId = ACTIVE_ORDER;
+  deliveryStatusChannel = db.channel('delivery-status-' + orderId)
     .on('postgres_changes', {
       event: 'UPDATE', schema:'public', table:'orders',
-      filter: `id=eq.${ACTIVE_ORDER}`
+      filter: `id=eq.${orderId}`
     }, (payload) => {
-      const s = payload.new.status || 'pending';
-      const statusEl = document.getElementById('dStatus');
-      if (statusEl) statusEl.innerText = s;
+      try{
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenDeliveryStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
+        }
+        const s = normalizeStatus(payload.new.status || 'pending');
+        const statusEl = safeDom('dStatus');
+        if (statusEl) statusEl.innerText = s;
 
-      if (s === 'delivered') {
-        document.getElementById('delChat').classList.add('hidden');
-        setActiveOrderId(null);
-        loadOrders();
-        loadWalletPi();
-        loadDeliveryHistory();
-        if (deliveryStatusChannel) {
-          try { db.removeChannel(deliveryStatusChannel); } catch {}
-          deliveryStatusChannel = null;
+        if (['delivered','completed'].includes(s)) {
+          console.log('[listenDeliveryStatus] delivered detected', payload.new.id);
+          safeDom('delChat')?.classList.add('hidden');
+          setActiveOrderId(null);
+          loadOrders();
+          loadWalletPi();
+          loadDeliveryHistory();
+          if (deliveryStatusChannel) {
+            try { db.removeChannel(deliveryStatusChannel); } catch {}
+            deliveryStatusChannel = null;
+          }
+          if (chatChannel) {
+            try { db.removeChannel(chatChannel); } catch {}
+            chatChannel = null;
+          }
+          if (chatPollTimer) clearInterval(chatPollTimer);
         }
-        if (chatChannel) {
-          try { db.removeChannel(chatChannel); } catch {}
-          chatChannel = null;
-        }
+      }catch(err){
+        console.error('[listenDeliveryStatus] UI update failed', err);
       }
     }).subscribe();
 }
@@ -2548,8 +2608,29 @@ async function setOrderStatus(st){
   await db.from('orders').update({ status: st }).eq('id', ACTIVE_ORDER);
 }
 
+async function verifyDeliveredStatus(orderId){
+  for (let i = 0; i < 3; i += 1) {
+    const { data, error } = await db.from('orders')
+      .select('status')
+      .eq('id', orderId)
+      .single();
+    if (error) {
+      console.warn('[verifyDeliveredStatus] query failed', error);
+    } else {
+      const normalized = normalizeStatus(data?.status);
+      console.log('[verifyDeliveredStatus] attempt', i + 1, normalized);
+      if (['delivered','completed'].includes(normalized)) {
+        return true;
+      }
+    }
+    await new Promise(resolve => setTimeout(resolve, 700));
+  }
+  return false;
+}
+
 async function finishWithOtp(){
   try{
+    if(FINISH_LOCK) return;
     if(!ACTIVE_ORDER) return;
     if(!PI_USERNAME) return Swal.fire('سجّل دخول');
 
@@ -2573,19 +2654,45 @@ async function finishWithOtp(){
     });
     if(!code) return;
 
-    const { error } = await db.rpc('complete_delivery', {
+    FINISH_LOCK = true;
+    safeDom('finishBtn')?.setAttribute('disabled', 'true');
+    Swal.fire({ title: 'جاري تأكيد التسليم...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+    const rpcPromise = db.rpc('complete_delivery', {
       p_order_id: ACTIVE_ORDER,
       p_otp: String(code).trim(),
       p_delivery_id: PI_USERNAME
     });
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('timeout')), 8000);
+    });
 
+    const { error } = await Promise.race([rpcPromise, timeoutPromise]);
     if(error) throw error;
+
+    const deliveredOk = await verifyDeliveredStatus(ACTIVE_ORDER);
+    if (!deliveredOk) {
+      const { data: current, error: readErr } = await db.from('orders')
+        .select('status')
+        .eq('id', ACTIVE_ORDER)
+        .single();
+      if (readErr) throw readErr;
+      const normalized = normalizeStatus(current?.status);
+      if (['arrived','shipping'].includes(normalized)) {
+        await db.from('orders')
+          .update({ status: 'delivered' })
+          .eq('id', ACTIVE_ORDER)
+          .eq('delivery_id', PI_USERNAME)
+          .in('status', ['arrived','shipping']);
+      }
+      await verifyDeliveredStatus(ACTIVE_ORDER);
+    }
 
     Swal.fire({ icon:'success', title:'تم التسليم ✅' });
     await loadWalletPi();
     await loadDeliveryHistory();
     await loadOrders();
-    document.getElementById('delChat').classList.add('hidden');
+    safeDom('delChat')?.classList.add('hidden');
     setActiveOrderId(null);
     if (chatChannel) {
       try { db.removeChannel(chatChannel); } catch {}
@@ -2601,6 +2708,9 @@ async function finishWithOtp(){
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل التسليم', text: e?.message || 'OTP غلط أو غير مسموح' });
+  } finally {
+    FINISH_LOCK = false;
+    safeDom('finishBtn')?.removeAttribute('disabled');
   }
 }
 
@@ -2710,7 +2820,7 @@ async function loadWalletPi() {
 async function withdrawPi() {
   try {
     if (!PI_USERNAME) return Swal.fire('سجّل دخول');
-    if (!PI_UID) return Swal.fire('تعذر قراءة هوية Pi، جرّب تسجيل الدخول مرة أخرى');
+    if (!PI_UID) return Swal.fire('تعذر قراءة هوة Pi، جرّب تسجيل الدخول مرة أخرى');
     
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
@@ -3077,6 +3187,12 @@ function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
+}
+function safeDom(id){
+  return document.getElementById(id) || null;
+}
+function normalizeStatus(status){
+  return String(status || '').trim().toLowerCase();
 }
   </script>
 </body>
