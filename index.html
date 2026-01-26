@@ -1783,17 +1783,24 @@ async function applyCustomerOrderState(order){
   safeDom('custChat')?.classList.remove('hidden');
   if (safeDom('custStatus')) safeDom('custStatus').innerText = statusNormalized || 'pending';
   updateCustomerTimeline(statusNormalized || 'pending');
+  const status = normalizeStatus(order.status || 'pending');
+  safeDom('custTrack')?.classList.remove('hidden');
+  safeDom('custChat')?.classList.remove('hidden');
+  if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
+  updateCustomerTimeline(status || 'pending');
   if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
   safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
   if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
 
   if (statusNormalized === 'delivered') {
+  if (['delivered','completed'].includes(status)) {
     safeDom('custTrack')?.classList.add('hidden');
     safeDom('custChat')?.classList.add('hidden');
     setMainTab('track');
     const rating = safeDom('custRating');
     rating?.classList.remove('hidden');
     rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setActiveOrderId(null);
     if (statusPollTimer) clearInterval(statusPollTimer);
     if (statusChannel) {
       try { db.removeChannel(statusChannel); } catch {}
@@ -2522,6 +2529,25 @@ function listenStatus(){
             showConfirmButton: false,
             icon: 'success',
             title: 'تم التسليم ✅'
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
+        }
+        const s = normalizeStatus(payload.new.status);
+        safeDom('custStatus') && (safeDom('custStatus').innerText = s);
+        updateCustomerTimeline(s);
+
+        if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
+          safeDom('custChat')?.classList.remove('hidden');
+        }
+
+        if(['delivered','completed'].includes(s)){
+          console.log('[listenStatus] delivered detected', payload.new.id);
+          Swal.fire({
+            icon:'success',
+            title:'تم التسليم ✅',
+            text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
+            confirmButtonText:'قيّم الآن'
           });
           loadCustomerHistory();
           safeDom('custChat')?.classList.add('hidden');
@@ -2530,6 +2556,7 @@ function listenStatus(){
           const rating = safeDom('custRating');
           rating?.classList.remove('hidden');
           rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveOrderId(null);
           loadRatingState(payload.new);
           if (statusChannel) {
             try { db.removeChannel(statusChannel); } catch {}
@@ -2822,7 +2849,7 @@ async function loadWalletPi() {
 async function withdrawPi() {
   try {
     if (!PI_USERNAME) return Swal.fire('سجّل دخول');
-    if (!PI_UID) return Swal.fire('تعذر قراءة هوية Pi، جرّب تسجيل الدخول مرة أخرى');
+    if (!PI_UID) return Swal.fire('تعذر قراءة هوة Pi، جرّب تسجيل الدخول مرة أخرى');
     
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
