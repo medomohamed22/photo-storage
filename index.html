@@ -458,10 +458,12 @@ CHANGELOG (Top 10 UI/UX Updates)
       display:flex;
       flex-direction:column;
       gap:10px;
-      max-height:70vh;
+      height: calc(100vh - 220px);
+      flex:1 1 auto;
+      min-height:0;
     }
     .chatScroll{
-      flex:1 1 auto;
+      flex:1;
       min-height:180px;
       overflow-y:auto;
       overscroll-behavior: contain;
@@ -472,6 +474,7 @@ CHANGELOG (Top 10 UI/UX Updates)
       background: rgba(255,255,255,.95);
       border-top:1px solid rgba(16,185,129,.12);
       padding-top:8px;
+      padding-bottom: env(safe-area-inset-bottom);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
@@ -485,7 +488,18 @@ CHANGELOG (Top 10 UI/UX Updates)
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    #delChat{ overflow: hidden; }
+    #delChat{
+      display:flex;
+      flex-direction:column;
+      height: calc(100vh - 220px);
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+      overflow: hidden;
+    }
+    #chatD{
+      flex:1 1 auto;
+      overflow-y:auto;
+      padding-bottom:12px;
+    }
 
     /* Bottom nav - app style */
     .bottomNav{
@@ -1414,6 +1428,7 @@ let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
 let FINISH_LOCK = false;
+let LAST_DELIVERED_ORDER_ID = null;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -1777,8 +1792,37 @@ function updateCustomerTimeline(status){
   });
 }
 
+async function finalizeCustomerDeliveredUI(order){
+  safeDom('custTrack')?.classList.add('hidden');
+  safeDom('custChat')?.classList.add('hidden');
+  setMainTab('track');
+  const rating = safeDom('custRating');
+  rating?.classList.remove('hidden');
+  rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  LAST_DELIVERED_ORDER_ID = order?.id || LAST_DELIVERED_ORDER_ID;
+  setActiveOrderId(null);
+
+  if (statusPollTimer) clearInterval(statusPollTimer);
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  if (statusChannel) {
+    try { db.removeChannel(statusChannel); } catch {}
+    statusChannel = null;
+  }
+  if (chatChannel) {
+    try { db.removeChannel(chatChannel); } catch {}
+    chatChannel = null;
+  }
+
+  await loadRatingState(order);
+}
+
 async function applyCustomerOrderState(order){
   const status = normalizeStatus(order.status || 'pending');
+  if (['delivered','completed'].includes(status)) {
+    await finalizeCustomerDeliveredUI(order);
+    return;
+  }
   safeDom('custTrack')?.classList.remove('hidden');
   safeDom('custChat')?.classList.remove('hidden');
   if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
@@ -1786,28 +1830,7 @@ async function applyCustomerOrderState(order){
   if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
   safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
   if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
-
-  if (['delivered','completed'].includes(status)) {
-    safeDom('custTrack')?.classList.add('hidden');
-    safeDom('custChat')?.classList.add('hidden');
-    setMainTab('track');
-    const rating = safeDom('custRating');
-    rating?.classList.remove('hidden');
-    rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setActiveOrderId(null);
-    if (statusPollTimer) clearInterval(statusPollTimer);
-    if (statusChannel) {
-      try { db.removeChannel(statusChannel); } catch {}
-      statusChannel = null;
-    }
-    if (chatChannel) {
-      try { db.removeChannel(chatChannel); } catch {}
-      chatChannel = null;
-    }
-    await loadRatingState(order);
-  } else {
-    hideRating();
-  }
+  hideRating();
   const trackLink = safeDom('custTrackMapLink');
   if (trackLink && typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
     trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
@@ -1831,6 +1854,7 @@ function hideRating(){
 
 async function refreshCustomerStatus(){
   try{
+    if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
     if (!PI_USERNAME || !ACTIVE_ORDER) return;
     const { data, error } = await db.from('orders')
       .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code,delivery_id')
@@ -1869,7 +1893,6 @@ function initRatingStars(){
 
 async function loadRatingState(order){
   if (!order?.id || !order?.delivery_id) return;
-  document.getElementById('custRating').classList.remove('hidden');
   try {
     const { data, error } = await db.from('delivery_ratings')
       .select('id,rating')
@@ -1884,12 +1907,6 @@ async function loadRatingState(order){
       submit.disabled = true;
       submit.classList.remove('btnA');
       submit.classList.add('btnS');
-      document.getElementById('custTrack').classList.add('hidden');
-      document.getElementById('custChat').classList.add('hidden');
-      setActiveOrderId(null);
-      document.getElementById('custRating').classList.add('hidden');
-      if (chatPollTimer) clearInterval(chatPollTimer);
-      if (statusPollTimer) clearInterval(statusPollTimer);
     } else {
       document.getElementById('ratingThanks').classList.add('hidden');
       document.getElementById('ratingSubmit').disabled = false;
@@ -1901,19 +1918,20 @@ async function loadRatingState(order){
 
 async function submitRating(){
   try{
-    if (!ACTIVE_ORDER) return;
+    const orderId = ACTIVE_ORDER || LAST_DELIVERED_ORDER_ID;
+    if (!orderId) return;
     if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
     if (ACTIVE_RATING < 1) return Swal.fire('اختار تقييم من 1 إلى 5');
 
     const note = document.getElementById('ratingNote').value.trim();
     const { data: order, error: orderErr } = await db.from('orders')
       .select('delivery_id')
-      .eq('id', ACTIVE_ORDER)
+      .eq('id', orderId)
       .single();
     if (orderErr) throw orderErr;
 
     const { error } = await db.from('delivery_ratings').insert([{
-      order_id: ACTIVE_ORDER,
+      order_id: orderId,
       delivery_id: order?.delivery_id || null,
       customer_pi_username: PI_USERNAME,
       rating: ACTIVE_RATING,
@@ -1926,12 +1944,6 @@ async function submitRating(){
     document.getElementById('ratingSubmit').classList.remove('btnA');
     document.getElementById('ratingSubmit').classList.add('btnS');
     Swal.fire({ icon:'success', title:'تم التقييم ✅' });
-    document.getElementById('custTrack').classList.add('hidden');
-    document.getElementById('custChat').classList.add('hidden');
-    setActiveOrderId(null);
-    document.getElementById('custRating').classList.add('hidden');
-    if (chatPollTimer) clearInterval(chatPollTimer);
-    if (statusPollTimer) clearInterval(statusPollTimer);
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
@@ -2366,6 +2378,7 @@ function startChat(){
     }, (payload) => {
       if (payload.new?.order_id !== ACTIVE_ORDER) return;
       appendMsg(payload.new, ACTIVE_ROLE);
+      scrollChatToBottom(ACTIVE_ROLE);
       markSeen(currentRole());
     })
     .subscribe();
@@ -2385,6 +2398,7 @@ async function loadMessages(){
     safeDom('chatD') && (safeDom('chatD').innerHTML = '');
   }
   (data||[]).forEach((msg) => appendMsg(msg, ACTIVE_ROLE));
+  scrollChatToBottom(ACTIVE_ROLE);
 
   markSeen(currentRole());
 }
@@ -2456,11 +2470,21 @@ function appendMsg(m, targetRole){
   `;
   if (targetRole === 'customer') {
     safeDom('chatC')?.insertAdjacentHTML('beforeend', bubble);
-    if (safeDom('chatC')) safeDom('chatC').scrollTop = safeDom('chatC').scrollHeight;
   } else {
     safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
-    if (safeDom('chatD')) safeDom('chatD').scrollTop = safeDom('chatD').scrollHeight;
   }
+  scrollChatToBottom(targetRole);
+}
+
+function scrollChatToBottom(role){
+  const el = role === 'delivery'
+    ? document.getElementById('chatD')
+    : document.getElementById('chatC');
+
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollTop = el.scrollHeight;
+  });
 }
 
 async function markSeen(viewerRole){
@@ -2501,45 +2525,22 @@ function listenStatus(){
       filter: `id=eq.${orderId}`
     }, (payload) => {
       try{
+        if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
         if (ACTIVE_ORDER !== orderId) {
           console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
           return;
         }
         const s = normalizeStatus(payload.new.status);
+        if(['delivered','completed'].includes(s)){
+          console.log('[listenStatus] delivered detected', payload.new.id);
+          finalizeCustomerDeliveredUI(payload.new);
+          return;
+        }
         safeDom('custStatus') && (safeDom('custStatus').innerText = s);
         updateCustomerTimeline(s);
 
         if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
           safeDom('custChat')?.classList.remove('hidden');
-        }
-
-        if(['delivered','completed'].includes(s)){
-          console.log('[listenStatus] delivered detected', payload.new.id);
-          Swal.fire({
-            icon:'success',
-            title:'تم التسليم ✅',
-            text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
-            confirmButtonText:'قيّم الآن'
-          });
-          loadCustomerHistory();
-          safeDom('custChat')?.classList.add('hidden');
-          safeDom('custTrack')?.classList.add('hidden');
-          setMainTab('track');
-          const rating = safeDom('custRating');
-          rating?.classList.remove('hidden');
-          rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActiveOrderId(null);
-          loadRatingState(payload.new);
-          if (statusChannel) {
-            try { db.removeChannel(statusChannel); } catch {}
-            statusChannel = null;
-          }
-          if (chatChannel) {
-            try { db.removeChannel(chatChannel); } catch {}
-            chatChannel = null;
-          }
-          if (chatPollTimer) clearInterval(chatPollTimer);
-          if (statusPollTimer) clearInterval(statusPollTimer);
         }
       } catch (err){
         console.error('[listenStatus] UI update failed', err);
