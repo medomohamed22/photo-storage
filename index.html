@@ -2036,6 +2036,9 @@ function listenStatus(){
     statusChannel = null;
   }
 
+  if (statusPollTimer) clearInterval(statusPollTimer);
+  statusPollTimer = setInterval(refreshCustomerStatus, 15000);
+
   statusChannel = db.channel('order-status-' + ACTIVE_ORDER)
     .on('postgres_changes', {
       event: 'UPDATE', schema:'public', table:'orders',
