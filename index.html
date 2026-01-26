@@ -459,8 +459,6 @@ CHANGELOG (Top 10 UI/UX Updates)
       flex-direction:column;
       gap:10px;
       height: calc(100vh - 220px);
-      flex:1 1 auto;
-      min-height:0;
     }
     .chatScroll{
       flex:1;
@@ -2484,6 +2482,14 @@ function scrollChatToBottom(role){
   if (!el) return;
   requestAnimationFrame(() => {
     el.scrollTop = el.scrollHeight;
+  });
+}
+
+function scrollChatToBottom(role){
+  const target = role === 'customer' ? safeDom('chatC') : safeDom('chatD');
+  if (!target) return;
+  requestAnimationFrame(() => {
+    target.scrollTop = target.scrollHeight;
   });
 }
 
