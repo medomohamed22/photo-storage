@@ -467,9 +467,11 @@ CHANGELOG (Top 10 UI/UX Updates)
       overscroll-behavior: contain;
     }
     .chatComposer{
+      display:flex;
+      gap:6px;
       position: sticky;
       bottom: 0;
-      background: rgba(255,255,255,.95);
+      background: white;
       border-top:1px solid rgba(16,185,129,.12);
       padding-top:8px;
       padding-bottom: env(safe-area-inset-bottom);
@@ -1127,9 +1129,34 @@ CHANGELOG (Top 10 UI/UX Updates)
       <div id="deliveryTrackTab" class="hidden space-y-3">
 
         <!-- DELIVERY CHAT -->
-    <section id="delChat" class="hidden glass pageSection space-y-2">
-          <div class="secTitle">
-            <b><i class="fa-solid fa-headset mr-1"></i> شات الطلب (لحظي)</b>
+        <section id="delChat" class="hidden glass pageSection space-y-3">
+          <div class="miniCard space-y-2">
+            <div class="secTitle">
+              <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
+              <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
+            </div>
+            <div class="space-y-1" id="delOrderDetails">
+              <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
+              <div class="flex items-center justify-between">
+                <span class="muted">الموقع</span>
+                <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+              </div>
+              <div class="divider"></div>
+              <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+              <div class="divider"></div>
+              <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
+              <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
+            </div>
+          </div>
+
+          <div class="miniCard chatCard">
+            <div class="chatCardHeader">الشات مع العميل</div>
             <div class="flex gap-2">
               <button class="chip chipS" onclick="quick('delivery','أنا في الطريق 🛵')">
                 <i class="fa-solid fa-motorcycle"></i> في الطريق
@@ -1138,57 +1165,31 @@ CHANGELOG (Top 10 UI/UX Updates)
                 <i class="fa-solid fa-ban"></i> غير متوفر
               </button>
             </div>
+            <div id="chatD" class="flex flex-col gap-2"></div>
+            <div class="chatComposer items-center">
+              <input id="msgD" class="flex-1" placeholder="رسالة..." />
+              <label class="chip chipS cursor-pointer">
+                <i class="fa-regular fa-image"></i>
+                <input type="file" id="imgD" accept="image/*" class="hidden" />
+                صورة
+              </label>
+              <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+            </div>
           </div>
 
-          <div class="chatLayout">
-            <div class="chatStickyHeader">
-              <div class="secTitle">
-                <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
-                <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
-              </div>
-              <div class="miniCard space-y-1 mt-2" id="delOrderDetails">
-                <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
-                <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
-                <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
-                <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
-                <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
-                <div class="flex items-center justify-between">
-                  <span class="muted">الموقع</span>
-                  <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
-                </div>
-                <div class="divider"></div>
-                <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
-                <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-                <div class="divider"></div>
-                <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
-                <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
-                <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
-              </div>
+          <div class="miniCard">
+            <div class="secTitle">
+              <b><i class="fa-solid fa-headset mr-1"></i> إجراءات الطلب</b>
             </div>
-
-            <div id="chatD" class="flex flex-col gap-2 chatScroll soft p-3"></div>
-
-            <div class="chatComposer">
-              <div class="flex gap-2 items-center">
-                <input id="msgD" class="flex-1" placeholder="رسالة..." />
-                <label class="chip chipS cursor-pointer">
-                  <i class="fa-regular fa-image"></i>
-                  <input type="file" id="imgD" accept="image/*" class="hidden" />
-                  صورة
-                </label>
-                <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
-                  <i class="fa-solid fa-arrow-up"></i>
-                </button>
-              </div>
-
-              <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
-                <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
-                  <i class="fa-solid fa-location-crosshairs"></i> وصلت
-                </button>
-                <button id="finishBtn" onclick="finishWithOtp()" class="btn btnG">
-                  <i class="fa-solid fa-check"></i> تم التسليم
-                </button>
-              </div>
+            <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
+              <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
+                <i class="fa-solid fa-location-crosshairs"></i> وصلت
+              </button>
+              <button id="finishBtn" onclick="finishWithOtp()" class="btn btnG">
+                <i class="fa-solid fa-check"></i> تم التسليم
+              </button>
             </div>
           </div>
         </section>
