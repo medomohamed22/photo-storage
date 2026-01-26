@@ -2,8 +2,8 @@ const StellarSdk = require('stellar-sdk');
 const { createClient } = require('@supabase/supabase-js');
 
 // 1. إعدادات قاعدة البيانات (Supabase)
-const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co'; 
-const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'; 
+const SUPABASE_URL = process.env.SUPABASE_URL; 
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 
 // 2. إعدادات المحفظة (من متغيرات البيئة - Environment Variables)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
@@ -11,6 +11,10 @@ const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 // 3. إعدادات شبكة Pi Testnet
 const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
 const NETWORK_PASSPHRASE = 'Pi Testnet';
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('Missing Supabase environment variables.');
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -28,14 +32,26 @@ exports.handler = async (event) => {
     if (!uid || !amount || !walletAddress) {
       return { statusCode: 400, body: JSON.stringify({ error: 'بيانات ناقصة' }) };
     }
+    if (!Number.isFinite(withdrawAmount) || withdrawAmount <= 0) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'قيمة السحب غير صحيحة' }) };
+    }
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return { statusCode: 500, body: JSON.stringify({ error: 'إعدادات قاعدة البيانات غير متوفرة' }) };
+    }
 
     // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
-    const { data: donations } = await supabase.from('donations').select('amount').eq('pi_user_id', uid);
-    const { data: withdrawals } = await supabase.from('withdrawals').select('amount').eq('pi_user_id', uid);
+    const { data: earnings } = await supabase
+      .from('delivery_earnings')
+      .select('amount')
+      .eq('delivery_pi_user_id', uid);
+    const { data: withdrawals } = await supabase
+      .from('withdrawals')
+      .select('amount')
+      .eq('pi_user_id', uid);
 
-    const totalDonated = donations ? donations.reduce((sum, row) => sum + parseFloat(row.amount), 0) : 0;
-    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount), 0) : 0;
-    const currentBalance = totalDonated - totalWithdrawn;
+    const totalEarned = earnings ? earnings.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) : 0;
+    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) : 0;
+    const currentBalance = totalEarned - totalWithdrawn;
 
     if (currentBalance < withdrawAmount) {
       return { statusCode: 400, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
