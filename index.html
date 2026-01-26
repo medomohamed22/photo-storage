@@ -2828,6 +2828,8 @@ async function withdrawPi() {
   try {
     if (!PI_USERNAME) return Swal.fire('سجّل دخول');
     if (!PI_UID) return Swal.fire('تعذر قراءة هوة Pi، جرّب تسجيل الدخول مرة أخرى');
+    const accessToken = PI_USER?.accessToken || PI_USER?.access_token || PI_USER?.token;
+    if (!accessToken) return Swal.fire('تعذر قراءة رمز المصادقة، جرّب تسجيل الدخول مرة أخرى');
     
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
@@ -2863,10 +2865,11 @@ async function withdrawPi() {
     // Call server function (Netlify redirect -> /.netlify/functions/withdraw)
     const res = await fetch('/api/withdraw', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
-        uid: PI_UID,
-        username: PI_USERNAME,
         amount,
         walletAddress
       })
