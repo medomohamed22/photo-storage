@@ -2,8 +2,8 @@ const StellarSdk = require('stellar-sdk');
 const { createClient } = require('@supabase/supabase-js');
 
 // 1. إعدادات قاعدة البيانات (Supabase)
-const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co'; 
-const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci'; 
+const SUPABASE_URL = process.env.SUPABASE_URL; 
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 
 // 2. إعدادات المحفظة (من متغيرات البيئة - Environment Variables)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
@@ -12,12 +12,26 @@ const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
 const NETWORK_PASSPHRASE = 'Pi Testnet';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const headers = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
+function clampBalance(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, num);
+}
 
 exports.handler = async (event) => {
   // السماح فقط بطلبات POST
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers };
+  }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
   try {
@@ -26,19 +40,33 @@ exports.handler = async (event) => {
 
     // التحقق من المدخلات
     if (!uid || !amount || !walletAddress) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'بيانات ناقصة' }) };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'بيانات ناقصة' }) };
+    }
+    if (!Number.isFinite(withdrawAmount) || withdrawAmount <= 0) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'قيمة السحب غير صحيحة' }) };
+    }
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'إعدادات قاعدة البيانات غير متوفرة' }) };
     }
 
-    // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
-    const { data: donations } = await supabase.from('donations').select('amount').eq('pi_user_id', uid);
-    const { data: withdrawals } = await supabase.from('withdrawals').select('amount').eq('pi_user_id', uid);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const totalDonated = donations ? donations.reduce((sum, row) => sum + parseFloat(row.amount), 0) : 0;
-    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount), 0) : 0;
-    const currentBalance = totalDonated - totalWithdrawn;
+    // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
+    const { data: earnings } = await supabase
+      .from('delivery_earnings')
+      .select('amount_pi')
+      .eq('delivery_pi_user_id', uid);
+    const { data: withdrawals } = await supabase
+      .from('withdrawals')
+      .select('amount')
+      .eq('pi_user_id', uid);
+
+    const totalEarned = earnings ? earnings.reduce((sum, row) => sum + parseFloat(row.amount_pi || 0), 0) : 0;
+    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) : 0;
+    const currentBalance = clampBalance(totalEarned - totalWithdrawn);
 
     if (currentBalance < withdrawAmount) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
     }
 
     // --- خطوة 2: تهيئة شبكة Pi (Stellar) ---
@@ -80,12 +108,17 @@ exports.handler = async (event) => {
       txid: result.hash
     }]);
 
+    const balanceAfter = clampBalance(currentBalance - withdrawAmount);
+
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({ 
         success: true, 
         txid: result.hash, 
-        message: 'تم التحويل بنجاح' 
+        balance_before: currentBalance,
+        withdrawn: withdrawAmount,
+        balance_after: balanceAfter
       })
     };
 
@@ -115,6 +148,7 @@ exports.handler = async (event) => {
 
     return { 
       statusCode: 500, 
+      headers,
       body: JSON.stringify(errorResponse) 
     };
   }
