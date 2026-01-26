@@ -459,8 +459,6 @@ CHANGELOG (Top 10 UI/UX Updates)
       flex-direction:column;
       gap:10px;
       height: calc(100vh - 220px);
-      flex:1 1 auto;
-      min-height:0;
     }
     .chatScroll{
       flex:1;
@@ -475,7 +473,10 @@ CHANGELOG (Top 10 UI/UX Updates)
       bottom: 0;
       background: white;
       border-top:1px solid rgba(16,185,129,.12);
-      padding-top:6px;
+      padding-top:8px;
+      padding-bottom: env(safe-area-inset-bottom);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
     .chatStickyHeader{
       position: sticky;
@@ -488,26 +489,16 @@ CHANGELOG (Top 10 UI/UX Updates)
       -webkit-backdrop-filter: blur(8px);
     }
     #delChat{
-      padding-bottom: 90px;
-    }
-    .chatCard{
       display:flex;
       flex-direction:column;
-      gap:8px;
-      height: 55vh;
-    }
-    .chatCardHeader{
-      font-weight:800;
-      font-size:13px;
-      padding-bottom:6px;
-      border-bottom:1px solid rgba(124,58,237,.15);
+      height: calc(100vh - 220px);
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+      overflow: hidden;
     }
     #chatD{
       flex:1 1 auto;
       overflow-y:auto;
-      padding:8px;
-      border-radius:14px;
-      background: rgba(255,255,255,.8);
+      padding-bottom:12px;
     }
 
     /* Bottom nav - app style */
@@ -2492,6 +2483,14 @@ function scrollChatToBottom(role){
   if (!el) return;
   requestAnimationFrame(() => {
     el.scrollTop = el.scrollHeight;
+  });
+}
+
+function scrollChatToBottom(role){
+  const target = role === 'customer' ? safeDom('chatC') : safeDom('chatD');
+  if (!target) return;
+  requestAnimationFrame(() => {
+    target.scrollTop = target.scrollHeight;
   });
 }
 
