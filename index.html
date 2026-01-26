@@ -754,9 +754,6 @@
               <b id="otp" class="text-purple-300 text-lg mono"></b>
               <div class="tiny muted mt-1">قدّم الكود للكابتن عند الوصول.</div>
             </div>
-            <button id="rejectCaptainBtn" class="btn btnS w-full hidden" onclick="rejectDeliveryCaptain()">
-              رفض الكابتن الحالي
-            </button>
           </div>
         </section>
 
@@ -1073,7 +1070,6 @@ let HAS_LOCATION_COLUMNS = true;
 let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
-let RATING_ORDER_ID = null;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -1411,13 +1407,10 @@ async function applyCustomerOrderState(order){
   document.getElementById('otp').innerText = order.otp_code || '';
   document.getElementById('otpBox').classList.toggle('hidden', !order.otp_code);
   document.getElementById('custAddressView').innerText = order.customer_address || '—';
-  const showReject = ['accepted','shipping','arrived'].includes(order.status) && order.delivery_id;
-  document.getElementById('rejectCaptainBtn').classList.toggle('hidden', !showReject);
   if (order.status === 'delivered') {
     document.getElementById('custTrack').classList.add('hidden');
     document.getElementById('custChat').classList.add('hidden');
     document.getElementById('custRating').classList.remove('hidden');
-    RATING_ORDER_ID = order.id;
     setActiveOrderId(null);
     if (statusPollTimer) clearInterval(statusPollTimer);
     await loadRatingState(order);
@@ -1442,40 +1435,6 @@ function hideRating(){
   document.getElementById('ratingSubmit').classList.add('btnA');
   document.getElementById('ratingNote').value = '';
   document.getElementById('ratingValue').innerText = 'اختر تقييمك.';
-  document.getElementById('rejectCaptainBtn').classList.add('hidden');
-  setRating(0);
-}
-
-async function rejectDeliveryCaptain(){
-  try{
-    if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
-    if (!ACTIVE_ORDER) return Swal.fire('لا يوجد طلب نشط');
-
-    const confirm = await Swal.fire({
-      icon: 'warning',
-      title: 'رفض الكابتن؟',
-      text: 'سيتم إعادة الطلب لكابتن آخر.',
-      showCancelButton: true,
-      confirmButtonText: 'تأكيد',
-      cancelButtonText: 'إلغاء'
-    });
-    if (!confirm.isConfirmed) return;
-
-    const { error } = await db.from('orders')
-      .update({ delivery_id: null, status: 'pending' })
-      .eq('id', ACTIVE_ORDER)
-      .eq('customer_pi_username', PI_USERNAME);
-    if (error) throw error;
-
-    await refreshCustomerStatus();
-    loadOrders();
-    Swal.fire({ icon:'success', title:'تم رفض الكابتن' });
-  }catch(e){
-    console.error(e);
-    Swal.fire({ icon:'error', title:'فشل رفض الكابتن', text: e?.message || 'حصل خطأ' });
-  }
-}
-
   setRating(0);
 }
 
@@ -1537,7 +1496,6 @@ async function loadRatingState(order){
       document.getElementById('custTrack').classList.add('hidden');
       document.getElementById('custChat').classList.add('hidden');
       setActiveOrderId(null);
-      RATING_ORDER_ID = null;
       document.getElementById('custRating').classList.add('hidden');
       if (chatPollTimer) clearInterval(chatPollTimer);
       if (statusPollTimer) clearInterval(statusPollTimer);
@@ -1552,20 +1510,19 @@ async function loadRatingState(order){
 
 async function submitRating(){
   try{
-    const orderId = ACTIVE_ORDER || RATING_ORDER_ID;
-    if (!orderId) return Swal.fire('لا يوجد طلب للتقييم');
+    if (!ACTIVE_ORDER) return;
     if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
     if (ACTIVE_RATING < 1) return Swal.fire('اختار تقييم من 1 إلى 5');
 
     const note = document.getElementById('ratingNote').value.trim();
     const { data: order, error: orderErr } = await db.from('orders')
       .select('delivery_id')
-      .eq('id', orderId)
+      .eq('id', ACTIVE_ORDER)
       .single();
     if (orderErr) throw orderErr;
 
     const { error } = await db.from('delivery_ratings').insert([{
-      order_id: orderId,
+      order_id: ACTIVE_ORDER,
       delivery_id: order?.delivery_id || null,
       customer_pi_username: PI_USERNAME,
       rating: ACTIVE_RATING,
@@ -1581,7 +1538,6 @@ async function submitRating(){
     document.getElementById('custTrack').classList.add('hidden');
     document.getElementById('custChat').classList.add('hidden');
     setActiveOrderId(null);
-    RATING_ORDER_ID = null;
     document.getElementById('custRating').classList.add('hidden');
     if (chatPollTimer) clearInterval(chatPollTimer);
     if (statusPollTimer) clearInterval(statusPollTimer);
@@ -2106,8 +2062,6 @@ function listenStatus(){
     }, (payload) => {
       const s = payload.new.status;
       document.getElementById('custStatus').innerText = s;
-      const showReject = ['accepted','shipping','arrived'].includes(s) && payload.new.delivery_id;
-      document.getElementById('rejectCaptainBtn').classList.toggle('hidden', !showReject);
 
       if(['accepted','shipping','arrived','delivered'].includes(s)){
         document.getElementById('custChat').classList.remove('hidden');
@@ -2124,8 +2078,6 @@ function listenStatus(){
         document.getElementById('custChat').classList.add('hidden');
         document.getElementById('custTrack').classList.add('hidden');
         document.getElementById('custRating').classList.remove('hidden');
-        document.getElementById('rejectCaptainBtn').classList.add('hidden');
-        RATING_ORDER_ID = payload.new.id;
         setActiveOrderId(null);
         loadRatingState(payload.new);
         if (statusChannel) {
