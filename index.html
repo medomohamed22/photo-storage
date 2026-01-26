@@ -1408,8 +1408,6 @@ async function applyCustomerOrderState(order){
     document.getElementById('custTrack').classList.add('hidden');
     document.getElementById('custChat').classList.add('hidden');
     document.getElementById('custRating').classList.remove('hidden');
-    setActiveOrderId(null);
-    if (statusPollTimer) clearInterval(statusPollTimer);
     await loadRatingState(order);
   } else {
     hideRating();
@@ -1495,7 +1493,6 @@ async function loadRatingState(order){
       setActiveOrderId(null);
       document.getElementById('custRating').classList.add('hidden');
       if (chatPollTimer) clearInterval(chatPollTimer);
-      if (statusPollTimer) clearInterval(statusPollTimer);
     } else {
       document.getElementById('ratingThanks').classList.add('hidden');
       document.getElementById('ratingSubmit').disabled = false;
@@ -1537,7 +1534,6 @@ async function submitRating(){
     setActiveOrderId(null);
     document.getElementById('custRating').classList.add('hidden');
     if (chatPollTimer) clearInterval(chatPollTimer);
-    if (statusPollTimer) clearInterval(statusPollTimer);
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
@@ -2031,7 +2027,6 @@ async function markSeen(viewerRole){
 /* ================== STATUS ================== */
 let statusChannel = null;
 let deliveryStatusChannel = null;
-let statusPollTimer = null;
 
 function listenStatus(){
   if(!ACTIVE_ORDER) return;
@@ -2042,7 +2037,7 @@ function listenStatus(){
   }
 
   if (statusPollTimer) clearInterval(statusPollTimer);
-  statusPollTimer = setInterval(refreshCustomerStatus, 1000);
+  statusPollTimer = setInterval(refreshCustomerStatus, 15000);
 
   statusChannel = db.channel('order-status-' + ACTIVE_ORDER)
     .on('postgres_changes', {
@@ -2067,7 +2062,6 @@ function listenStatus(){
         document.getElementById('custChat').classList.add('hidden');
         document.getElementById('custTrack').classList.add('hidden');
         document.getElementById('custRating').classList.remove('hidden');
-        setActiveOrderId(null);
         loadRatingState(payload.new);
         if (statusChannel) {
           try { db.removeChannel(statusChannel); } catch {}
@@ -2078,7 +2072,6 @@ function listenStatus(){
           chatChannel = null;
         }
         if (chatPollTimer) clearInterval(chatPollTimer);
-        if (statusPollTimer) clearInterval(statusPollTimer);
       }
     }).subscribe();
 }
@@ -2115,6 +2108,41 @@ function listenDeliveryStatus(){
           chatChannel = null;
         }
         if (chatPollTimer) clearInterval(chatPollTimer);
+      }
+    }).subscribe();
+}
+
+function listenDeliveryStatus(){
+  if(!ACTIVE_ORDER) return;
+
+  if (deliveryStatusChannel) {
+    try { db.removeChannel(deliveryStatusChannel); } catch {}
+    deliveryStatusChannel = null;
+  }
+
+  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      const s = payload.new.status || 'pending';
+      const statusEl = document.getElementById('dStatus');
+      if (statusEl) statusEl.innerText = s;
+
+      if (s === 'delivered') {
+        document.getElementById('delChat').classList.add('hidden');
+        setActiveOrderId(null);
+        loadOrders();
+        loadWalletPi();
+        loadDeliveryHistory();
+        if (deliveryStatusChannel) {
+          try { db.removeChannel(deliveryStatusChannel); } catch {}
+          deliveryStatusChannel = null;
+        }
+        if (chatChannel) {
+          try { db.removeChannel(chatChannel); } catch {}
+          chatChannel = null;
+        }
       }
     }).subscribe();
 }
@@ -2159,7 +2187,6 @@ async function finishWithOtp(){
       chatChannel = null;
     }
     if (chatPollTimer) clearInterval(chatPollTimer);
-    if (statusPollTimer) clearInterval(statusPollTimer);
     if (deliveryStatusChannel) {
       try { db.removeChannel(deliveryStatusChannel); } catch {}
       deliveryStatusChannel = null;
