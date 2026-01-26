@@ -723,7 +723,12 @@
         <section id="custTrack" class="hidden glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-route mr-1"></i> متابعة الطلب</b>
-            <span class="chip chipP"><i class="fa-solid fa-circle-info"></i> Live</span>
+            <div class="flex items-center gap-2">
+              <button class="chip chipS" onclick="refreshCustomerStatus()">
+                <i class="fa-solid fa-rotate"></i> تحديث
+              </button>
+              <span class="chip chipP"><i class="fa-solid fa-circle-info"></i> Live</span>
+            </div>
           </div>
 
           <div class="miniCard space-y-2">
@@ -1426,6 +1431,23 @@ function hideRating(){
   document.getElementById('ratingNote').value = '';
   document.getElementById('ratingValue').innerText = 'اختر تقييمك.';
   setRating(0);
+}
+
+async function refreshCustomerStatus(){
+  try{
+    if (!PI_USERNAME || !ACTIVE_ORDER) return;
+    const { data, error } = await db.from('orders')
+      .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code,delivery_id')
+      .eq('id', ACTIVE_ORDER)
+      .eq('customer_pi_username', PI_USERNAME)
+      .single();
+    if (error) throw error;
+    if (data) {
+      await applyCustomerOrderState(data);
+    }
+  }catch(e){
+    console.warn('refreshCustomerStatus failed', e);
+  }
 }
 
 function setRating(value){
