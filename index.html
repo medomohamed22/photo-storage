@@ -2929,12 +2929,7 @@ async function withdrawPi() {
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
 
-    const balanceAfter = Number(out?.balance_after);
-    if (Number.isFinite(balanceAfter)) {
-      document.getElementById('walletPi').innerText = balanceAfter.toFixed(6);
-    } else {
-      await loadWalletPi();
-    }
+    await loadWalletPi();
     await loadWithdrawHistory();
 
   } catch (e) {

@@ -5,10 +5,10 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL; 
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 
-// 2. إعدادات المحفظة (من متغيرات البيئة - Environment Variables)
+// 2) App wallet secret (محفظة النظام اللي هتدفع منها)
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 
-// 3. إعدادات شبكة Pi Testnet
+// 3) Pi Testnet (Stellar)
 const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
 const NETWORK_PASSPHRASE = 'Pi Testnet';
 
@@ -35,8 +35,39 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { uid, username, amount, walletAddress } = JSON.parse(event.body);
-    const withdrawAmount = parseFloat(amount);
+    // تحقق من env
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return json(500, { error: 'Missing Supabase environment variables (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)' });
+    }
+    if (!APP_WALLET_SECRET) {
+      return json(500, { error: 'APP_WALLET_SECRET is not defined in environment variables' });
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const body = JSON.parse(event.body || '{}');
+    const uid = body.uid; // ده لازم يساوي delivery_earnings.delivery_id
+    const username = body.username || null;
+    const walletAddress = body.walletAddress;
+    const withdrawAmount = Number(body.amount);
+
+    // تحقق من المدخلات
+    if (!uid || !walletAddress || !body.amount) {
+      return json(400, { error: 'بيانات ناقصة', required: ['uid', 'amount', 'walletAddress'] });
+    }
+    if (!isValidAmount(withdrawAmount)) {
+      return json(400, { error: 'قيمة السحب غير صحيحة' });
+    }
+    if (!isValidStellarPublicKey(walletAddress)) {
+      return json(400, { error: 'عنوان المحفظة غير صحيح (Stellar/Pi address)' });
+    }
+
+    // --- 1) حساب رصيد الدليفري من قاعدة البيانات ---
+    // جدولك: delivery_earnings (delivery_id, amount_pi, ...)
+    const { data: earnings, error: earnErr } = await supabase
+      .from('delivery_earnings')
+      .select('amount_pi')
+      .eq('delivery_id', uid);
 
     // التحقق من المدخلات
     if (!uid || !amount || !walletAddress) {
@@ -69,25 +100,21 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
     }
 
-    // --- خطوة 2: تهيئة شبكة Pi (Stellar) ---
-    const server = new StellarSdk.Horizon.Server(PI_HORIZON_URL); 
-    
-    if (!APP_WALLET_SECRET) throw new Error("APP_WALLET_SECRET is not defined in environment variables");
+    // --- 2) تنفيذ التحويل على Pi Testnet ---
+    const server = new StellarSdk.Horizon.Server(PI_HORIZON_URL);
     const sourceKeys = StellarSdk.Keypair.fromSecret(APP_WALLET_SECRET);
-    
-    // تحميل بيانات حساب التطبيق
+
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
 
-    // بناء المعاملة مع الرسوم المحدثة (0.01 Pi)
-    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: "100000", // تم التعديل لحل خطأ tx_insufficient_fee
+    const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: '100000', // 0.01 Pi تقريباً (حسب إعدادك)
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(
         StellarSdk.Operation.payment({
           destination: walletAddress,
           asset: StellarSdk.Asset.native(),
-          amount: withdrawAmount.toFixed(7).toString(),
+          amount: withdrawAmount.toFixed(7),
         })
       )
       .setTimeout(30)
@@ -122,29 +149,39 @@ exports.handler = async (event) => {
       })
     };
 
+    return json(200, {
+      success: true,
+      txid: result.hash,
+      message: 'تم التحويل بنجاح',
+      balance_before: Number(currentBalance.toFixed(7)),
+      withdrawn: Number(withdrawAmount.toFixed(7)),
+      balance_after: Number((currentBalance - withdrawAmount).toFixed(7)),
+    });
   } catch (err) {
-    // معالجة الأخطاء المتقدمة
-    console.error("--- ERROR LOG START ---");
+    console.error('--- ERROR LOG START ---');
+
     let errorResponse = {
-        error: 'فشلت المعاملة',
-        details: err.message
+      error: 'فشلت المعاملة',
+      details: err?.message || 'Unknown error',
     };
 
+    // Stellar/Horizon errors
     if (err.response && err.response.data && err.response.data.extras) {
-        const codes = err.response.data.extras.result_codes;
-        const opCodes = codes.operations ? codes.operations.join(', ') : 'no_op_code';
-        errorResponse.details = `Blockchain Error: ${codes.transaction} (${opCodes})`;
-        
-        // تنبيهات مخصصة للأخطاء
-        if (codes.transaction === 'tx_insufficient_fee') {
-            errorResponse.error = 'رسوم الشبكة مرتفعة حالياً، حاول مرة أخرى';
-        } else if (opCodes.includes('op_underfunded')) {
-            errorResponse.error = 'محفظة النظام تحتاج شحن رصيد';
-        }
+      const codes = err.response.data.extras.result_codes;
+      const opCodes = codes.operations ? codes.operations.join(', ') : 'no_op_code';
+      errorResponse.details = `Blockchain Error: ${codes.transaction} (${opCodes})`;
+
+      if (codes.transaction === 'tx_insufficient_fee') {
+        errorResponse.error = 'رسوم الشبكة مرتفعة حالياً، حاول مرة أخرى';
+      } else if (opCodes.includes('op_underfunded')) {
+        errorResponse.error = 'محفظة النظام تحتاج شحن رصيد';
+      } else if (codes.transaction === 'tx_bad_seq') {
+        errorResponse.error = 'هناك تعارض تسلسلي (Sequence). أعد المحاولة بعد ثواني';
+      }
     }
 
     console.error(errorResponse.details);
-    console.error("--- ERROR LOG END ---");
+    console.error('--- ERROR LOG END ---');
 
     return { 
       statusCode: 500, 
