@@ -777,6 +777,9 @@
             <button id="ratingSubmit" class="btn btnA w-full" onclick="submitRating()">
               إرسال التقييم
             </button>
+            <button class="btn btnS w-full" onclick="rejectCaptain()">
+              رفض الكابتن
+            </button>
             <div id="ratingThanks" class="tiny muted hidden">تم إرسال التقييم، شكرًا لك.</div>
           </div>
         </section>
@@ -1542,6 +1545,12 @@ async function submitRating(){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
   }
+}
+
+async function rejectCaptain(){
+  setRating(1);
+  document.getElementById('ratingNote').value = 'رفض الكابتن';
+  await submitRating();
 }
 
 /* ================== INVOICE UI ================== */
@@ -2451,10 +2460,22 @@ async function loadCustomerHistory(){
       return;
     }
 
+    const orderIds = data.map(o => o.id);
+    let ratingMap = {};
+    if (orderIds.length) {
+      const { data: ratings } = await db.from('delivery_ratings')
+        .select('order_id,rating')
+        .in('order_id', orderIds);
+      (ratings || []).forEach(r => {
+        ratingMap[r.order_id] = r.rating;
+      });
+    }
+
     box.innerHTML = data.map(o => {
       const totalEgp = Number(o.total_price||0);
       const totalPi = Number(o?.pricing_snapshot?.total_pi || (egpToPi(totalEgp) || 0));
       const s = o.status || 'pending';
+      const rating = ratingMap[o.id];
 
       const color =
         s==='delivered' ? 'text-emerald-500' :
@@ -2476,6 +2497,7 @@ async function loadCustomerHistory(){
             <span class="tiny">بالـ Pi</span>
             <b class="mono text-purple-600">${Number(totalPi||0).toFixed(6)} Pi</b>
           </div>
+          ${typeof rating === 'number' ? `<div class="tiny mt-1">تقييم الكابتن: <b>${rating}</b> ⭐</div>` : ``}
           <div class="tiny mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
         </div>
       `;
@@ -2511,11 +2533,34 @@ async function loadDeliveryHistory(){
     const statOrders = document.getElementById('statOrders');
     if (statOrders) statOrders.innerText = String(data.length);
 
+    const orderIds = data.map(o => o.id);
+    let ratingMap = {};
+    if (orderIds.length) {
+      const { data: ratings } = await db.from('delivery_ratings')
+        .select('order_id,rating')
+        .in('order_id', orderIds);
+      (ratings || []).forEach(r => {
+        ratingMap[r.order_id] = r.rating;
+      });
+    }
+
+    const ratingValues = Object.values(ratingMap).filter(v => typeof v === 'number');
+    const statRating = document.getElementById('statRating');
+    if (statRating) {
+      if (ratingValues.length) {
+        const avg = ratingValues.reduce((sum, v) => sum + v, 0) / ratingValues.length;
+        statRating.innerText = avg.toFixed(1);
+      } else {
+        statRating.innerText = '—';
+      }
+    }
+
     box.innerHTML = data.map(o => {
       const totalEgp = Number(o.total_price||0);
       const totalPi = Number(o?.pricing_snapshot?.total_pi || (egpToPi(totalEgp) || 0));
       const profitPi = Number(o?.pricing_snapshot?.delivery_fee_pi || 0);
       const s = o.status || 'pending';
+      const rating = ratingMap[o.id];
 
       return `
         <div class="soft p-3">
@@ -2536,6 +2581,7 @@ async function loadDeliveryHistory(){
             <span class="tiny">ربحك</span>
             <b class="mono text-purple-600">${profitPi.toFixed(6)} Pi</b>
           </div>
+          ${typeof rating === 'number' ? `<div class="tiny mt-1">تقييمك: <b>${rating}</b> ⭐</div>` : ``}
           <div class="tiny mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
         </div>
       `;
