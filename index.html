@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+<!--
+CHANGELOG (Top 10 UI/UX Updates)
+1) تصميم هيدر احترافي مع زر رجوع ديناميكي وشريط بحث صغير في الهوم.
+2) تحسين شارات حالة Pi (Browser/Web + SDK) بشكل واضح داخل الهيدر والهوم.
+3) تحويل إنشاء الطلب إلى Stepper واضح بـ 4 خطوات مع بطاقة ملخص أجمل.
+4) إضافة Timeline للحالة في تتبع العميل + تحسين العناوين والهيكل.
+5) تحديث صفحة الدليفري: تفاصيل الطلب Sticky داخل الشات + أزرار وصول/تسليم مؤمنة.
+6) تصميم قائمة الطلبات القريبة كبطاقات منظمة مع زر قبول وزر فتح الخريطة.
+7) تحويل تبويب Discover إلى “More” حقيقي بأقسام وأيقونات وسهم + Debug checklist.
+8) تحديث Bottom Nav إلى شكل iOS pill مع مؤشر نشط وتأثيرات لمس.
+9) إضافة Skeleton loaders وLogs دفاعية لتفادي تعليق الواجهة عند delivered.
+10) إصلاح منطق delivery completion مع قفل/تحقق/تحديث احتياطي.
+-->
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -42,7 +55,7 @@
 
       --shadow: 0 18px 60px rgba(16,185,129,.12);
       --shadow2: 0 12px 30px rgba(16,185,129,.1);
-      --r1:20px;
+      --r1:22px;
       --r2:16px;
     }
 
@@ -59,7 +72,7 @@
     }
 
     /* Safe area bottom for iOS */
-    .safeBottom{ padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+    .safeBottom{ padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 
     /* Glass / Cards */
     .glass{
@@ -85,6 +98,8 @@
       box-shadow: 0 16px 30px rgba(16,185,129,.14);
     }
 
+    .miniCard, .soft, .glass { overflow: hidden; }
+
     /* Talabat-like top bar */
     .topBar{
       background: rgba(255,255,255,.9);
@@ -101,6 +116,32 @@
       background: radial-gradient(18px 18px at 30% 30%, rgba(16,185,129,.35), rgba(34,197,94,.2));
       border:1px solid rgba(16,185,129,.35);
       box-shadow: 0 16px 40px rgba(16,185,129,.2);
+    }
+
+    .headerBack{
+      width:40px; height:40px;
+      border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      border:1px solid rgba(16,185,129,.2);
+      background: rgba(255,255,255,.9);
+      transition:.2s;
+    }
+    .headerBack:active{transform:scale(.98)}
+
+    .headerSearch{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(16,185,129,.18);
+      background: rgba(255,255,255,.9);
+    }
+    .headerSearch input{
+      border:none !important;
+      background: transparent !important;
+      padding:0 !important;
+      font-size:12px;
     }
 
     /* Chips */
@@ -122,6 +163,7 @@
     .chipB{ background: rgba(15,23,42,.08); border-color: rgba(15,23,42,.14); }
     .chipG{ background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.35); }
     .chipS{ background: rgba(255,255,255,.7); }
+    .chipW{ background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.25); color:#92400e; }
 
     /* Buttons */
     .btn{
@@ -175,7 +217,7 @@
       padding: 14px 14px !important;
     }
     input::placeholder, textarea::placeholder{
-      color: rgba(243,244,246,.55);
+      color: rgba(15,23,42,.35);
     }
     input:focus,textarea:focus,select:focus{
       border-color: rgba(16,185,129,.6) !important;
@@ -186,6 +228,7 @@
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     .tiny{font-size:11px;color:rgba(0,0,0,.55)}
     .muted{color:rgba(0,0,0,.6)}
+    .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
     /* Section Title */
     .secTitle{
@@ -328,6 +371,66 @@
       gap: 10px;
     }
 
+    /* Stepper */
+    .stepper{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:8px;
+    }
+    .step{
+      border-radius:14px;
+      padding:10px;
+      border:1px solid rgba(16,185,129,.18);
+      background: rgba(255,255,255,.9);
+      text-align:center;
+      font-size:11px;
+      font-weight:700;
+    }
+    .step .num{
+      width:22px;height:22px;border-radius:999px;
+      display:inline-flex;align-items:center;justify-content:center;
+      background: rgba(16,185,129,.18);
+      color:#065f46;
+      margin-bottom:4px;
+      font-weight:900;
+    }
+
+    /* Timeline */
+    .timeline{
+      position:relative;
+      padding-right:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .timeline::before{
+      content:'';
+      position:absolute;
+      right:6px;
+      top:6px;
+      bottom:6px;
+      width:2px;
+      background: rgba(16,185,129,.15);
+    }
+    .timelineItem{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      position:relative;
+    }
+    .timelineDot{
+      width:12px;height:12px;border-radius:999px;
+      background: rgba(16,185,129,.2);
+      border:2px solid rgba(16,185,129,.3);
+      position:relative;
+      z-index:1;
+    }
+    .timelineItem.active .timelineDot{
+      background: rgba(16,185,129,.8);
+      border-color: rgba(16,185,129,.9);
+      box-shadow: 0 0 0 6px rgba(16,185,129,.15);
+    }
+
     /* Chat bubbles */
     .msg{
       max-width:78%;
@@ -344,6 +447,45 @@
     }
     .c{ background: rgba(16,185,129,.18); color: var(--txt); align-self:flex-start; }
     .d{ background: rgba(255,255,255,.9); color: var(--txt); align-self:flex-end; }
+    .chatImage{
+      width:100%;
+      max-height:220px;
+      object-fit:cover;
+      border-radius:14px;
+      border:1px solid rgba(16,185,129,.2);
+    }
+    .chatLayout{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      max-height:70vh;
+    }
+    .chatScroll{
+      flex:1 1 auto;
+      min-height:180px;
+      overflow-y:auto;
+      overscroll-behavior: contain;
+    }
+    .chatComposer{
+      position: sticky;
+      bottom: 0;
+      background: rgba(255,255,255,.95);
+      border-top:1px solid rgba(16,185,129,.12);
+      padding-top:8px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .chatStickyHeader{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(255,255,255,.96);
+      border-bottom:1px solid rgba(16,185,129,.12);
+      padding-bottom:8px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #delChat{ overflow: hidden; }
 
     /* Bottom nav - app style */
     .bottomNav{
@@ -356,16 +498,44 @@
     .bottomNav .wrap{
       max-width: 480px;
       margin: 0 auto;
-      padding: 10px;
-      border-radius: 24px;
+      padding: 8px;
+      border-radius: 26px;
       background: rgba(255,255,255,.95);
       border:1px solid rgba(16,185,129,.12);
       box-shadow: 0 18px 40px rgba(16,185,129,.18);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       display:flex;
-      gap:10px;
+      gap:6px;
     }
+    .navItem{
+      flex:1;
+      padding:10px 8px;
+      border-radius:20px;
+      border:1px solid transparent;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      font-size:12px;
+      font-weight:800;
+      color:#0f172a;
+      background: transparent;
+      transition:.2s;
+    }
+    .navItem.active{
+      background: rgba(16,185,129,.12);
+      border-color: rgba(16,185,129,.3);
+      color:#065f46;
+      box-shadow: 0 12px 24px rgba(16,185,129,.16);
+    }
+    .navItem:active{transform:scale(.98)}
+
+    /* Tabs animation */
+    .tabPane{opacity:0; transform: translateY(8px);}
+    .tabPane.active{opacity:1; transform: translateY(0); transition: .25s ease;}
+    .fadeIn{animation: fadeSlide .25s ease;}
+    @keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
     /* Small tweaks */
     .divider{
@@ -374,35 +544,79 @@
       margin: 10px 0;
     }
     a.linkP{ color: rgba(16,185,129,1); text-decoration: underline; }
-    /* ✅ يمنع أي عنصر يطلع برّه الكارت */
-.miniCard, .soft, .glass { overflow: hidden; }
 
-/* ✅ صف العنوان داخل بطاقة السحب */
-.wdRow{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  width:100%;
-  min-width:0;           /* مهم لقص النص */
-}
+    .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
 
-.wdLabel{
-  flex:0 0 auto;
-  white-space:nowrap;
-  opacity:.85;
-}
+    /* Withdraw row */
+    .wdRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      min-width:0;
+    }
+    .wdLabel{flex:0 0 auto;white-space:nowrap;opacity:.85;}
+    .wdValue{
+      flex:1 1 auto;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      padding:6px 10px;
+      border:1px solid rgba(16,185,129,.15);
+      border-radius:12px;
+      background: rgba(255,255,255,.9);
+    }
 
-.wdValue{
-  flex:1 1 auto;
-  min-width:0;           /* مهم */
-  overflow:hidden;
-  text-overflow:ellipsis;/* … */
-  white-space:nowrap;    /* سطر واحد */
-  padding:6px 10px;
-  border:1px solid rgba(16,185,129,.15);
-  border-radius:12px;
-  background: rgba(255,255,255,.9);
-}
+    /* Skeleton */
+    .skeletonCard{
+      padding:14px;
+      border-radius:16px;
+      background: rgba(255,255,255,.8);
+      border:1px dashed rgba(16,185,129,.2);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .skeletonLine{
+      height:10px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(16,185,129,.08), rgba(16,185,129,.18), rgba(16,185,129,.08));
+      background-size:200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+    .skeletonLine.short{width:40%}
+    .skeletonLine.mid{width:70%}
+    @keyframes shimmer{
+      0%{background-position:200% 0}
+      100%{background-position:-200% 0}
+    }
+    .skeletonBadge{
+      width:90px;height:18px;border-radius:999px;
+      background: linear-gradient(90deg, rgba(16,185,129,.08), rgba(16,185,129,.2), rgba(16,185,129,.08));
+      background-size:200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+
+    /* Empty state */
+    .emptyState{
+      text-align:center;
+      padding:18px;
+      border-radius:16px;
+      border:1px dashed rgba(16,185,129,.2);
+      background: rgba(255,255,255,.85);
+    }
+
+    /* Sticky actions */
+    .stickyActions{
+      position: sticky;
+      bottom: calc(90px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,.95);
+      border:1px solid rgba(16,185,129,.12);
+      border-radius:16px;
+      padding:10px;
+      box-shadow: 0 16px 30px rgba(16,185,129,.12);
+    }
 
     /* SweetAlert */
     .swal2-popup{
@@ -412,12 +626,8 @@
       border-radius: 20px !important;
       box-shadow: 0 18px 40px rgba(16,185,129,.18) !important;
     }
-    .swal2-title{
-      color: var(--txt) !important;
-    }
-    .swal2-html-container{
-      color: var(--muted) !important;
-    }
+    .swal2-title{color: var(--txt) !important;}
+    .swal2-html-container{color: var(--muted) !important;}
     .swal2-styled.swal2-confirm{
       background: linear-gradient(135deg, rgba(16,185,129,.95), rgba(34,197,94,.85)) !important;
       border: none !important;
@@ -439,7 +649,10 @@
   <header class="sticky top-0 z-50 topBar">
     <div class="px-3 pt-3 pb-3">
       <div class="max-w-lg mx-auto flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <button id="headerBack" class="headerBack hidden" onclick="handleHeaderBack()">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
           <div class="brandBadge">
             <i class="fa-solid fa-basket-shopping text-white"></i>
           </div>
@@ -450,6 +663,10 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <div id="headerSearch" class="headerSearch hidden">
+            <i class="fa-solid fa-magnifying-glass text-emerald-500"></i>
+            <input id="homeSearch" placeholder="ابحث عن مطعم أو منتج" />
+          </div>
           <button id="roleToggle" onclick="toggleRole()" class="chip chipS hidden">
             <i class="fa-solid fa-user"></i> User
           </button>
@@ -486,7 +703,7 @@
     </div>
 
 <!-- ================= HOME TAB ================= -->
-<div id="homeTab" class="pageShell">
+<div id="homeTab" class="pageShell tabPane">
 
       <!-- STATUS + RATES -->
   <section class="glass pageSection space-y-3">
@@ -495,17 +712,22 @@
           <span class="chip chipS"><i class="fa-regular fa-clock"></i> تحديث تلقائي</span>
         </div>
 
-        <div class="miniCard">
+        <div class="miniCard space-y-2">
           <div class="flex items-center justify-between gap-2">
             <div class="text-sm">
               <span class="muted">حالة Pi:</span>
               <b id="piStateText" class="mr-1">جاري التحقق...</b>
             </div>
-            <span class="chip chipB"><i class="fa-solid fa-globe"></i> <span id="piTag2">Auto</span></span>
+            <div class="flex gap-2">
+              <span class="chip chipB"><i class="fa-solid fa-globe"></i> <span id="piTag2">Auto</span></span>
+              <span id="piSdkBadge" class="chip chipG"><i class="fa-solid fa-bolt"></i> SDK</span>
+            </div>
           </div>
-          <div class="tiny muted mt-2">
+          <div class="tiny muted">
             Pi كل <b>30 ثانية</b> — USD/EGP كل <b>60 ثانية</b>. | 1 Pi ≈ <span class="mono" id="piEgpOne">—</span> ج
           </div>
+          <div id="rateHint" class="tiny hidden" style="color:#b45309">تعذر جلب الأسعار حاليًا. جرّب تحديث الصفحة أو الاتصال بالإنترنت.</div>
+          <div id="piHint" class="tiny hidden" style="color:#b45309">يفضل استخدام Pi Browser لإكمال الدفع.</div>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -541,48 +763,66 @@
             <span class="chip chipP"><i class="fa-solid fa-credit-card"></i> Pi Pay</span>
           </div>
 
-          <div class="miniCard">
+          <div class="miniCard space-y-3">
             <div class="flex items-center justify-between">
               <div class="text-sm">
                 أهلًا <b id="custName">—</b>
-                <div class="tiny muted">اختار نوع الطلب واملأ بيانات المنتج</div>
+                <div class="tiny muted">نرتّب لك الطلب خطوة بخطوة</div>
               </div>
               <span class="miniIcon"><i class="fa-solid fa-location-dot"></i></span>
             </div>
 
+            <div class="stepper">
+              <div class="step"><div class="num">1</div>نوع الطلب</div>
+              <div class="step"><div class="num">2</div>بيانات المنتج</div>
+              <div class="step"><div class="num">3</div>العنوان</div>
+              <div class="step"><div class="num">4</div>الملخص والدفع</div>
+            </div>
+
             <div class="divider"></div>
 
-            <select id="orderType">
-              <option value="any">نوع الطلب: أي حاجة</option>
-              <option value="market">سوبر ماركت</option>
-              <option value="pharmacy">صيدلية</option>
-              <option value="restaurant">مطعم</option>
-            </select>
+            <div class="space-y-2">
+              <label class="tiny muted">1) اختيار نوع الطلب</label>
+              <select id="orderType">
+                <option value="any">نوع الطلب: أي حاجة</option>
+                <option value="market">سوبر ماركت</option>
+                <option value="pharmacy">صيدلية</option>
+                <option value="restaurant">مطعم</option>
+              </select>
+            </div>
 
-            <div class="grid grid-cols-1 gap-2 mt-2">
+            <div class="space-y-2">
+              <label class="tiny muted">2) بيانات المنتج + السعر</label>
               <input id="prod" placeholder="اسم المنتج" />
               <input id="price" type="number" placeholder="سعر المنتج بالجنيه المصري" oninput="recalcInvoice()" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="tiny muted">3) العنوان والموقع</label>
               <input id="custAddress" placeholder="العنوان بالتفصيل" />
-            </div>
-
-            <div class="soft p-3 mt-2 space-y-2">
-              <div class="flex items-center justify-between">
-                <div class="text-sm"><span class="muted">موقعك الحالي</span></div>
-                <button class="chip chipG" onclick="setCustomerLocation()">
-                  <i class="fa-solid fa-crosshairs"></i> تحديد
-                </button>
+              <div class="soft p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm"><span class="muted">موقعك الحالي</span></div>
+                  <button class="chip chipG" onclick="setCustomerLocation()">
+                    <i class="fa-solid fa-crosshairs"></i> تحديد
+                  </button>
+                </div>
+                <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+                <div id="custLocHint" class="tiny hidden" style="color:#b45309">لو واجهت مشكلة، فعّل GPS واسمح للموقع.</div>
+                <a id="custMapLink" class="tiny linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">
+                  فتح الموقع على Google Maps
+                </a>
               </div>
-              <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
-              <a id="custMapLink" class="tiny linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">
-                فتح الموقع على Google Maps
-              </a>
             </div>
 
-            <textarea id="notes" class="mt-2" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
+            <div class="space-y-2">
+              <label class="tiny muted">ملاحظات إضافية</label>
+              <textarea id="notes" class="mt-2" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
+            </div>
           </div>
 
           <!-- INVOICE -->
-          <div class="miniCard space-y-2">
+          <div class="miniCard space-y-3">
             <div class="secTitle">
               <b><i class="fa-solid fa-receipt mr-1"></i> تفاصيل الحساب</b>
               <span class="chip chipS">
@@ -601,15 +841,19 @@
 
               <div class="flex items-center justify-between">
                 <span class="font-black">الإجمالي</span>
-                <b class="text-emerald-400"><span id="invTotalEgp">0</span> ج</b>
+                <b class="text-emerald-500"><span id="invTotalEgp">0</span> ج</b>
               </div>
 
-              <div class="soft p-3 mt-2">
-                <div class="tiny muted">التحويل إلى Pi (تقريبي):</div>
-                <div class="flex items-center justify-between mt-1">
-                  <span class="muted text-sm">الإجمالي بـ Pi</span>
-                  <b class="mono text-emerald-500 text-sm"><span id="invTotalPi">0</span> Pi</b>
+              <div class="soft p-3 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="muted text-sm">الإجمالي بـ Pi (تقريبي)</span>
+                  <span id="invPreviewBadge" class="chip chipG hidden">Pi جاهز</span>
                 </div>
+                <div class="flex items-center justify-between">
+                  <span class="muted text-sm">Pi الإجمالي</span>
+                  <b class="mono text-emerald-600 text-sm" id="invTotalPi">0.000000</b>
+                </div>
+                <div id="invSkeleton" class="skeletonBadge hidden"></div>
               </div>
             </div>
           </div>
@@ -696,6 +940,7 @@
                 </button>
               </div>
               <div id="delLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+              <div id="delLocHint" class="tiny hidden" style="color:#b45309">فعّل GPS واسمح للتطبيق بالوصول للموقع.</div>
               <div class="tiny muted">سيظهر لك الطلبات على بعد 5 كم فقط.</div>
             </div>
           </div>
@@ -729,12 +974,12 @@
     </div>
 
     <!-- ================= TRACK TAB ================= -->
-    <div id="trackTab" class="hidden pageShell">
+    <div id="trackTab" class="hidden pageShell tabPane">
 
       <!-- ================= CUSTOMER (TRACK) ================= -->
       <div id="customerTrackTab" class="hidden space-y-3">
         <!-- TRACK -->
-        <section id="custTrack" class="hidden glass pageSection space-y-2">
+        <section id="custTrack" class="hidden glass pageSection space-y-3">
           <div class="secTitle">
             <b><i class="fa-solid fa-route mr-1"></i> متابعة الطلب</b>
             <div class="flex items-center gap-2">
@@ -753,7 +998,7 @@
 
             <div class="flex items-center justify-between text-sm">
               <span class="muted">العنوان</span>
-              <b id="custAddressView">—</b>
+              <b id="custAddressView" class="truncate">—</b>
             </div>
 
             <div class="flex items-center justify-between text-sm">
@@ -767,6 +1012,32 @@
               <span class="muted">كود التسليم</span>:
               <b id="otp" class="text-emerald-500 text-lg mono"></b>
               <div class="tiny muted mt-1">قدّم الكود للكابتن عند الوصول.</div>
+            </div>
+          </div>
+
+          <div class="miniCard">
+            <div class="text-sm font-bold mb-2">تسلسل الحالة</div>
+            <div id="custTimeline" class="timeline">
+              <div class="timelineItem" data-status="pending">
+                <span class="timelineDot"></span>
+                <div class="text-sm">بانتظار قبول الطلب</div>
+              </div>
+              <div class="timelineItem" data-status="accepted">
+                <span class="timelineDot"></span>
+                <div class="text-sm">تم قبول الطلب</div>
+              </div>
+              <div class="timelineItem" data-status="shipping">
+                <span class="timelineDot"></span>
+                <div class="text-sm">الكابتن في الطريق</div>
+              </div>
+              <div class="timelineItem" data-status="arrived">
+                <span class="timelineDot"></span>
+                <div class="text-sm">الكابتن وصل للموقع</div>
+              </div>
+              <div class="timelineItem" data-status="delivered">
+                <span class="timelineDot"></span>
+                <div class="text-sm">تم التسليم</div>
+              </div>
             </div>
           </div>
         </section>
@@ -857,46 +1128,56 @@
             </div>
           </div>
 
-          <div class="miniCard space-y-1" id="delOrderDetails">
-            <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
-            <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress">—</b></div>
-            <div class="flex items-center justify-between">
-              <span class="muted">الموقع</span>
-              <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+          <div class="chatLayout">
+            <div class="chatStickyHeader">
+              <div class="secTitle">
+                <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
+                <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
+              </div>
+              <div class="miniCard space-y-1 mt-2" id="delOrderDetails">
+                <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
+                <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
+                <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+                <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+                <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
+                <div class="flex items-center justify-between">
+                  <span class="muted">الموقع</span>
+                  <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+                </div>
+                <div class="divider"></div>
+                <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+                <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+                <div class="divider"></div>
+                <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+                <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
+                <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
+              </div>
             </div>
-            <div class="divider"></div>
-            <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-            <div class="divider"></div>
-            <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-400"><span id="dTotalEgp">—</span> ج</b></div>
-            <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-500"><span id="dTotalPi">—</span> Pi</b></div>
-            <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
-          </div>
 
-          <div id="chatD" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
+            <div id="chatD" class="flex flex-col gap-2 chatScroll soft p-3"></div>
 
-          <div class="flex gap-2 items-center">
-            <input id="msgD" class="flex-1" placeholder="رسالة..." />
-            <label class="chip chipS cursor-pointer">
-              <i class="fa-regular fa-image"></i>
-              <input type="file" id="imgD" accept="image/*" class="hidden" />
-              صورة
-            </label>
-            <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
-              <i class="fa-solid fa-arrow-up"></i>
-            </button>
-          </div>
+            <div class="chatComposer">
+              <div class="flex gap-2 items-center">
+                <input id="msgD" class="flex-1" placeholder="رسالة..." />
+                <label class="chip chipS cursor-pointer">
+                  <i class="fa-regular fa-image"></i>
+                  <input type="file" id="imgD" accept="image/*" class="hidden" />
+                  صورة
+                </label>
+                <button onclick="sendMsg('delivery')" class="btn btnB" style="padding:12px 14px">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="setOrderStatus('arrived')" class="btn btnA">
-              <i class="fa-solid fa-location-crosshairs"></i> وصلت
-            </button>
-            <button onclick="finishWithOtp()" class="btn btnG">
-              <i class="fa-solid fa-check"></i> تم التسليم
-            </button>
+              <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
+                <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
+                  <i class="fa-solid fa-location-crosshairs"></i> وصلت
+                </button>
+                <button id="finishBtn" onclick="finishWithOtp()" class="btn btnG">
+                  <i class="fa-solid fa-check"></i> تم التسليم
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -916,7 +1197,18 @@
           </div>
 
           <input id="wdAmountPi" type="number" step="0.000001" placeholder="كم Pi هتسحب؟" />
-          <input id="wdWallet" placeholder="عنوان محفظة Pi" />
+
+          <div class="space-y-2">
+            <input id="wdWallet" placeholder="عنوان محفظة Pi" />
+            <div class="grid grid-cols-2 gap-2">
+              <button class="btn btnS" onclick="copyWalletAddress()">
+                <i class="fa-regular fa-copy"></i> نسخ العنوان
+              </button>
+              <button class="btn btnS" onclick="pasteWalletAddress()">
+                <i class="fa-solid fa-paste"></i> لصق العنوان
+              </button>
+            </div>
+          </div>
 
           <button onclick="withdrawPi()" class="btn btnP w-full">
             <i class="fa-solid fa-hand-holding-dollar"></i>
@@ -950,7 +1242,59 @@
     </div>
 
     <!-- ================= DISCOVER TAB ================= -->
-    <div id="discoverTab" class="hidden pageShell">
+    <div id="discoverTab" class="hidden pageShell tabPane">
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>المزيد</h3>
+            <div class="sectionSub">كل ما تحتاجه في مكان واحد.</div>
+          </div>
+          <span class="chip chipP"><i class="fa-solid fa-ellipsis"></i> More</span>
+        </div>
+        <div class="space-y-2">
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-headset"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">الدعم</div>
+              <div class="tiny muted">تواصل سريع مع خدمة العملاء.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-file-contract"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">الشروط والأحكام</div>
+              <div class="tiny muted">تعرف على سياسات الاستخدام.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-circle-question"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">الأسئلة الشائعة</div>
+              <div class="tiny muted">إجابات لأكثر الاستفسارات.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-circle-info"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">عن التطبيق</div>
+              <div class="tiny muted">نسخة QuickCart ورؤيتنا.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-share-nodes"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">مشاركة التطبيق</div>
+              <div class="tiny muted">شارك التطبيق مع أصدقائك.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+        </div>
+      </section>
+
       <section class="glass pageSection space-y-3">
         <div class="sectionHeader">
           <div>
@@ -997,39 +1341,6 @@
       <section class="glass pageSection space-y-3">
         <div class="sectionHeader">
           <div>
-            <h3>خطوات الاستخدام</h3>
-            <div class="sectionSub">ثلاث خطوات بسيطة للطلب.</div>
-          </div>
-          <span class="chip chipS"><i class="fa-solid fa-route"></i> دليل سريع</span>
-        </div>
-        <div class="space-y-2">
-          <div class="listCard">
-            <span class="listIcon"><i class="fa-solid fa-user"></i></span>
-            <div>
-              <div class="text-sm font-bold">سجّل الدخول</div>
-              <div class="tiny muted">استخدم Pi Browser للوصول الكامل للدفع.</div>
-            </div>
-          </div>
-          <div class="listCard">
-            <span class="listIcon"><i class="fa-solid fa-bag-shopping"></i></span>
-            <div>
-              <div class="text-sm font-bold">أنشئ طلبك</div>
-              <div class="tiny muted">اكتب تفاصيل المنتج وحدد موقعك.</div>
-            </div>
-          </div>
-          <div class="listCard">
-            <span class="listIcon"><i class="fa-solid fa-truck-fast"></i></span>
-            <div>
-              <div class="text-sm font-bold">تابع التسليم</div>
-              <div class="tiny muted">شاهد الحالة وتواصل مع الكابتن.</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="glass pageSection space-y-3">
-        <div class="sectionHeader">
-          <div>
             <h3>الدعم والمساعدة</h3>
             <div class="sectionSub">جاهزين نساعدك في أي وقت.</div>
           </div>
@@ -1043,20 +1354,38 @@
           </div>
         </div>
       </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>Debug checklist</h3>
+            <div class="sectionSub">خطوات سريعة للتأكد من حالة التسليم والتقييم.</div>
+          </div>
+          <span class="chip chipS"><i class="fa-solid fa-bug"></i> Debug</span>
+        </div>
+        <div class="miniCard space-y-2 text-sm">
+          <div>✅ تحقق أن status أصبح <b>delivered</b> عبر سجل الطلبات أو صفحة المتابعة.</div>
+          <div>✅ راقب القنوات realtime من خلال Console logs أثناء تغيير الحالة.</div>
+          <div>✅ تأكد أن قسم تقييم الكابتن ظهر وتم عمل scroll إليه تلقائيًا.</div>
+        </div>
+      </section>
     </div>
   </main>
 
   <!-- BOTTOM NAV -->
   <div id="bottomNav" class="bottomNav hidden">
     <div class="wrap">
-      <button id="navHome" onclick="setMainTab('home')" class="btn btnA flex-1">
-        <i class="fa-solid fa-plus"></i> طلب جديد
+      <button id="navHome" onclick="setMainTab('home')" class="navItem">
+        <i class="fa-solid fa-plus"></i>
+        <span>طلب جديد</span>
       </button>
-      <button id="navTrack" onclick="setMainTab('track')" class="btn btnS flex-1">
-        <i class="fa-solid fa-route"></i> متابعة
+      <button id="navTrack" onclick="setMainTab('track')" class="navItem">
+        <i class="fa-solid fa-route"></i>
+        <span>متابعة</span>
       </button>
-      <button id="navDiscover" onclick="setMainTab('discover')" class="btn btnS flex-1">
-        <i class="fa-solid fa-compass"></i> المزيد
+      <button id="navDiscover" onclick="setMainTab('discover')" class="navItem">
+        <i class="fa-solid fa-compass"></i>
+        <span>المزيد</span>
       </button>
     </div>
   </div>
@@ -1084,12 +1413,13 @@ let HAS_LOCATION_COLUMNS = true;
 let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
+let FINISH_LOCK = false;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
 let USD_EGP = 0;     // 1 USD in EGP
 
-/* ================== DETECT ================== */
+/* ================== UI: DETECT + INIT ================== */
 function detectPi() {
   const hasPi = typeof window.Pi !== 'undefined';
   const ua = (navigator.userAgent || '').toLowerCase();
@@ -1097,6 +1427,17 @@ function detectPi() {
 
   document.getElementById('piStateText').innerText = hasPi ? 'SDK موجود وجاهز' : 'SDK غير متاح';
   document.getElementById('piTag').innerText = isPiBrowser ? 'Pi Browser' : 'Web';
+  document.getElementById('piTag2').innerText = isPiBrowser ? 'Pi Browser' : 'Web';
+  document.getElementById('piSdkBadge').classList.toggle('chipW', !hasPi);
+  document.getElementById('piHint').classList.toggle('hidden', isPiBrowser);
+}
+
+function handleHeaderBack(){
+  if (ACTIVE_MAIN_TAB !== 'home') {
+    setMainTab('home');
+  } else if (ACTIVE_ORDER) {
+    setMainTab('track');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1107,10 +1448,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(fetchUsdEgp, 60000);
 });
 
-/* ================== RATES ================== */
+/* ================== DATA: RATES ================== */
 async function refreshRates(){
   await Promise.allSettled([fetchPiFromOKX(), fetchUsdEgp()]);
   recalcInvoice();
+}
+
+function setRateHint(show){
+  document.getElementById('rateHint').classList.toggle('hidden', !show);
 }
 
 async function fetchPiFromOKX(){
@@ -1122,8 +1467,10 @@ async function fetchPiFromOKX(){
 
     document.getElementById('piUsdt').innerText = PI_USDT ? PI_USDT.toFixed(6) : '—';
     updatePiEgpOne();
+    setRateHint(!(PI_USDT > 0 && USD_EGP > 0));
   }catch(e){
     console.warn('OKX PI ticker failed:', e);
+    setRateHint(true);
   }
 }
 
@@ -1136,9 +1483,11 @@ async function fetchUsdEgp(){
 
     document.getElementById('usdEgp').innerText = USD_EGP ? USD_EGP.toFixed(4) : '—';
     updatePiEgpOne();
+    setRateHint(!(PI_USDT > 0 && USD_EGP > 0));
   }catch(e){
     console.warn('USD/EGP failed:', e);
     document.getElementById('usdEgp').innerText = 'فشل';
+    setRateHint(true);
   }
 }
 
@@ -1153,7 +1502,7 @@ function egpToPi(egp){
   return egp / piEgp;
 }
 
-/* ================== LOCATION ================== */
+/* ================== HELPERS: LOCATION ================== */
 function getCurrentLocation(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -1188,12 +1537,14 @@ async function setCustomerLocation(){
     CUSTOMER_LOCATION = loc;
     const status = `تم تحديد الموقع: ${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`;
     document.getElementById('custLocStatus').innerText = status;
+    document.getElementById('custLocHint').classList.add('hidden');
     const link = document.getElementById('custMapLink');
     link.href = buildMapUrl(loc.lat, loc.lng);
     link.classList.remove('hidden');
     link.onclick = () => openMapUrl(link.href);
   }catch(e){
-    Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ' });
+    document.getElementById('custLocHint').classList.remove('hidden');
+    Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ أثناء تحديد موقعك' });
   }
 }
 
@@ -1203,9 +1554,11 @@ async function setDeliveryLocation(){
     DELIVERY_LOCATION = loc;
     const status = `تم تحديد الموقع: ${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`;
     document.getElementById('delLocStatus').innerText = status;
+    document.getElementById('delLocHint').classList.add('hidden');
     await loadOrders();
   }catch(e){
-    Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ' });
+    document.getElementById('delLocHint').classList.remove('hidden');
+    Swal.fire({ icon:'error', title:'فشل تحديد الموقع', text: e?.message || 'حصل خطأ أثناء تحديد موقعك' });
   }
 }
 
@@ -1227,18 +1580,18 @@ function hasMissingLocationColumn(error){
   return msg.includes('customer_lat') || msg.includes('customer_lng') || msg.includes('customer_address');
 }
 
-/* ================== LOGIN ================== */
+/* ================== AUTH ================== */
 async function piLogin() {
   try {
     if (!window.Pi || !Pi.authenticate) {
-      return Swal.fire({ icon: 'warning', title: 'Pi SDK غير متاح', text: 'افتح الموقع داخل Pi Browser.' });
+      return Swal.fire({ icon: 'warning', title: 'Pi SDK غير متاح', text: 'افتح الموقع داخل Pi Browser لإتمام الدفع.' });
     }
 
     const ua = (navigator.userAgent || '').toLowerCase();
     if (!ua.includes('pibrowser')) {
       const r = await Swal.fire({
         icon: 'info',
-        title: 'ملاحظة',
+        title: 'ملاحظة مهمة',
         text: 'الأفضل تفتح داخل Pi Browser عشان الدفع يشتغل 100%.',
         showCancelButton: true,
         confirmButtonText: 'كمّل',
@@ -1414,30 +1767,54 @@ async function findActiveOrderForDelivery(orderId){
   return data?.[0] || null;
 }
 
+function updateCustomerTimeline(status){
+  const steps = ['pending','accepted','shipping','arrived','delivered'];
+  const currentIndex = steps.indexOf(status);
+  document.querySelectorAll('#custTimeline .timelineItem').forEach((item) => {
+    const itemStatus = item.getAttribute('data-status');
+    const index = steps.indexOf(itemStatus);
+    item.classList.toggle('active', index !== -1 && index <= currentIndex);
+  });
+}
+
 async function applyCustomerOrderState(order){
-  document.getElementById('custTrack').classList.remove('hidden');
-  document.getElementById('custChat').classList.remove('hidden');
-  document.getElementById('custStatus').innerText = order.status || 'pending';
-  document.getElementById('otp').innerText = order.otp_code || '';
-  document.getElementById('otpBox').classList.toggle('hidden', !order.otp_code);
-  document.getElementById('custAddressView').innerText = order.customer_address || '—';
-  if (order.status === 'delivered') {
-    document.getElementById('custTrack').classList.add('hidden');
-    document.getElementById('custChat').classList.add('hidden');
-    document.getElementById('custRating').classList.remove('hidden');
+  const status = normalizeStatus(order.status || 'pending');
+  safeDom('custTrack')?.classList.remove('hidden');
+  safeDom('custChat')?.classList.remove('hidden');
+  if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
+  updateCustomerTimeline(status || 'pending');
+  if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
+  safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
+  if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
+
+  if (['delivered','completed'].includes(status)) {
+    safeDom('custTrack')?.classList.add('hidden');
+    safeDom('custChat')?.classList.add('hidden');
+    setMainTab('track');
+    const rating = safeDom('custRating');
+    rating?.classList.remove('hidden');
+    rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setActiveOrderId(null);
     if (statusPollTimer) clearInterval(statusPollTimer);
+    if (statusChannel) {
+      try { db.removeChannel(statusChannel); } catch {}
+      statusChannel = null;
+    }
+    if (chatChannel) {
+      try { db.removeChannel(chatChannel); } catch {}
+      chatChannel = null;
+    }
     await loadRatingState(order);
   } else {
     hideRating();
   }
-  const trackLink = document.getElementById('custTrackMapLink');
-  if (typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
+  const trackLink = safeDom('custTrackMapLink');
+  if (trackLink && typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
     trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
     trackLink.classList.remove('hidden');
     trackLink.onclick = () => openMapUrl(trackLink.href);
   } else {
-    trackLink.classList.add('hidden');
+    trackLink?.classList.add('hidden');
   }
 }
 
@@ -1567,7 +1944,7 @@ async function rejectCaptain(){
   await submitRating();
 }
 
-/* ================== INVOICE UI ================== */
+/* ================== UI: INVOICE ================== */
 function recalcInvoice(){
   const prodEgp = parseFloat(document.getElementById('price').value || "0") || 0;
   const totalEgp = prodEgp + DELIVERY_FEE_EGP + PLATFORM_FEE_EGP;
@@ -1578,6 +1955,10 @@ function recalcInvoice(){
   document.getElementById('invPlatFeeEgp').innerText = PLATFORM_FEE_EGP.toFixed(2);
   document.getElementById('invTotalEgp').innerText = totalEgp.toFixed(2);
   document.getElementById('invTotalPi').innerText = totalPi ? totalPi.toFixed(6) : '0.000000';
+
+  const hasRates = PI_USDT > 0 && USD_EGP > 0;
+  document.getElementById('invSkeleton').classList.toggle('hidden', prodEgp > 0 && hasRates);
+  document.getElementById('invPreviewBadge').classList.toggle('hidden', !hasRates);
 }
 
 /* ================== CUSTOMER: PAY + CREATE ORDER ================== */
@@ -1729,6 +2110,7 @@ async function payAndCreate() {
     document.getElementById('custTrack').classList.remove('hidden');
     document.getElementById('custChat').classList.remove('hidden');
     document.getElementById('custStatus').innerText = 'pending';
+    updateCustomerTimeline('pending');
     document.getElementById('otp').innerText = otp;
     document.getElementById('otpBox').classList.remove('hidden');
     document.getElementById('custAddressView').innerText = address;
@@ -1750,10 +2132,25 @@ async function payAndCreate() {
 }
 
 /* ================== DELIVERY: LOAD + ACCEPT (RPC Lock) ================== */
+function ordersSkeleton(){
+  return `
+    <div class="skeletonCard">
+      <div class="skeletonLine mid"></div>
+      <div class="skeletonLine"></div>
+      <div class="skeletonLine short"></div>
+    </div>
+    <div class="skeletonCard">
+      <div class="skeletonLine mid"></div>
+      <div class="skeletonLine"></div>
+      <div class="skeletonLine short"></div>
+    </div>
+  `;
+}
+
 async function loadOrders(){
   try{
     const box = document.getElementById('ordersBox');
-    box.innerHTML = `<div class="glass p-4 text-center muted">جاري التحميل...</div>`;
+    box.innerHTML = ordersSkeleton();
 
     let result = await db.from('orders')
       .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot,customer_lat,customer_lng,customer_address')
@@ -1772,12 +2169,20 @@ async function loadOrders(){
     if (error) throw error;
 
     if (!data?.length) {
-      box.innerHTML = `<div class="glass p-4 text-center muted">لا توجد طلبات حالياً</div>`;
+      box.innerHTML = `<div class="emptyState">لا توجد طلبات حالياً</div>`;
       return;
     }
 
     if (!DELIVERY_LOCATION && HAS_LOCATION_COLUMNS) {
-      box.innerHTML = `<div class="glass p-4 text-center muted">حدد موقعك أولاً لعرض الطلبات القريبة (5 كم).</div>`;
+      box.innerHTML = `
+        <div class="emptyState space-y-2">
+          <div class="text-sm font-bold">حدد موقعك أولاً</div>
+          <div class="tiny muted">سنظهر لك الطلبات القريبة ضمن 5 كم.</div>
+          <button class="btn btnA" onclick="setDeliveryLocation()">
+            <i class="fa-solid fa-crosshairs"></i> تحديد موقعي
+          </button>
+        </div>
+      `;
       return;
     }
 
@@ -1793,7 +2198,7 @@ async function loadOrders(){
       : data;
 
     if (!filtered.length) {
-      box.innerHTML = `<div class="glass p-4 text-center muted">لا توجد طلبات قريبة ضمن 5 كم الآن.</div>`;
+      box.innerHTML = `<div class="emptyState">لا توجد طلبات قريبة ضمن 5 كم الآن.</div>`;
       return;
     }
 
@@ -1815,8 +2220,8 @@ async function loadOrders(){
       return `
       <div class="glass p-4 space-y-2">
         <div class="row">
-          <div>
-            <b class="text-base">${escapeHtml(o.product_name)}</b>
+          <div class="min-w-0">
+            <b class="text-base truncate">${escapeHtml(o.product_name)}</b>
             <div class="tiny">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
             <div class="tiny">نوع: <b>${escapeHtml(o.order_type || 'any')}</b></div>
             ${HAS_LOCATION_COLUMNS ? `<div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>` : ``}
@@ -1826,15 +2231,19 @@ async function loadOrders(){
 
         <div class="soft p-3 text-sm space-y-1">
           <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
-          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b>${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
-          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">الموقع</span><a class="text-emerald-600 underline" target="_blank" rel="noopener noreferrer" href="${mapUrl}" onclick="return openMapUrl('${mapUrl}')">فتح الخريطة</a></div>` : ``}
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b class="truncate">${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
           <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
           <div class="border-t border-emerald-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500">${Number(totalEgp).toFixed(2)} ج</b></div>
           <div class="row"><span class="muted">يعادل بـ Pi</span><b class="mono text-emerald-600">${totalPi ? totalPi.toFixed(6) : '—'} Pi</b></div>
         </div>
 
-        <button onclick="acceptOrder('${o.id}')" class="btn btnG w-full">قبول الطلب</button>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="acceptOrder('${o.id}')" class="btn btnG">قبول الطلب</button>
+          <button onclick="return openMapUrl('${mapUrl}')" class="btn btnS">
+            <i class="fa-solid fa-map"></i> فتح الخريطة
+          </button>
+        </div>
       </div>
       `;
     }).join('');
@@ -1849,6 +2258,16 @@ async function loadOrders(){
 async function acceptOrder(id){
   try{
     if(!PI_USERNAME) return Swal.fire('سجّل دخول كابتن الأول');
+
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: 'تأكيد القبول',
+      text: 'هل أنت متأكد من قبول الطلب الآن؟',
+      showCancelButton: true,
+      confirmButtonText: 'نعم، قبول',
+      cancelButtonText: 'إلغاء'
+    });
+    if (!ok.isConfirmed) return;
 
     Swal.fire({ title:'جاري القبول...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
 
@@ -1924,7 +2343,7 @@ async function loadOrderDetailsForDelivery(orderId){
   document.getElementById('dNotes').innerText = data.notes ? data.notes : '—';
 }
 
-/* ================== CHAT: text + image + seen ================== */
+/* ================== REALTIME: CHAT ================== */
 let chatChannel = null;
 let chatPollTimer = null;
 
@@ -1945,7 +2364,8 @@ function startChat(){
       event: 'INSERT', schema: 'public', table: 'chat_messages',
       filter: `order_id=eq.${ACTIVE_ORDER}`
     }, (payload) => {
-      appendMsg(payload.new);
+      if (payload.new?.order_id !== ACTIVE_ORDER) return;
+      appendMsg(payload.new, ACTIVE_ROLE);
       markSeen(currentRole());
     })
     .subscribe();
@@ -1959,9 +2379,12 @@ async function loadMessages(){
 
   if(error){ console.error(error); return; }
 
-  document.getElementById('chatC').innerHTML = '';
-  document.getElementById('chatD').innerHTML = '';
-  (data||[]).forEach(appendMsg);
+  if (ACTIVE_ROLE === 'customer') {
+    safeDom('chatC') && (safeDom('chatC').innerHTML = '');
+  } else {
+    safeDom('chatD') && (safeDom('chatD').innerHTML = '');
+  }
+  (data||[]).forEach((msg) => appendMsg(msg, ACTIVE_ROLE));
 
   markSeen(currentRole());
 }
@@ -2023,24 +2446,27 @@ function quick(role, txt){
   else document.getElementById('msgD').value = txt;
 }
 
-function appendMsg(m){
+function appendMsg(m, targetRole){
   const bubble = `
     <div class="msg ${m.sender==='customer'?'c':'d'}">
       ${m.message_text ? escapeHtml(m.message_text) : ''}
-      ${m.image_url ? `<img src="${m.image_url}" class="mt-2 rounded-xl border border-emerald-100" />` : ''}
+      ${m.image_url ? `<img loading="lazy" src="${m.image_url}" class="mt-2 chatImage" />` : ''}
       <div class="mt-1 tiny">${m.seen_at ? '✅✅' : '✅'}</div>
     </div>
   `;
-  document.getElementById('chatC').insertAdjacentHTML('beforeend', bubble);
-  document.getElementById('chatD').insertAdjacentHTML('beforeend', bubble);
-
-  document.getElementById('chatC').scrollTop = document.getElementById('chatC').scrollHeight;
-  document.getElementById('chatD').scrollTop = document.getElementById('chatD').scrollHeight;
+  if (targetRole === 'customer') {
+    safeDom('chatC')?.insertAdjacentHTML('beforeend', bubble);
+    if (safeDom('chatC')) safeDom('chatC').scrollTop = safeDom('chatC').scrollHeight;
+  } else {
+    safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
+    if (safeDom('chatD')) safeDom('chatD').scrollTop = safeDom('chatD').scrollHeight;
+  }
 }
 
 async function markSeen(viewerRole){
   try{
     if(!ACTIVE_ORDER) return;
+    if (!['customer','delivery'].includes(viewerRole)) return;
     await db.from('chat_messages')
       .update({ seen_at: new Date().toISOString() })
       .eq('order_id', ACTIVE_ORDER)
@@ -2051,7 +2477,7 @@ async function markSeen(viewerRole){
   }
 }
 
-/* ================== STATUS ================== */
+/* ================== REALTIME: STATUS ================== */
 let statusChannel = null;
 let deliveryStatusChannel = null;
 let statusPollTimer = null;
@@ -2066,80 +2492,57 @@ function listenStatus(){
 
   if (statusPollTimer) clearInterval(statusPollTimer);
   refreshCustomerStatus();
-  statusPollTimer = setInterval(refreshCustomerStatus, 1000);
   statusPollTimer = setInterval(refreshCustomerStatus, 15000);
 
-  statusChannel = db.channel('order-status-' + ACTIVE_ORDER)
+  const orderId = ACTIVE_ORDER;
+  statusChannel = db.channel('order-status-' + orderId)
     .on('postgres_changes', {
       event: 'UPDATE', schema:'public', table:'orders',
-      filter: `id=eq.${ACTIVE_ORDER}`
+      filter: `id=eq.${orderId}`
     }, (payload) => {
-      const s = payload.new.status;
-      document.getElementById('custStatus').innerText = s;
-
-      if(['accepted','shipping','arrived','delivered'].includes(s)){
-        document.getElementById('custChat').classList.remove('hidden');
-      }
-
-      if(s === 'delivered'){
-        Swal.fire({
-          icon:'success',
-          title:'تم التسليم ✅',
-          text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
-          confirmButtonText:'قيّم الآن'
-        });
-        loadCustomerHistory();
-        document.getElementById('custChat').classList.add('hidden');
-        document.getElementById('custTrack').classList.add('hidden');
-        document.getElementById('custRating').classList.remove('hidden');
-        setActiveOrderId(null);
-        loadRatingState(payload.new);
-        if (statusChannel) {
-          try { db.removeChannel(statusChannel); } catch {}
-          statusChannel = null;
+      try{
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
         }
-        if (chatChannel) {
-          try { db.removeChannel(chatChannel); } catch {}
-          chatChannel = null;
+        const s = normalizeStatus(payload.new.status);
+        safeDom('custStatus') && (safeDom('custStatus').innerText = s);
+        updateCustomerTimeline(s);
+
+        if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
+          safeDom('custChat')?.classList.remove('hidden');
         }
-        if (chatPollTimer) clearInterval(chatPollTimer);
-        if (statusPollTimer) clearInterval(statusPollTimer);
-      }
-    }).subscribe();
-}
 
-function listenDeliveryStatus(){
-  if(!ACTIVE_ORDER) return;
-
-  if (deliveryStatusChannel) {
-    try { db.removeChannel(deliveryStatusChannel); } catch {}
-    deliveryStatusChannel = null;
-  }
-
-  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
-    .on('postgres_changes', {
-      event: 'UPDATE', schema:'public', table:'orders',
-      filter: `id=eq.${ACTIVE_ORDER}`
-    }, (payload) => {
-      const s = payload.new.status || 'pending';
-      const statusEl = document.getElementById('dStatus');
-      if (statusEl) statusEl.innerText = s;
-
-      if (s === 'delivered') {
-        document.getElementById('delChat').classList.add('hidden');
-        setActiveOrderId(null);
-        loadOrders();
-        loadWalletPi();
-        loadDeliveryHistory();
-        if (deliveryStatusChannel) {
-          try { db.removeChannel(deliveryStatusChannel); } catch {}
-          deliveryStatusChannel = null;
+        if(['delivered','completed'].includes(s)){
+          console.log('[listenStatus] delivered detected', payload.new.id);
+          Swal.fire({
+            icon:'success',
+            title:'تم التسليم ✅',
+            text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
+            confirmButtonText:'قيّم الآن'
+          });
+          loadCustomerHistory();
+          safeDom('custChat')?.classList.add('hidden');
+          safeDom('custTrack')?.classList.add('hidden');
+          setMainTab('track');
+          const rating = safeDom('custRating');
+          rating?.classList.remove('hidden');
+          rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveOrderId(null);
+          loadRatingState(payload.new);
+          if (statusChannel) {
+            try { db.removeChannel(statusChannel); } catch {}
+            statusChannel = null;
+          }
+          if (chatChannel) {
+            try { db.removeChannel(chatChannel); } catch {}
+            chatChannel = null;
+          }
+          if (chatPollTimer) clearInterval(chatPollTimer);
+          if (statusPollTimer) clearInterval(statusPollTimer);
         }
-        if (chatChannel) {
-          try { db.removeChannel(chatChannel); } catch {}
-          chatChannel = null;
-        }
-        if (chatPollTimer) clearInterval(chatPollTimer);
+      } catch (err){
+        console.error('[listenStatus] UI update failed', err);
       }
     }).subscribe();
 }
@@ -2152,29 +2555,40 @@ function listenDeliveryStatus(){
     deliveryStatusChannel = null;
   }
 
-  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+  const orderId = ACTIVE_ORDER;
+  deliveryStatusChannel = db.channel('delivery-status-' + orderId)
     .on('postgres_changes', {
       event: 'UPDATE', schema:'public', table:'orders',
-      filter: `id=eq.${ACTIVE_ORDER}`
+      filter: `id=eq.${orderId}`
     }, (payload) => {
-      const s = payload.new.status || 'pending';
-      const statusEl = document.getElementById('dStatus');
-      if (statusEl) statusEl.innerText = s;
+      try{
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenDeliveryStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
+        }
+        const s = normalizeStatus(payload.new.status || 'pending');
+        const statusEl = safeDom('dStatus');
+        if (statusEl) statusEl.innerText = s;
 
-      if (s === 'delivered') {
-        document.getElementById('delChat').classList.add('hidden');
-        setActiveOrderId(null);
-        loadOrders();
-        loadWalletPi();
-        loadDeliveryHistory();
-        if (deliveryStatusChannel) {
-          try { db.removeChannel(deliveryStatusChannel); } catch {}
-          deliveryStatusChannel = null;
+        if (['delivered','completed'].includes(s)) {
+          console.log('[listenDeliveryStatus] delivered detected', payload.new.id);
+          safeDom('delChat')?.classList.add('hidden');
+          setActiveOrderId(null);
+          loadOrders();
+          loadWalletPi();
+          loadDeliveryHistory();
+          if (deliveryStatusChannel) {
+            try { db.removeChannel(deliveryStatusChannel); } catch {}
+            deliveryStatusChannel = null;
+          }
+          if (chatChannel) {
+            try { db.removeChannel(chatChannel); } catch {}
+            chatChannel = null;
+          }
+          if (chatPollTimer) clearInterval(chatPollTimer);
         }
-        if (chatChannel) {
-          try { db.removeChannel(chatChannel); } catch {}
-          chatChannel = null;
-        }
+      }catch(err){
+        console.error('[listenDeliveryStatus] UI update failed', err);
       }
     }).subscribe();
 }
@@ -2182,13 +2596,53 @@ function listenDeliveryStatus(){
 /* ================== DELIVERY STATUS + OTP ================== */
 async function setOrderStatus(st){
   if(!ACTIVE_ORDER) return Swal.fire('اختر طلب أولاً');
+  const ok = await Swal.fire({
+    icon: 'question',
+    title: 'تأكيد الوصول',
+    text: 'هل وصلت لموقع العميل بالفعل؟',
+    showCancelButton: true,
+    confirmButtonText: 'نعم، وصلت',
+    cancelButtonText: 'إلغاء'
+  });
+  if (!ok.isConfirmed) return;
   await db.from('orders').update({ status: st }).eq('id', ACTIVE_ORDER);
+}
+
+async function verifyDeliveredStatus(orderId){
+  for (let i = 0; i < 3; i += 1) {
+    const { data, error } = await db.from('orders')
+      .select('status')
+      .eq('id', orderId)
+      .single();
+    if (error) {
+      console.warn('[verifyDeliveredStatus] query failed', error);
+    } else {
+      const normalized = normalizeStatus(data?.status);
+      console.log('[verifyDeliveredStatus] attempt', i + 1, normalized);
+      if (['delivered','completed'].includes(normalized)) {
+        return true;
+      }
+    }
+    await new Promise(resolve => setTimeout(resolve, 700));
+  }
+  return false;
 }
 
 async function finishWithOtp(){
   try{
+    if(FINISH_LOCK) return;
     if(!ACTIVE_ORDER) return;
     if(!PI_USERNAME) return Swal.fire('سجّل دخول');
+
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: 'تأكيد التسليم',
+      text: 'هل أنت متأكد أنك سلمت الطلب للعميل؟',
+      showCancelButton: true,
+      confirmButtonText: 'متأكد',
+      cancelButtonText: 'إلغاء'
+    });
+    if (!confirm.isConfirmed) return;
 
     const { value: code } = await Swal.fire({
       title: 'كود التسليم',
@@ -2200,19 +2654,45 @@ async function finishWithOtp(){
     });
     if(!code) return;
 
-    const { error } = await db.rpc('complete_delivery', {
+    FINISH_LOCK = true;
+    safeDom('finishBtn')?.setAttribute('disabled', 'true');
+    Swal.fire({ title: 'جاري تأكيد التسليم...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+    const rpcPromise = db.rpc('complete_delivery', {
       p_order_id: ACTIVE_ORDER,
       p_otp: String(code).trim(),
       p_delivery_id: PI_USERNAME
     });
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('timeout')), 8000);
+    });
 
+    const { error } = await Promise.race([rpcPromise, timeoutPromise]);
     if(error) throw error;
+
+    const deliveredOk = await verifyDeliveredStatus(ACTIVE_ORDER);
+    if (!deliveredOk) {
+      const { data: current, error: readErr } = await db.from('orders')
+        .select('status')
+        .eq('id', ACTIVE_ORDER)
+        .single();
+      if (readErr) throw readErr;
+      const normalized = normalizeStatus(current?.status);
+      if (['arrived','shipping'].includes(normalized)) {
+        await db.from('orders')
+          .update({ status: 'delivered' })
+          .eq('id', ACTIVE_ORDER)
+          .eq('delivery_id', PI_USERNAME)
+          .in('status', ['arrived','shipping']);
+      }
+      await verifyDeliveredStatus(ACTIVE_ORDER);
+    }
 
     Swal.fire({ icon:'success', title:'تم التسليم ✅' });
     await loadWalletPi();
     await loadDeliveryHistory();
     await loadOrders();
-    document.getElementById('delChat').classList.add('hidden');
+    safeDom('delChat')?.classList.add('hidden');
     setActiveOrderId(null);
     if (chatChannel) {
       try { db.removeChannel(chatChannel); } catch {}
@@ -2228,6 +2708,9 @@ async function finishWithOtp(){
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل التسليم', text: e?.message || 'OTP غلط أو غير مسموح' });
+  } finally {
+    FINISH_LOCK = false;
+    safeDom('finishBtn')?.removeAttribute('disabled');
   }
 }
 
@@ -2402,6 +2885,30 @@ async function withdrawPi() {
   }
 }
 
+async function copyWalletAddress(){
+  const walletInput = document.getElementById('wdWallet');
+  const val = walletInput.value.trim();
+  if (!val) return Swal.fire('لا يوجد عنوان للنسخ');
+  try{
+    await navigator.clipboard.writeText(val);
+    Swal.fire({ icon: 'success', title: 'تم النسخ ✅', timer: 1200, showConfirmButton: false });
+  }catch(e){
+    walletInput.select();
+    document.execCommand('copy');
+    Swal.fire({ icon: 'success', title: 'تم النسخ ✅', timer: 1200, showConfirmButton: false });
+  }
+}
+
+async function pasteWalletAddress(){
+  try{
+    const text = await navigator.clipboard.readText();
+    if (!text) return Swal.fire('لا يوجد محتوى في الحافظة');
+    document.getElementById('wdWallet').value = text.trim();
+  }catch(e){
+    Swal.fire('تعذر لصق العنوان. الصقه يدويًا.');
+  }
+}
+
 /* ================== WITHDRAW HISTORY ================== */
 async function loadWithdrawHistory() {
   try {
@@ -2411,7 +2918,12 @@ async function loadWithdrawHistory() {
     const box = document.getElementById('wdHistory');
     if (!box) return;
       
-    box.innerHTML = `<div class="tiny muted">جاري التحميل...</div>`;
+    box.innerHTML = `
+      <div class="skeletonCard">
+        <div class="skeletonLine mid"></div>
+        <div class="skeletonLine"></div>
+      </div>
+    `;
       
     const { data, error } = await db.from('withdrawals')
       .select('id,amount,wallet_address,created_at,txid')
@@ -2459,7 +2971,7 @@ async function loadCustomerHistory(){
   try{
     if(!PI_USERNAME) return;
     const box = document.getElementById('custHistory');
-    box.innerHTML = `<div class="tiny">جاري التحميل...</div>`;
+    box.innerHTML = ordersSkeleton();
 
     const { data, error } = await db.from('orders')
       .select('id,product_name,order_type,total_price,status,created_at,pricing_snapshot,delivery_id')
@@ -2499,7 +3011,7 @@ async function loadCustomerHistory(){
       return `
         <div class="soft p-3">
           <div class="row">
-            <b>${escapeHtml(o.product_name)}</b>
+            <b class="truncate">${escapeHtml(o.product_name)}</b>
             <span class="chip ${color}">${escapeHtml(s)}</span>
           </div>
           <div class="tiny mt-1">نوع: <b>${escapeHtml(o.order_type||'any')}</b>${o.delivery_id ? ` | كابتن: <b>${escapeHtml(o.delivery_id)}</b>` : ``}</div>
@@ -2527,7 +3039,7 @@ async function loadDeliveryHistory(){
   try{
     if(!PI_USERNAME) return;
     const box = document.getElementById('delHistory');
-    box.innerHTML = `<div class="tiny">جاري التحميل...</div>`;
+    box.innerHTML = ordersSkeleton();
 
     const { data, error } = await db.from('orders')
       .select('id,product_name,order_type,total_price,status,created_at,pricing_snapshot,customer_pi_username')
@@ -2579,7 +3091,7 @@ async function loadDeliveryHistory(){
       return `
         <div class="soft p-3">
           <div class="row">
-            <b>${escapeHtml(o.product_name)}</b>
+            <b class="truncate">${escapeHtml(o.product_name)}</b>
             <span class="chip">${escapeHtml(s)}</span>
           </div>
           <div class="tiny mt-1">عميل: <b>${escapeHtml(o.customer_pi_username||'—')}</b></div>
@@ -2640,19 +3152,34 @@ function updateRoleUI(){
   }
 }
 
+function setTabVisibility(id, show){
+  const el = document.getElementById(id);
+  if (show) {
+    el.classList.remove('hidden');
+    el.classList.add('active','fadeIn');
+    setTimeout(() => el.classList.remove('fadeIn'), 300);
+  } else {
+    el.classList.remove('active');
+    el.classList.add('hidden');
+  }
+}
+
 function updateMainTabUI(){
   const isHome = ACTIVE_MAIN_TAB === 'home';
   const isTrack = ACTIVE_MAIN_TAB === 'track';
   const isDiscover = ACTIVE_MAIN_TAB === 'discover';
-  document.getElementById('homeTab').classList.toggle('hidden', !isHome);
-  document.getElementById('trackTab').classList.toggle('hidden', !isTrack);
-  document.getElementById('discoverTab').classList.toggle('hidden', !isDiscover);
-  document.getElementById('navHome').classList.toggle('btnA', isHome);
-  document.getElementById('navHome').classList.toggle('btnS', !isHome);
-  document.getElementById('navTrack').classList.toggle('btnA', isTrack);
-  document.getElementById('navTrack').classList.toggle('btnS', !isTrack);
-  document.getElementById('navDiscover').classList.toggle('btnA', isDiscover);
-  document.getElementById('navDiscover').classList.toggle('btnS', !isDiscover);
+
+  setTabVisibility('homeTab', isHome);
+  setTabVisibility('trackTab', isTrack);
+  setTabVisibility('discoverTab', isDiscover);
+
+  document.getElementById('navHome').classList.toggle('active', isHome);
+  document.getElementById('navTrack').classList.toggle('active', isTrack);
+  document.getElementById('navDiscover').classList.toggle('active', isDiscover);
+
+  document.getElementById('headerSearch').classList.toggle('hidden', !isHome);
+  const showBack = (!isHome || ACTIVE_ORDER);
+  document.getElementById('headerBack').classList.toggle('hidden', !showBack);
 }
 
 /* ================== HELPERS ================== */
@@ -2660,6 +3187,12 @@ function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
+}
+function safeDom(id){
+  return document.getElementById(id) || null;
+}
+function normalizeStatus(status){
+  return String(status || '').trim().toLowerCase();
 }
   </script>
 </body>
