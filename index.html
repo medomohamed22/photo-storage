@@ -466,17 +466,58 @@ CHANGELOG (Top 10 UI/UX Updates)
       overflow-y:auto;
       overscroll-behavior: contain;
     }
-    .chatComposer{
+    .page{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:12px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+    .card{
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:12px;
+    }
+    .card-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .chat-card{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .chat-messages{
+      flex:1;
+      min-height:180px;
+      max-height:38vh;
+      overflow:auto;
+      padding:8px;
+      border-radius:14px;
+      background: rgba(0,0,0,.08);
+      overscroll-behavior: contain;
+    }
+    .chat-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .chat-composer{
       display:flex;
       gap:6px;
       position: sticky;
       bottom: 0;
-      background: white;
-      border-top:1px solid rgba(16,185,129,.12);
-      padding-top:8px;
-      padding-bottom: env(safe-area-inset-bottom);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(10,10,20,.55);
+      border-top:1px solid rgba(255,255,255,.12);
+      padding:10px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      border-radius:14px;
+      margin-top:10px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .chatStickyHeader{
       position: sticky;
@@ -488,17 +529,14 @@ CHANGELOG (Top 10 UI/UX Updates)
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    #delChat{
+    .actions-card .btn-row{
       display:flex;
-      flex-direction:column;
-      height: calc(100vh - 220px);
-      padding-bottom: calc(90px + env(safe-area-inset-bottom));
-      overflow: hidden;
+      flex-wrap:wrap;
+      gap:10px;
     }
-    #chatD{
-      flex:1 1 auto;
-      overflow-y:auto;
-      padding-bottom:12px;
+    .actions-card .btn{
+      flex:1;
+      min-width:140px;
     }
 
     /* Bottom nav - app style */
@@ -1129,12 +1167,12 @@ CHANGELOG (Top 10 UI/UX Updates)
       <div id="deliveryTrackTab" class="hidden space-y-3">
 
         <!-- DELIVERY CHAT -->
-        <section id="delChat" class="hidden glass pageSection space-y-3">
-          <div class="miniCard space-y-2">
-            <div class="secTitle">
+        <main id="delChat" class="hidden page">
+          <section class="card order-card">
+            <header class="card-head">
               <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
               <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
-            </div>
+            </header>
             <div class="space-y-1" id="delOrderDetails">
               <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
               <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
@@ -1153,11 +1191,13 @@ CHANGELOG (Top 10 UI/UX Updates)
               <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
               <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
             </div>
-          </div>
+          </section>
 
-          <div class="miniCard chatCard">
-            <div class="chatCardHeader">الشات مع العميل</div>
-            <div class="flex gap-2">
+          <section class="card chat-card">
+            <header class="card-head">
+              <b><i class="fa-solid fa-comments mr-1"></i> الشات</b>
+            </header>
+            <div class="flex gap-2 flex-wrap">
               <button class="chip chipS" onclick="quick('delivery','أنا في الطريق 🛵')">
                 <i class="fa-solid fa-motorcycle"></i> في الطريق
               </button>
@@ -1165,8 +1205,10 @@ CHANGELOG (Top 10 UI/UX Updates)
                 <i class="fa-solid fa-ban"></i> غير متوفر
               </button>
             </div>
-            <div id="chatD" class="flex flex-col gap-2"></div>
-            <div class="chatComposer items-center">
+            <div id="chatMessages" class="chat-messages">
+              <div id="chatD" class="chat-list"></div>
+            </div>
+            <div class="chat-composer items-center">
               <input id="msgD" class="flex-1" placeholder="رسالة..." />
               <label class="chip chipS cursor-pointer">
                 <i class="fa-regular fa-image"></i>
@@ -1177,13 +1219,13 @@ CHANGELOG (Top 10 UI/UX Updates)
                 <i class="fa-solid fa-arrow-up"></i>
               </button>
             </div>
-          </div>
+          </section>
 
-          <div class="miniCard">
-            <div class="secTitle">
+          <section class="card actions-card">
+            <header class="card-head">
               <b><i class="fa-solid fa-headset mr-1"></i> إجراءات الطلب</b>
-            </div>
-            <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
+            </header>
+            <div class="btn-row mt-3">
               <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
                 <i class="fa-solid fa-location-crosshairs"></i> وصلت
               </button>
@@ -1191,8 +1233,8 @@ CHANGELOG (Top 10 UI/UX Updates)
                 <i class="fa-solid fa-check"></i> تم التسليم
               </button>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
 
         <!-- WALLET + WITHDRAW -->
     <section class="glass pageSection space-y-2">
