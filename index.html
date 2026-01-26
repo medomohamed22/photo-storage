@@ -472,6 +472,7 @@ CHANGELOG (Top 10 UI/UX Updates)
       background: rgba(255,255,255,.95);
       border-top:1px solid rgba(16,185,129,.12);
       padding-top:8px;
+      padding-bottom: env(safe-area-inset-bottom);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
@@ -485,7 +486,18 @@ CHANGELOG (Top 10 UI/UX Updates)
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    #delChat{ overflow: hidden; }
+    #delChat{
+      display:flex;
+      flex-direction:column;
+      height: calc(100vh - 220px);
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+      overflow: hidden;
+    }
+    #chatD{
+      flex:1 1 auto;
+      overflow-y:auto;
+      padding-bottom:12px;
+    }
 
     /* Bottom nav - app style */
     .bottomNav{
@@ -2459,6 +2471,18 @@ function appendMsg(m, targetRole){
   } else {
     safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
   }
+  scrollChatToBottom(targetRole);
+}
+
+function scrollChatToBottom(role){
+  const el = role === 'delivery'
+    ? document.getElementById('chatD')
+    : document.getElementById('chatC');
+
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollTop = el.scrollHeight;
+  });
 }
 
 function scrollChatToBottom(role){
