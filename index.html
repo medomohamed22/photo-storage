@@ -458,22 +458,15 @@ CHANGELOG (Top 10 UI/UX Updates)
       display:flex;
       flex-direction:column;
       gap:10px;
-      max-height:70vh;
+      height: calc(100vh - 220px);
+      flex:1 1 auto;
+      min-height:0;
     }
     .chatScroll{
-      flex:1 1 auto;
+      flex:1;
       min-height:180px;
       overflow-y:auto;
       overscroll-behavior: contain;
-    }
-    .chatComposer{
-      position: sticky;
-      bottom: 0;
-      background: rgba(255,255,255,.95);
-      border-top:1px solid rgba(16,185,129,.12);
-      padding-top:8px;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
     }
     .chatStickyHeader{
       position: sticky;
@@ -485,7 +478,49 @@ CHANGELOG (Top 10 UI/UX Updates)
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    #delChat{ overflow: hidden; }
+    .orderCard{
+    }
+    .orderCardHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding-bottom:8px;
+      margin-bottom:10px;
+      border-bottom:1px solid rgba(16,185,129,.12);
+    }
+    .chatCard{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      height: 56vh;
+      overflow: hidden;
+    }
+    .chatCardHeader{
+      font-weight:900;
+      font-size:13px;
+      padding-bottom:8px;
+      border-bottom:1px solid rgba(16,185,129,.12);
+    }
+    .chatScrollArea{
+      flex:1 1 auto;
+      overflow-y:auto;
+      padding:10px;
+      border-radius:14px;
+      background: rgba(255,255,255,.75);
+      border:1px solid rgba(16,185,129,.10);
+    }
+    .chatComposerBar{
+      position: sticky;
+      bottom: 0;
+      background: rgba(255,255,255,.95);
+      border-top:1px solid rgba(16,185,129,.12);
+      padding-top:8px;
+      backdrop-filter: blur(8px);
+    }
+    #delChat{
+      padding-bottom: calc(110px + env(safe-area-inset-bottom));
+    }
 
     /* Bottom nav - app style */
     .bottomNav{
@@ -1115,48 +1150,36 @@ CHANGELOG (Top 10 UI/UX Updates)
       <div id="deliveryTrackTab" class="hidden space-y-3">
 
         <!-- DELIVERY CHAT -->
-    <section id="delChat" class="hidden glass pageSection space-y-2">
-          <div class="secTitle">
-            <b><i class="fa-solid fa-headset mr-1"></i> شات الطلب (لحظي)</b>
-            <div class="flex gap-2">
-              <button class="chip chipS" onclick="quick('delivery','أنا في الطريق 🛵')">
-                <i class="fa-solid fa-motorcycle"></i> في الطريق
-              </button>
-              <button class="chip chipS" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">
-                <i class="fa-solid fa-ban"></i> غير متوفر
-              </button>
+        <section id="delChat" class="hidden glass pageSection space-y-3">
+          <div class="miniCard orderCard">
+            <div class="orderCardHeader">
+              <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
+              <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
+            </div>
+            <div class="space-y-1" id="delOrderDetails">
+              <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
+              <div class="flex items-center justify-between">
+                <span class="muted">الموقع</span>
+                <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+              </div>
+              <div class="divider"></div>
+              <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+              <div class="divider"></div>
+              <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
+              <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
             </div>
           </div>
 
-          <div class="chatLayout">
-            <div class="chatStickyHeader">
-              <div class="secTitle">
-                <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
-                <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
-              </div>
-              <div class="miniCard space-y-1 mt-2" id="delOrderDetails">
-                <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
-                <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
-                <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
-                <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
-                <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
-                <div class="flex items-center justify-between">
-                  <span class="muted">الموقع</span>
-                  <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
-                </div>
-                <div class="divider"></div>
-                <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
-                <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
-                <div class="divider"></div>
-                <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
-                <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
-                <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
-              </div>
-            </div>
-
-            <div id="chatD" class="flex flex-col gap-2 chatScroll soft p-3"></div>
-
-            <div class="chatComposer">
+          <div class="miniCard chatCard">
+            <div class="chatCardHeader">الشات مع العميل</div>
+            <div id="chatD" class="chatScrollArea flex flex-col gap-2"></div>
+            <div class="chatComposerBar">
               <div class="flex gap-2 items-center">
                 <input id="msgD" class="flex-1" placeholder="رسالة..." />
                 <label class="chip chipS cursor-pointer">
@@ -1168,15 +1191,20 @@ CHANGELOG (Top 10 UI/UX Updates)
                   <i class="fa-solid fa-arrow-up"></i>
                 </button>
               </div>
+            </div>
+          </div>
 
-              <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
-                <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
-                  <i class="fa-solid fa-location-crosshairs"></i> وصلت
-                </button>
-                <button id="finishBtn" onclick="finishWithOtp()" class="btn btnG">
-                  <i class="fa-solid fa-check"></i> تم التسليم
-                </button>
-              </div>
+          <div class="miniCard actionsCard">
+            <div class="secTitle">
+              <b><i class="fa-solid fa-headset mr-1"></i> إجراءات الطلب</b>
+            </div>
+            <div class="stickyActions grid grid-cols-2 gap-2 mt-3">
+              <button id="arrivedBtn" onclick="setOrderStatus('arrived')" class="btn btnA">
+                <i class="fa-solid fa-location-crosshairs"></i> وصلت
+              </button>
+              <button id="finishBtn" onclick="finishWithOtp()" class="btn btnG">
+                <i class="fa-solid fa-check"></i> تم التسليم
+              </button>
             </div>
           </div>
         </section>
@@ -1414,6 +1442,7 @@ let ACTIVE_ROLE = 'customer';
 let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
 let FINISH_LOCK = false;
+let LAST_DELIVERED_ORDER_ID = null;
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -1777,8 +1806,37 @@ function updateCustomerTimeline(status){
   });
 }
 
+async function finalizeCustomerDeliveredUI(order){
+  safeDom('custTrack')?.classList.add('hidden');
+  safeDom('custChat')?.classList.add('hidden');
+  setMainTab('track');
+  const rating = safeDom('custRating');
+  rating?.classList.remove('hidden');
+  rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  LAST_DELIVERED_ORDER_ID = order?.id || LAST_DELIVERED_ORDER_ID;
+  setActiveOrderId(null);
+
+  if (statusPollTimer) clearInterval(statusPollTimer);
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  if (statusChannel) {
+    try { db.removeChannel(statusChannel); } catch {}
+    statusChannel = null;
+  }
+  if (chatChannel) {
+    try { db.removeChannel(chatChannel); } catch {}
+    chatChannel = null;
+  }
+
+  await loadRatingState(order);
+}
+
 async function applyCustomerOrderState(order){
   const status = normalizeStatus(order.status || 'pending');
+  if (['delivered','completed'].includes(status)) {
+    await finalizeCustomerDeliveredUI(order);
+    return;
+  }
   safeDom('custTrack')?.classList.remove('hidden');
   safeDom('custChat')?.classList.remove('hidden');
   if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
@@ -1786,28 +1844,7 @@ async function applyCustomerOrderState(order){
   if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
   safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
   if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
-
-  if (['delivered','completed'].includes(status)) {
-    safeDom('custTrack')?.classList.add('hidden');
-    safeDom('custChat')?.classList.add('hidden');
-    setMainTab('track');
-    const rating = safeDom('custRating');
-    rating?.classList.remove('hidden');
-    rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setActiveOrderId(null);
-    if (statusPollTimer) clearInterval(statusPollTimer);
-    if (statusChannel) {
-      try { db.removeChannel(statusChannel); } catch {}
-      statusChannel = null;
-    }
-    if (chatChannel) {
-      try { db.removeChannel(chatChannel); } catch {}
-      chatChannel = null;
-    }
-    await loadRatingState(order);
-  } else {
-    hideRating();
-  }
+  hideRating();
   const trackLink = safeDom('custTrackMapLink');
   if (trackLink && typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
     trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
@@ -1831,6 +1868,7 @@ function hideRating(){
 
 async function refreshCustomerStatus(){
   try{
+    if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
     if (!PI_USERNAME || !ACTIVE_ORDER) return;
     const { data, error } = await db.from('orders')
       .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code,delivery_id')
@@ -1869,7 +1907,6 @@ function initRatingStars(){
 
 async function loadRatingState(order){
   if (!order?.id || !order?.delivery_id) return;
-  document.getElementById('custRating').classList.remove('hidden');
   try {
     const { data, error } = await db.from('delivery_ratings')
       .select('id,rating')
@@ -1884,12 +1921,6 @@ async function loadRatingState(order){
       submit.disabled = true;
       submit.classList.remove('btnA');
       submit.classList.add('btnS');
-      document.getElementById('custTrack').classList.add('hidden');
-      document.getElementById('custChat').classList.add('hidden');
-      setActiveOrderId(null);
-      document.getElementById('custRating').classList.add('hidden');
-      if (chatPollTimer) clearInterval(chatPollTimer);
-      if (statusPollTimer) clearInterval(statusPollTimer);
     } else {
       document.getElementById('ratingThanks').classList.add('hidden');
       document.getElementById('ratingSubmit').disabled = false;
@@ -1901,19 +1932,20 @@ async function loadRatingState(order){
 
 async function submitRating(){
   try{
-    if (!ACTIVE_ORDER) return;
+    const orderId = ACTIVE_ORDER || LAST_DELIVERED_ORDER_ID;
+    if (!orderId) return;
     if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
     if (ACTIVE_RATING < 1) return Swal.fire('اختار تقييم من 1 إلى 5');
 
     const note = document.getElementById('ratingNote').value.trim();
     const { data: order, error: orderErr } = await db.from('orders')
       .select('delivery_id')
-      .eq('id', ACTIVE_ORDER)
+      .eq('id', orderId)
       .single();
     if (orderErr) throw orderErr;
 
     const { error } = await db.from('delivery_ratings').insert([{
-      order_id: ACTIVE_ORDER,
+      order_id: orderId,
       delivery_id: order?.delivery_id || null,
       customer_pi_username: PI_USERNAME,
       rating: ACTIVE_RATING,
@@ -1926,12 +1958,6 @@ async function submitRating(){
     document.getElementById('ratingSubmit').classList.remove('btnA');
     document.getElementById('ratingSubmit').classList.add('btnS');
     Swal.fire({ icon:'success', title:'تم التقييم ✅' });
-    document.getElementById('custTrack').classList.add('hidden');
-    document.getElementById('custChat').classList.add('hidden');
-    setActiveOrderId(null);
-    document.getElementById('custRating').classList.add('hidden');
-    if (chatPollTimer) clearInterval(chatPollTimer);
-    if (statusPollTimer) clearInterval(statusPollTimer);
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
@@ -2385,6 +2411,7 @@ async function loadMessages(){
     safeDom('chatD') && (safeDom('chatD').innerHTML = '');
   }
   (data||[]).forEach((msg) => appendMsg(msg, ACTIVE_ROLE));
+  scrollChatToBottom();
 
   markSeen(currentRole());
 }
@@ -2456,11 +2483,18 @@ function appendMsg(m, targetRole){
   `;
   if (targetRole === 'customer') {
     safeDom('chatC')?.insertAdjacentHTML('beforeend', bubble);
-    if (safeDom('chatC')) safeDom('chatC').scrollTop = safeDom('chatC').scrollHeight;
   } else {
     safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
-    if (safeDom('chatD')) safeDom('chatD').scrollTop = safeDom('chatD').scrollHeight;
   }
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom(){
+  const el = document.getElementById('chatD');
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollTop = el.scrollHeight;
+  });
 }
 
 async function markSeen(viewerRole){
@@ -2501,45 +2535,22 @@ function listenStatus(){
       filter: `id=eq.${orderId}`
     }, (payload) => {
       try{
+        if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
         if (ACTIVE_ORDER !== orderId) {
           console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
           return;
         }
         const s = normalizeStatus(payload.new.status);
+        if(['delivered','completed'].includes(s)){
+          console.log('[listenStatus] delivered detected', payload.new.id);
+          finalizeCustomerDeliveredUI(payload.new);
+          return;
+        }
         safeDom('custStatus') && (safeDom('custStatus').innerText = s);
         updateCustomerTimeline(s);
 
         if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
           safeDom('custChat')?.classList.remove('hidden');
-        }
-
-        if(['delivered','completed'].includes(s)){
-          console.log('[listenStatus] delivered detected', payload.new.id);
-          Swal.fire({
-            icon:'success',
-            title:'تم التسليم ✅',
-            text:'قيّم تجربة التوصيل من 1 إلى 5 نجوم.',
-            confirmButtonText:'قيّم الآن'
-          });
-          loadCustomerHistory();
-          safeDom('custChat')?.classList.add('hidden');
-          safeDom('custTrack')?.classList.add('hidden');
-          setMainTab('track');
-          const rating = safeDom('custRating');
-          rating?.classList.remove('hidden');
-          rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActiveOrderId(null);
-          loadRatingState(payload.new);
-          if (statusChannel) {
-            try { db.removeChannel(statusChannel); } catch {}
-            statusChannel = null;
-          }
-          if (chatChannel) {
-            try { db.removeChannel(chatChannel); } catch {}
-            chatChannel = null;
-          }
-          if (chatPollTimer) clearInterval(chatPollTimer);
-          if (statusPollTimer) clearInterval(statusPollTimer);
         }
       } catch (err){
         console.error('[listenStatus] UI update failed', err);
@@ -2821,6 +2832,8 @@ async function withdrawPi() {
   try {
     if (!PI_USERNAME) return Swal.fire('سجّل دخول');
     if (!PI_UID) return Swal.fire('تعذر قراءة هوة Pi، جرّب تسجيل الدخول مرة أخرى');
+    const accessToken = PI_USER?.accessToken || PI_USER?.access_token || PI_USER?.token;
+    if (!accessToken) return Swal.fire('تعذر قراءة رمز المصادقة، جرّب تسجيل الدخول مرة أخرى');
     
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
@@ -2856,10 +2869,11 @@ async function withdrawPi() {
     // Call server function (Netlify redirect -> /.netlify/functions/withdraw)
     const res = await fetch('/api/withdraw', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
-        uid: PI_UID,
-        username: PI_USERNAME,
         amount,
         walletAddress
       })
