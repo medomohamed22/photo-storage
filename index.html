@@ -1469,6 +1469,8 @@ async function loadRatingState(order){
       document.getElementById('custTrack').classList.add('hidden');
       document.getElementById('custChat').classList.add('hidden');
       setActiveOrderId(null);
+      document.getElementById('custRating').classList.add('hidden');
+      if (chatPollTimer) clearInterval(chatPollTimer);
     } else {
       document.getElementById('ratingThanks').classList.add('hidden');
       document.getElementById('ratingSubmit').disabled = false;
@@ -1508,6 +1510,8 @@ async function submitRating(){
     document.getElementById('custTrack').classList.add('hidden');
     document.getElementById('custChat').classList.add('hidden');
     setActiveOrderId(null);
+    document.getElementById('custRating').classList.add('hidden');
+    if (chatPollTimer) clearInterval(chatPollTimer);
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
@@ -1873,6 +1877,7 @@ async function loadOrderDetailsForDelivery(orderId){
 
 /* ================== CHAT: text + image + seen ================== */
 let chatChannel = null;
+let chatPollTimer = null;
 
 function startChat(){
   if(!ACTIVE_ORDER) return;
@@ -1883,6 +1888,8 @@ function startChat(){
   }
 
   loadMessages();
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  chatPollTimer = setInterval(loadMessages, 8000);
 
   chatChannel = db.channel('chat-room-' + ACTIVE_ORDER)
     .on('postgres_changes', {
@@ -2039,6 +2046,43 @@ function listenStatus(){
           try { db.removeChannel(chatChannel); } catch {}
           chatChannel = null;
         }
+        if (chatPollTimer) clearInterval(chatPollTimer);
+      }
+    }).subscribe();
+}
+
+function listenDeliveryStatus(){
+  if(!ACTIVE_ORDER) return;
+
+  if (deliveryStatusChannel) {
+    try { db.removeChannel(deliveryStatusChannel); } catch {}
+    deliveryStatusChannel = null;
+  }
+
+  deliveryStatusChannel = db.channel('delivery-status-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      const s = payload.new.status || 'pending';
+      const statusEl = document.getElementById('dStatus');
+      if (statusEl) statusEl.innerText = s;
+
+      if (s === 'delivered') {
+        document.getElementById('delChat').classList.add('hidden');
+        setActiveOrderId(null);
+        loadOrders();
+        loadWalletPi();
+        loadDeliveryHistory();
+        if (deliveryStatusChannel) {
+          try { db.removeChannel(deliveryStatusChannel); } catch {}
+          deliveryStatusChannel = null;
+        }
+        if (chatChannel) {
+          try { db.removeChannel(chatChannel); } catch {}
+          chatChannel = null;
+        }
+        if (chatPollTimer) clearInterval(chatPollTimer);
       }
     }).subscribe();
 }
@@ -2117,6 +2161,7 @@ async function finishWithOtp(){
       try { db.removeChannel(chatChannel); } catch {}
       chatChannel = null;
     }
+    if (chatPollTimer) clearInterval(chatPollTimer);
     if (deliveryStatusChannel) {
       try { db.removeChannel(deliveryStatusChannel); } catch {}
       deliveryStatusChannel = null;
