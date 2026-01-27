@@ -177,7 +177,7 @@
     <div class="glass p-4 statCard">
       <div class="muted text-sm">Pi مسحوب</div>
       <div id="statWithdrawPi" class="kpi mono" style="color: var(--p2)">—</div>
-      <div class="text-[11px] muted mt-1">withdrawal_requests.amount</div>
+      <div class="text-[11px] muted mt-1">withdrawals.amount</div>
     </div>
 
     <div class="glass p-4 statCard">
@@ -597,7 +597,7 @@ function getWdReviewedAt(w){
 async function loadWithdraws(){
   const st = document.getElementById('wdFilter').value;
 
-  let q = db.from('withdrawal_requests') // 👈 جدولك من الصورة
+  let q = db.from('withdrawals') // 👈 جدولك من الصورة
     .select('*')
     .order('created_at',{ascending:false})
     .limit(200);
@@ -675,7 +675,7 @@ async function approveWithdraw(id){
   const { data: ses } = await db.auth.getSession();
   const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
 
-  const { error } = await db.from('withdrawal_requests').update({
+  const { error } = await db.from('withdrawals').update({
     status:'approved',
     reviewed_by: reviewer,
     reviewed_at: new Date().toISOString(),
@@ -703,7 +703,7 @@ async function approveWithdraw(id){
  */
 async function markPaid(id){
   try{
-    const { data: w, error: e1 } = await db.from('withdrawal_requests')
+    const { data: w, error: e1 } = await db.from('withdrawals')
       .select('*')
       .eq('id', id)
       .single();
@@ -769,7 +769,7 @@ async function markPaid(id){
     const { data: ses } = await db.auth.getSession();
     const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
 
-    const { error: e4 } = await db.from('withdrawal_requests').update({
+    const { error: e4 } = await db.from('withdrawals').update({
       status:'paid',
       txid: (txid || null),
       reviewed_by: reviewer,
@@ -810,7 +810,7 @@ async function rejectWithdraw(id){
   const { data: ses } = await db.auth.getSession();
   const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
 
-  const { error } = await db.from('withdrawal_requests').update({
+  const { error } = await db.from('withdrawals').update({
     status:'rejected',
     admin_note: (note || null),
     reviewed_by: reviewer,
