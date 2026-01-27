@@ -1,8 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
 const headers = {
   'Content-Type': 'application/json; charset=utf-8',
   'Access-Control-Allow-Origin': '*',
@@ -20,19 +17,12 @@ function toNum(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
-
 function clampBalance(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
   return Math.max(0, num);
 }
 
-/**
- * ✅ مستحقات الدليفري من snapshot:
- * الأفضل: total_pi - platform_fee_pi
- * fallback: price_pi + delivery_fee_pi
- * fallback: delivery_fee_pi فقط (آخر حل)
- */
 function deliveryPayoutFromSnapshot(snapshot) {
   const s = snapshot || {};
   const total = toNum(s.total_pi);
@@ -50,10 +40,21 @@ function deliveryPayoutFromSnapshot(snapshot) {
   return Math.max(0, deliveryFee);
 }
 
-// ✅ Supabase client مرة واحدة
-const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+function getDb() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-async function getWithdrawnSum(uid) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    const missing = [];
+    if (!SUPABASE_URL) missing.push('SUPABASE_URL');
+    if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+    throw new Error(`Missing env: ${missing.join(', ')}`);
+  }
+
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+}
+
+async function getWithdrawnSum(db, uid) {
   const { data, error } = await db
     .from('withdrawals')
     .select('amount')
@@ -64,8 +65,8 @@ async function getWithdrawnSum(uid) {
   return (data || []).reduce((sum, r) => sum + toNum(r.amount), 0);
 }
 
-async function getEarnedSum(uid) {
-  // 1) أسرع: cache من delivery_wallet (لو انت محافظ عليه كمستحقات الدليفري)
+async function getEarnedSum(db, uid) {
+  // 1) delivery_wallet
   const walletRes = await db
     .from('delivery_wallet')
     .select('balance_pi')
@@ -76,7 +77,7 @@ async function getEarnedSum(uid) {
     return toNum(walletRes.data.balance_pi);
   }
 
-  // 2) Ledger: delivery_earnings (لازم تكون بتسجل مستحقات الدليفري = total - platform)
+  // 2) delivery_earnings
   const earnRes = await db
     .from('delivery_earnings')
     .select('amount_pi')
@@ -87,7 +88,7 @@ async function getEarnedSum(uid) {
     return (earnRes.data || []).reduce((sum, r) => sum + toNum(r.amount_pi), 0);
   }
 
-  // 3) Fallback من orders (لو earnings مش متطبقة)
+  // 3) fallback orders snapshot
   const ordersRes = await db
     .from('orders')
     .select('pricing_snapshot')
@@ -107,24 +108,19 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
   try {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return json(500, { error: 'إعدادات قاعدة البيانات غير متوفرة' });
-    }
+    const db = getDb();
 
     const { uid } = JSON.parse(event.body || '{}');
-    if (!uid) {
-      return json(400, { error: 'بيانات ناقصة', required: ['uid'] });
-    }
+    if (!uid) return json(400, { error: 'بيانات ناقصة', required: ['uid'] });
 
-    const earned = await getEarnedSum(uid);
-    const withdrawn = await getWithdrawnSum(uid);
+    const earned = await getEarnedSum(db, uid);
+    const withdrawn = await getWithdrawnSum(db, uid);
     const balance = clampBalance(earned - withdrawn);
 
     return json(200, {
       balance: Number(balance.toFixed(7)),
       earned: Number(earned.toFixed(7)),
       withdrawn: Number(withdrawn.toFixed(7)),
-      note: 'الدليفري رصيده = (price + delivery_fee) لكل طلب (يعني total_pi - platform_fee_pi)',
     });
   } catch (err) {
     console.error('get-balance error:', err);
