@@ -349,44 +349,25 @@ const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ========== AUTH GUARD (ADMIN ONLY) ========== */
-async function guardAdmin(){
-  try{
+/* ========== AUTH GUARD (LOGIN ONLY) ========== */
+async function guardLogin() {
+  try {
     const { data, error } = await db.auth.getSession();
-    if(error) throw error;
-
+    if (error) throw error;
+    
     const session = data?.session;
-    if(!session){
+    if (!session) {
       location.href = './login.html';
-      return;
+      return false;
     }
-
-    const uid = session.user.id;
-
-    const { data: adminRow, error: e2 } = await db
-      .from('admins')
-      .select('user_id')
-      .eq('user_id', uid)
-      .maybeSingle();
-
-    if(e2) throw e2;
-    if(!adminRow){
-      await db.auth.signOut();
-      location.href = './login.html';
-      return;
-    }
-  }catch(e){
+    return true;
+  } catch (e) {
     console.error(e);
-    try{ await db.auth.signOut(); }catch{}
+    try { await db.auth.signOut(); } catch {}
     location.href = './login.html';
+    return false;
   }
 }
-
-async function logout(){
-  await db.auth.signOut();
-  location.href = './login.html';
-}
-
 /* ========== HELPERS ========== */
 function esc(s){
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -761,14 +742,12 @@ async function rejectWithdraw(id){
 }
 
 /* ========== INIT ========== */
-async function refreshAll(){
-  await Promise.allSettled([loadOrders(), loadWithdraws(), loadStats()]);
-}
-
-(async ()=>{
-  await guardAdmin();
+(async () => {
+  const ok = await guardLogin();
+  if (!ok) return;
   await refreshAll();
 })();
+
 </script>
 
 </body>
