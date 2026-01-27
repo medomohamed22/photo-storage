@@ -1421,6 +1421,17 @@ CHANGELOG (Top 10 UI/UX Updates)
           <div>✅ تأكد أن قسم تقييم الكابتن ظهر وتم عمل scroll إليه تلقائيًا.</div>
         </div>
       </section>
+
+      <section id="adminWithdrawPanel" class="glass pageSection space-y-2 hidden">
+        <div class="secTitle">
+          <b><i class="fa-solid fa-user-shield mr-1"></i> طلبات سحب الدليفري</b>
+          <button class="chip chipS" onclick="loadAdminWithdrawRequests()">
+            <i class="fa-solid fa-rotate"></i> تحديث
+          </button>
+        </div>
+        <div class="tiny muted">لوحة الإدارة لمراجعة طلبات السحب المعلقة.</div>
+        <div id="adminWithdrawList" class="space-y-2 text-sm"></div>
+      </section>
     </div>
   </main>
 
@@ -1467,6 +1478,7 @@ let ACTIVE_MAIN_TAB = 'home';
 let ACTIVE_RATING = 0;
 let FINISH_LOCK = false;
 let LAST_DELIVERED_ORDER_ID = null;
+let ADMIN_WITHDRAW_REQUESTS = [];
 
 /* ================== RATES ================== */
 let PI_USDT = 0;     // 1 PI in USDT
@@ -1490,6 +1502,17 @@ function handleHeaderBack(){
     setMainTab('home');
   } else if (ACTIVE_ORDER) {
     setMainTab('track');
+  }
+}
+
+function setAdminPanelVisibility(){
+  const isAdmin = PI_USERNAME === 'medomohamed22';
+  const panel = document.getElementById('adminWithdrawPanel');
+  if (panel) {
+    panel.classList.toggle('hidden', !isAdmin);
+  }
+  if (isAdmin) {
+    loadAdminWithdrawRequests();
   }
 }
 
@@ -1679,6 +1702,7 @@ async function piLogin() {
     } else {
       document.getElementById('adminLink').classList.add('hidden');
     }
+    setAdminPanelVisibility();
 
     setMainTab('home');
     setRole('customer');
@@ -1711,6 +1735,7 @@ function devLogin(){
   document.getElementById('roleToggle').classList.remove('hidden');
 
   document.getElementById('adminLink').classList.add('hidden');
+  setAdminPanelVisibility();
 
   setMainTab('home');
   setRole('customer');
@@ -2854,8 +2879,8 @@ async function loadWalletPi() {
 /* ================== WITHDRAW ================== */
 /**
  * ✅ Flow الصحيح:
- * 1) Call /.netlify/functions/withdraw -> Netlify function (withdraw.js)
- * 2) لو نجح: يظهر TX مباشرة
+ * 1) إنشاء طلب سحب في withdrawal_requests
+ * 2) الإدارة تراجع الطلب وتحدّث الحالة
  */
 function setWithdrawStatus(message, state) {
   const statusEl = document.getElementById('withdrawStatus');
@@ -2904,36 +2929,21 @@ async function withdrawPi() {
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري السحب...';
     }
 
-    const res = await fetch('/.netlify/functions/withdraw', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        uid: PI_UID,
-        username: PI_USERNAME,
-        amount,
-        walletAddress
-      })
-    });
-      
-    const out = await res.json().catch(() => ({}));
-    if (!res.ok || !out?.success) {
-      const msg = out?.error || out?.details || 'فشل السحب';
-      throw new Error(msg);
-    }
+    // SECURITY: RLS must allow insert/select only for the same delivery_uid.
+    const { error: insertError } = await db.from('withdrawal_requests').insert([{
+      delivery_username: PI_USERNAME,
+      delivery_uid: PI_UID,
+      amount,
+      wallet_address: walletAddress,
+      status: 'pending'
+    }]);
+    if (insertError) throw insertError;
 
-    setWithdrawStatus(`✅ تم التحويل بنجاح ${out.txid ? `- ${out.txid}` : ''}`, 'success');
+    setWithdrawStatus('تم إرسال طلب السحب للإدارة للمراجعة', 'success');
 
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
 
-    const balanceAfter = Number(out?.balance_after);
-    if (Number.isFinite(balanceAfter)) {
-      document.getElementById('walletPi').innerText = balanceAfter.toFixed(6);
-    } else {
-      await loadWalletPi();
-    }
     await loadWithdrawHistory();
 
   } catch (e) {
@@ -2988,9 +2998,9 @@ async function loadWithdrawHistory() {
       </div>
     `;
       
-    const { data, error } = await db.from('withdrawals')
-      .select('id,amount,wallet_address,created_at,txid')
-      .eq('pi_user_id', PI_UID)
+    const { data, error } = await db.from('withdrawal_requests')
+      .select('id,amount,wallet_address,created_at,txid,status,admin_note')
+      .eq('delivery_uid', PI_UID)
       .order('created_at', { ascending: false })
       .limit(50);
     
@@ -3001,25 +3011,42 @@ async function loadWithdrawHistory() {
       return;
     }
     
-    box.innerHTML = data.map(w => `
-      <div class="soft p-3 space-y-1">
-        <div class="row">
-          <b class="mono text-emerald-500">${Number(w.amount||0).toFixed(6)} Pi</b>
-          <span class="chip chipG">مكتمل</span>
-        </div>
+    box.innerHTML = data.map(w => {
+      const status = w.status || 'pending';
+      const statusLabel =
+        status === 'paid' ? 'مدفوع' :
+        status === 'rejected' ? 'مرفوض' :
+        'معلق';
+      const statusClass =
+        status === 'paid' ? 'chip chipG' :
+        status === 'rejected' ? 'chip' :
+        'chip chipW';
+      const statusStyle =
+        status === 'rejected'
+          ? 'style="background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.25); color:#991b1b;"'
+          : '';
 
-        <div class="tiny muted break-all">
-          <b>العنوان:</b>
-          <span class="mono">${escapeHtml(w.wallet_address || '-')}</span>
-        </div>
+      return `
+        <div class="soft p-3 space-y-1">
+          <div class="row">
+            <b class="mono text-emerald-500">${Number(w.amount||0).toFixed(6)} Pi</b>
+            <span class="${statusClass}" ${statusStyle}>${statusLabel}</span>
+          </div>
 
-        ${w.txid ? `
           <div class="tiny muted break-all">
-            <b>TX:</b>
-            <span class="mono">${escapeHtml(w.txid)}</span>
-          </div>` : ``}
-      </div>
-    `).join('');
+            <b>العنوان:</b>
+            <span class="mono">${escapeHtml(w.wallet_address || '-')}</span>
+          </div>
+
+          ${w.txid ? `
+            <div class="tiny muted break-all">
+              <b>TX:</b>
+              <span class="mono">${escapeHtml(w.txid)}</span>
+            </div>` : ``}
+          ${w.admin_note ? `<div class="tiny muted">ملاحظة الإدارة: ${escapeHtml(w.admin_note)}</div>` : ``}
+        </div>
+      `;
+    }).join('');
     
   } catch (e) {
     console.error(e);
@@ -3028,6 +3055,153 @@ async function loadWithdrawHistory() {
       box.innerHTML = `<div class="tiny" style="color:#fca5a5">فشل تحميل سجل السحب</div>`;
     }
   }
+}
+
+/* ================== ADMIN: WITHDRAW REQUESTS ================== */
+// SECURITY: RLS must allow only admins to review/update requests.
+async function loadAdminWithdrawRequests(){
+  try{
+    if (PI_USERNAME !== 'medomohamed22') return;
+    const box = document.getElementById('adminWithdrawList');
+    if (!box) return;
+
+    box.innerHTML = `
+      <div class="skeletonCard">
+        <div class="skeletonLine mid"></div>
+        <div class="skeletonLine"></div>
+      </div>
+    `;
+
+    const { data, error } = await db.from('withdrawal_requests')
+      .select('id,delivery_username,delivery_uid,amount,wallet_address,created_at,status')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+    ADMIN_WITHDRAW_REQUESTS = data || [];
+
+    if (!ADMIN_WITHDRAW_REQUESTS.length) {
+      box.innerHTML = `<div class="tiny muted">لا يوجد طلبات معلقة.</div>`;
+      return;
+    }
+
+    box.innerHTML = ADMIN_WITHDRAW_REQUESTS.map(req => `
+      <div class="soft p-3 space-y-2">
+        <div class="row">
+          <b>${escapeHtml(req.delivery_username || '—')}</b>
+          <span class="chip chipW">معلق</span>
+        </div>
+        <div class="row">
+          <span class="tiny muted">المبلغ</span>
+          <b class="mono text-emerald-500">${Number(req.amount||0).toFixed(6)} Pi</b>
+        </div>
+        <div class="tiny muted break-all">
+          <b>العنوان:</b>
+          <span class="mono">${escapeHtml(req.wallet_address || '-')}</span>
+        </div>
+        <div class="tiny muted">${new Date(req.created_at).toLocaleString('ar-EG')}</div>
+        <div class="row">
+          <button class="btn btnP" onclick="approveWithdrawRequest('${req.id}')">Approve</button>
+          <button class="btn btnS" onclick="rejectWithdrawRequest('${req.id}')">Reject</button>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){
+    console.error(e);
+    const box = document.getElementById('adminWithdrawList');
+    if (box) {
+      box.innerHTML = `<div class="tiny" style="color:#fca5a5">فشل تحميل الطلبات</div>`;
+    }
+  }
+}
+
+async function approveWithdrawRequest(requestId){
+  if (PI_USERNAME !== 'medomohamed22') return;
+  const req = ADMIN_WITHDRAW_REQUESTS.find(r => r.id === requestId);
+  if (!req) return;
+
+  const { value: txid } = await Swal.fire({
+    title: 'TXID',
+    input: 'text',
+    inputPlaceholder: 'أدخل TXID',
+    showCancelButton: true,
+    confirmButtonText: 'تأكيد',
+    cancelButtonText: 'إلغاء'
+  });
+  if (!txid) return;
+
+  try{
+    await payWithdrawalRequest(req, String(txid).trim());
+    await loadAdminWithdrawRequests();
+    await loadWithdrawHistory();
+    await loadWalletPi();
+    Swal.fire({ icon: 'success', title: 'تم اعتماد الطلب' });
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon: 'error', title: 'فشل الاعتماد', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+async function rejectWithdrawRequest(requestId){
+  if (PI_USERNAME !== 'medomohamed22') return;
+  const { value: note } = await Swal.fire({
+    title: 'سبب الرفض',
+    input: 'text',
+    inputPlaceholder: 'اكتب سبب الرفض',
+    showCancelButton: true,
+    confirmButtonText: 'تأكيد',
+    cancelButtonText: 'إلغاء'
+  });
+  if (!note) return;
+
+  try{
+    const { error } = await db.from('withdrawal_requests')
+      .update({
+        status: 'rejected',
+        admin_note: String(note).trim(),
+        reviewed_by: PI_USERNAME,
+        reviewed_at: new Date().toISOString()
+      })
+      .eq('id', requestId);
+    if (error) throw error;
+    await loadAdminWithdrawRequests();
+    await loadWithdrawHistory();
+    Swal.fire({ icon: 'success', title: 'تم رفض الطلب' });
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon: 'error', title: 'فشل الرفض', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+async function payWithdrawalRequest(req, txid){
+  // SECURITY: Prefer RPC to enforce atomic updates and RLS on the server.
+  const { error: rpcError } = await db.rpc('pay_withdrawal_request', {
+    p_request_id: req.id,
+    p_admin_username: PI_USERNAME,
+    p_txid: txid
+  });
+  if (!rpcError) return;
+
+  // Fallback (client-side) if RPC is unavailable - ensure RLS protects this.
+  const { error: insertError } = await db.from('withdrawals').insert([{
+    pi_user_id: req.delivery_uid,
+    username: req.delivery_username,
+    amount: req.amount,
+    wallet_address: req.wallet_address,
+    txid
+  }]);
+  if (insertError) throw insertError;
+
+  const { error: updateError } = await db.from('withdrawal_requests')
+    .update({
+      status: 'paid',
+      txid,
+      reviewed_by: PI_USERNAME,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq('id', req.id);
+  if (updateError) throw updateError;
 }
 /* ================== HISTORY: CUSTOMER + DELIVERY ================== */
 async function loadCustomerHistory(){
