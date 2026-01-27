@@ -1022,6 +1022,39 @@ CHANGELOG (Top 10 UI/UX Updates)
             </div>
           </div>
         </div>
+
+        <section class="glass pageSection space-y-3">
+          <div class="secTitle">
+            <b><i class="fa-solid fa-hand-holding-dollar mr-1"></i> سحب الرصيد</b>
+            <button class="chip chipS" onclick="loadWalletPi()">
+              <i class="fa-solid fa-rotate"></i> تحديث
+            </button>
+          </div>
+
+          <div class="miniCard space-y-1">
+            <div class="text-sm">
+              الرصيد الحالي:
+              <b class="mono text-emerald-500"><span id="walletPi">0.000000</span> Pi</b>
+            </div>
+            <div class="tiny muted">تم حساب الرصيد من أرباح الدليفري بعد خصم المسحوبات.</div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="tiny muted">عنوان محفظة Pi</label>
+            <input id="wdWallet" placeholder="عنوان محفظة Pi" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="tiny muted">المبلغ (Pi)</label>
+            <input id="wdAmountPi" type="number" step="0.0000001" placeholder="كم Pi هتسحب؟" />
+          </div>
+
+          <button id="withdrawBtn" data-label="سحب الرصيد" onclick="withdrawPi()" class="btn btnP w-full">
+            <i class="fa-solid fa-wallet"></i>
+            سحب الرصيد
+          </button>
+          <div id="withdrawStatus" class="tiny muted"></div>
+        </section>
       </div>
     </div>
 
@@ -1236,42 +1269,6 @@ CHANGELOG (Top 10 UI/UX Updates)
           </section>
         </main>
 
-        <!-- WALLET + WITHDRAW -->
-    <section class="glass pageSection space-y-2">
-          <div class="secTitle">
-            <b><i class="fa-solid fa-wallet mr-1"></i> أرباحي المتاحة</b>
-            <span class="chip chipP"><i class="fa-brands fa-pied-piper-alt"></i> Pi</span>
-          </div>
-
-          <div class="miniCard">
-            <div class="text-sm">
-              الأرباح المتاحة:
-              <b class="mono text-emerald-500"><span id="walletPi">0.000000</span> Pi</b>
-            </div>
-            <div class="tiny muted mt-1">السحب يتم مباشرة إلى محفظتك بعد التأكيد.</div>
-          </div>
-
-          <input id="wdAmountPi" type="number" step="0.000001" placeholder="كم Pi هتسحب؟" />
-
-          <div class="space-y-2">
-            <input id="wdWallet" placeholder="عنوان محفظة Pi" />
-            <div class="grid grid-cols-2 gap-2">
-              <button class="btn btnS" onclick="copyWalletAddress()">
-                <i class="fa-regular fa-copy"></i> نسخ العنوان
-              </button>
-              <button class="btn btnS" onclick="pasteWalletAddress()">
-                <i class="fa-solid fa-paste"></i> لصق العنوان
-              </button>
-            </div>
-          </div>
-
-          <button onclick="withdrawPi()" class="btn btnP w-full">
-            <i class="fa-solid fa-hand-holding-dollar"></i>
-            طلب سحب Pi
-          </button>
-          <div class="tiny muted">تأكد من صحة العنوان قبل الإرسال.</div>
-        </section>
-
         <!-- WITHDRAW HISTORY -->
     <section class="glass pageSection space-y-2">
           <div class="secTitle">
@@ -1449,8 +1446,8 @@ CHANGELOG (Top 10 UI/UX Updates)
 /* ================== CONFIG ================== */
 Pi.init({ version: "2.0", sandbox: false });
 
-const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+const SUPABASE_URL = window.SUPABASE_URL || '';
+const SUPABASE_KEY = window.SUPABASE_ANON_KEY || '';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================== FEES ================== */
@@ -2817,41 +2814,34 @@ async function getWithdrawnSum() {
 
 async function loadWalletPi() {
   try {
-    if (!PI_USERNAME) return;
-    
-    // 1) خصم المسحوبات
-    const withdrawnSum = await getWithdrawnSum();
-    
-    // 2) محاولة من delivery_wallet
-    try {
-      const { data, error } = await db.from('delivery_wallet')
-        .select('balance_pi')
-        .eq('delivery_id', PI_USERNAME)
-        .maybeSingle();
-      
-      if (!error && data && typeof data.balance_pi !== 'undefined') {
-        const available = Math.max(0, toNum(data.balance_pi) - withdrawnSum);
-        document.getElementById('walletPi').innerText = available.toFixed(6);
-        return;
-      }
-    } catch (_) {
-      // تجاهل وكمّل fallback
-    }
-    
-    // 3) fallback: من orders delivered
-    const { data: orders, error: e2 } = await db.from('orders')
-      .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
-      .eq('delivery_id', PI_USERNAME)
-      .eq('status', 'delivered')
-      .limit(1000);
-    
-    if (e2) throw e2;
-    
-    let earned = 0;
-    (orders || []).forEach(o => {
-      earned += calcDeliveryEarningsPi(o);
+    if (!PI_UID) return;
+
+    const balanceRes = await fetch('/.netlify/functions/get-balance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: PI_UID })
     });
-    
+    if (balanceRes.ok) {
+      const out = await balanceRes.json().catch(() => ({}));
+      const balance = Math.max(0, toNum(out?.balance));
+      document.getElementById('walletPi').innerText = balance.toFixed(6);
+      return;
+    }
+
+    // fallback: حساب محلي في حال فشل السيرفر
+    const withdrawnSum = await getWithdrawnSum();
+    const { data: earnings, error: e2 } = await db.from('delivery_earnings')
+      .select('amount_pi')
+      .eq('delivery_id', PI_UID)
+      .limit(1000);
+
+    if (e2) throw e2;
+
+    let earned = 0;
+    (earnings || []).forEach((row) => {
+      earned += toNum(row.amount_pi);
+    });
+
     const available = Math.max(0, earned - withdrawnSum);
     document.getElementById('walletPi').innerText = available.toFixed(6);
     
@@ -2864,55 +2854,64 @@ async function loadWalletPi() {
 /* ================== WITHDRAW ================== */
 /**
  * ✅ Flow الصحيح:
- * 1) Call /api/withdraw -> Netlify function (withdraw.js)
+ * 1) Call /.netlify/functions/withdraw -> Netlify function (withdraw.js)
  * 2) لو نجح: يظهر TX مباشرة
  */
+function setWithdrawStatus(message, state) {
+  const statusEl = document.getElementById('withdrawStatus');
+  if (!statusEl) return;
+  statusEl.textContent = message || '';
+  statusEl.style.color = state === 'error'
+    ? '#dc2626'
+    : state === 'success'
+      ? '#16a34a'
+      : state === 'loading'
+        ? '#2563eb'
+        : 'rgba(0,0,0,.6)';
+}
+
 async function withdrawPi() {
   try {
-    if (!PI_USERNAME) return Swal.fire('سجّل دخول');
-    if (!PI_UID) return Swal.fire('تعذر قراءة هوة Pi، جرّب تسجيل الدخول مرة أخرى');
-    const accessToken = PI_USER?.accessToken || PI_USER?.access_token || PI_USER?.token;
-    if (!accessToken) return Swal.fire('تعذر قراءة رمز المصادقة، جرّب تسجيل الدخول مرة أخرى');
-    
+    const btn = document.getElementById('withdrawBtn');
+    const originalLabel = btn?.dataset?.label || btn?.innerText;
+
+    if (!PI_USERNAME || !PI_UID) {
+      setWithdrawStatus('❌ سجّل دخول أولاً', 'error');
+      return;
+    }
+
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
-    
-    if (!amount || amount <= 0) return Swal.fire('اكتب كمية Pi صحيحة');
-    if (!walletAddress || walletAddress.length < 10) return Swal.fire('اكتب عنوان محفظة Pi صحيح');
-    
+
+    if (!amount || amount <= 0) {
+      setWithdrawStatus('❌ اكتب كمية Pi صحيحة', 'error');
+      return;
+    }
+    if (!walletAddress || walletAddress.length < 10) {
+      setWithdrawStatus('❌ اكتب عنوان محفظة Pi صحيح', 'error');
+      return;
+    }
+
     const available = parseFloat(document.getElementById('walletPi').innerText || "0") || 0;
-    if (amount > available) return Swal.fire('المبلغ أكبر من الرصيد المتاح');
-    
-    const ok = await Swal.fire({
-      icon: 'question',
-      title: 'تأكيد السحب',
-      html: `
-        <div style="text-align:right">
-          <div>هتسحب: <b class="mono">${amount.toFixed(6)} Pi</b></div>
-          <div style="margin-top:6px">
-            إلى:
-            <span class="mono" style="font-size:12px;opacity:.85;display:block;word-break:break-all">
-              ${escapeHtml(walletAddress)}
-            </span>
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'سحب الآن',
-      cancelButtonText: 'إلغاء'
-    });
-    if (!ok.isConfirmed) return;
-    
-    Swal.fire({ title: 'جاري تنفيذ التحويل على الشبكة...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-      
-    // Call server function (Netlify redirect -> /.netlify/functions/withdraw)
-    const res = await fetch('/api/withdraw', {
+    if (amount > available) {
+      setWithdrawStatus('❌ المبلغ أكبر من الرصيد المتاح', 'error');
+      return;
+    }
+
+    setWithdrawStatus('جاري السحب...', 'loading');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري السحب...';
+    }
+
+    const res = await fetch('/.netlify/functions/withdraw', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        uid: PI_UID,
+        username: PI_USERNAME,
         amount,
         walletAddress
       })
@@ -2923,18 +2922,29 @@ async function withdrawPi() {
       const msg = out?.error || out?.details || 'فشل السحب';
       throw new Error(msg);
     }
-      
-    Swal.fire({ icon: 'success', title: 'تم السحب ✅', text: `TX: ${out.txid}` });
-    
+
+    setWithdrawStatus(`✅ تم التحويل بنجاح ${out.txid ? `- ${out.txid}` : ''}`, 'success');
+
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
-    
-    await loadWalletPi();
+
+    const balanceAfter = Number(out?.balance_after);
+    if (Number.isFinite(balanceAfter)) {
+      document.getElementById('walletPi').innerText = balanceAfter.toFixed(6);
+    } else {
+      await loadWalletPi();
+    }
     await loadWithdrawHistory();
-    
+
   } catch (e) {
     console.error(e);
-    Swal.fire({ icon: 'error', title: 'فشل طلب السحب', text: e?.message || 'حصل خطأ' });
+    setWithdrawStatus(`❌ ${e?.message || 'حصل خطأ'}`, 'error');
+  } finally {
+    const btn = document.getElementById('withdrawBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-wallet"></i> ${btn.dataset?.label || 'سحب الرصيد'}`;
+    }
   }
 }
 
