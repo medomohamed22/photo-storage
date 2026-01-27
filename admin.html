@@ -342,7 +342,6 @@ async function logout(){
   location.href = './login.html';
 }
 
-// لو اتعمل SignOut من حتة تانية
 db.auth.onAuthStateChange((event) => {
   if(event === 'SIGNED_OUT') location.href = './login.html';
 });
@@ -363,20 +362,18 @@ function badgeStatus(s){
     s==='accepted' ? 'border-green-400/30 text-green-200 bg-green-500/10' :
     s==='shipping' ? 'border-orange-400/30 text-orange-200 bg-orange-500/10' :
     s==='arrived' ? 'border-blue-400/30 text-blue-200 bg-blue-500/10' :
-    s==='delivered' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
     s==='approved' ? 'border-purple-400/30 text-purple-200 bg-purple-500/10' :
     s==='paid' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
     s==='rejected' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
+    s==='delivered' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
     s==='canceled' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
     'border-white/10 text-white/80 bg-white/5';
   return `<span class="${base} ${cls}">${esc(s)}</span>`;
 }
-
 function num(v, d=0){
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
 }
-
 function pick(obj, keys, fallback=null){
   for(const k of keys){
     if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
@@ -384,28 +381,19 @@ function pick(obj, keys, fallback=null){
   return fallback;
 }
 
+/* ===== Orders helpers (حسب أعمدة orders عندك) ===== */
 function getPricingSnapshot(order){
   const raw = pick(order, ['pricing_snapshot','pricing_sr','pricing_snap','pricing'], null);
   if(!raw) return {};
   if(typeof raw === 'object') return raw;
   try{ return JSON.parse(raw); }catch{ return {}; }
 }
-
-function getOrderProductName(o){
-  return pick(o, ['product_name','product','product_r','product_title','item_name'], '-');
-}
-function getOrderType(o){
-  return pick(o, ['order_type','order_typ','type'], 'any');
-}
-function getCustomerLabel(o){
-  return pick(o, ['customer_pi_username','customer_username','customer_user','customer','username','pi_username'], '-');
-}
-function getDeliveryLabel(o){
-  return pick(o, ['delivery_id','delivery_username','delivery_user','delivery_u','delivery'], '-');
-}
+function getOrderProductName(o){ return pick(o, ['product_name','product','product_r','product_title','item_name'], '-'); }
+function getOrderType(o){ return pick(o, ['order_type','order_typ','type'], 'any'); }
+function getCustomerLabel(o){ return pick(o, ['customer_pi_username','customer_username','customer_user','customer','username','pi_username'], '-'); }
+function getDeliveryLabel(o){ return pick(o, ['delivery_id','delivery_username','delivery_user','delivery_u','delivery'], '-'); }
 
 function calcMerchantProfitEgp(order){
-  // عندك في الجدول: price (افتراضي 0), delivery_fee (20), platform_fee (10), total_price
   const price = num(pick(order, ['price'], 0), 0);
   if(price > 0) return price;
 
@@ -416,7 +404,6 @@ function calcMerchantProfitEgp(order){
   const fallback = total - deliveryFee - platformFee;
   return fallback > 0 ? fallback : Math.max(0, total - platformFee);
 }
-
 function sumMerchantProfitPi(orders){
   let totalPi = 0;
   (orders || []).forEach(o=>{
@@ -426,7 +413,6 @@ function sumMerchantProfitPi(orders){
   });
   return totalPi;
 }
-
 function sumSiteProfitPi(orders){
   let totalPi = 0;
   (orders || []).forEach(o=>{
@@ -438,7 +424,7 @@ function sumSiteProfitPi(orders){
   return totalPi;
 }
 
-/* ========== STATS ========== */
+/* ========== STATS (تعتمد على الكاش) ========== */
 let __cacheOrders = [];
 let __cacheWithdraws = [];
 
@@ -571,33 +557,22 @@ async function setOrderStatus(id, st){
   loadOrders();
 }
 
-/* ========== WITHDRAW REQUESTS ========== */
-function getWdDeliveryLabel(w){
-  return pick(w, ['delivery_username','delivery_id','delivery_user','delivery_u','username'], '-');
-}
-function getWdDeliveryUserId(w){
-  return pick(w, ['delivery_user_id','delivery_user','delivery_u','pi_user_id','user_id'], null);
-}
-function getWdAmount(w){
-  return num(pick(w,['amount_pi','amount'],0), 0);
-}
-function getWdWallet(w){
-  return pick(w, ['wallet_address','wallet_ad','wallet'], '-');
-}
-function getWdAdminNote(w){
-  return pick(w, ['admin_note','rejected_reason','rejected_r','note'], null);
-}
-function getWdReviewedBy(w){
-  return pick(w, ['reviewed_by','reviewed_'], null);
-}
-function getWdReviewedAt(w){
-  return pick(w, ['reviewed_at','reviewed_'], null);
-}
+/* ========== WITHDRAWALS (حسب أعمدة جدول withdrawals في صورك) ========== */
+/**
+ * withdrawals columns (حسب صورك):
+ * id, created_at, pi_user_id, username, amount, wallet_address, txid, status,
+ * approved_by, approved_at, rejected_reason
+ */
+
+function getWdUserId(w){ return pick(w, ['pi_user_id','user_id'], null); }
+function getWdUsername(w){ return pick(w, ['username','pi_username'], '-'); }
+function getWdAmount(w){ return num(pick(w,['amount'],0), 0); }
+function getWdWallet(w){ return pick(w, ['wallet_address','wallet_ad','wallet'], '-'); }
 
 async function loadWithdraws(){
   const st = document.getElementById('wdFilter').value;
 
-  let q = db.from('withdrawals') // 👈 جدولك من الصورة
+  let q = db.from('withdrawals')
     .select('*')
     .order('created_at',{ascending:false})
     .limit(200);
@@ -632,7 +607,7 @@ async function loadWithdraws(){
     return `
       <tr>
         <td class="muted">${esc(fmtDate(w.created_at))}</td>
-        <td><b>${esc(getWdDeliveryLabel(w))}</b></td>
+        <td><b>${esc(getWdUsername(w))}</b></td>
         <td class="mono" style="color:var(--y)">${amountPi} Pi</td>
         <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(wallet)}</td>
         <td>${badgeStatus(w.status)}</td>
@@ -656,6 +631,7 @@ function copyText(t){
   });
 }
 
+/* ====== APPROVE (يكتب approved_by/approved_at فقط) ====== */
 async function approveWithdraw(id){
   const ok = await Swal.fire({
     icon:'question',
@@ -671,15 +647,14 @@ async function approveWithdraw(id){
   });
   if(!ok.isConfirmed) return;
 
-  // نخزن مين راجع الطلب + وقت المراجعة (أعمدة موجودة عندك)
   const { data: ses } = await db.auth.getSession();
-  const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
+  const who = ses?.session?.user?.email || ses?.session?.user?.id || 'admin';
 
   const { error } = await db.from('withdrawals').update({
     status:'approved',
-    reviewed_by: reviewer,
-    reviewed_at: new Date().toISOString(),
-    admin_note: null
+    approved_by: who,
+    approved_at: new Date().toISOString(),
+    rejected_reason: null
   }).eq('id', id);
 
   if(error) return Swal.fire('خطأ', error.message, 'error');
@@ -695,18 +670,15 @@ async function approveWithdraw(id){
   loadWithdraws();
 }
 
-/**
- * markPaid:
- * - يغير الحالة إلى paid
- * - يخصم amount من delivery_wallet.balance_pi
- * - يكتب txid (اختياري)
- */
+/* ====== MARK PAID
+   - يخصم amount من delivery_wallet.balance_pi
+   - يكتب status='paid' و txid (اختياري)
+   ملاحظة: delivery_wallet حسب صورك فيه:
+   delivery_user_id (PK) + delivery_username + balance_pi + updated_at
+===== */
 async function markPaid(id){
   try{
-    const { data: w, error: e1 } = await db.from('withdrawals')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data: w, error: e1 } = await db.from('withdrawals').select('*').eq('id', id).single();
     if(e1) throw e1;
     if(!w) throw new Error('Withdraw not found');
     if(w.status !== 'approved') return Swal.fire('تنبيه','لازم يكون approved الأول','warning');
@@ -714,8 +686,8 @@ async function markPaid(id){
     const amt = getWdAmount(w);
     if(amt <= 0) return Swal.fire('خطأ','amount غير صحيح','error');
 
-    const deliveryUserId = getWdDeliveryUserId(w);
-    const deliveryUsername = getWdDeliveryLabel(w);
+    const userId = getWdUserId(w);
+    const username = getWdUsername(w);
 
     const { value: txid } = await Swal.fire({
       title:'TXID (اختياري)',
@@ -732,7 +704,7 @@ async function markPaid(id){
     const ok = await Swal.fire({
       icon:'warning',
       title:'تأكيد تم الدفع',
-      html:`سيتم خصم <b class="mono">${amt.toFixed(3)} Pi</b> من رصيد الدليفري <b>${esc(deliveryUsername)}</b>`,
+      html:`سيتم خصم <b class="mono">${amt.toFixed(3)} Pi</b> من رصيد الدليفري <b>${esc(username)}</b>`,
       showCancelButton:true,
       confirmButtonText:'تم الدفع',
       cancelButtonText:'إلغاء',
@@ -743,37 +715,33 @@ async function markPaid(id){
     });
     if(!ok.isConfirmed) return;
 
-    // نجيب رصيد الدليفري
-    let walQ = db.from('delivery_wallet').select('*').limit(1);
-    if(deliveryUserId) walQ = walQ.eq('delivery_user_id', deliveryUserId);
-    else walQ = walQ.eq('delivery_username', deliveryUsername);
+    // 1) اقرأ محفظة الدليفري
+    let walQuery = db.from('delivery_wallet').select('*').limit(1);
+    if(userId) walQuery = walQuery.eq('delivery_user_id', userId);
+    else walQuery = walQuery.eq('delivery_username', username);
 
-    const { data: wal, error: e2 } = await walQ.maybeSingle();
+    const { data: wal, error: e2 } = await walQuery.maybeSingle();
     if(e2) throw e2;
+    if(!wal) return Swal.fire('خطأ','محفظة الدليفري غير موجودة في delivery_wallet','error');
 
     const balance = num(pick(wal, ['balance_pi','balance_p','balance'], 0), 0);
     if(balance < amt) return Swal.fire('خطأ','رصيد الدليفري غير كافي','error');
 
-    // نخصم
-    let updQ = db.from('delivery_wallet').update({
+    // 2) خصم الرصيد
+    let updWal = db.from('delivery_wallet').update({
       balance_pi: (balance - amt),
       updated_at: new Date().toISOString()
     });
-    if(deliveryUserId) updQ = updQ.eq('delivery_user_id', deliveryUserId);
-    else updQ = updQ.eq('delivery_username', deliveryUsername);
+    if(userId) updWal = updWal.eq('delivery_user_id', userId);
+    else updWal = updWal.eq('delivery_username', username);
 
-    const { error: e3 } = await updQ;
+    const { error: e3 } = await updWal;
     if(e3) throw e3;
 
-    // نحدث طلب السحب
-    const { data: ses } = await db.auth.getSession();
-    const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
-
+    // 3) تحديث السحب إلى paid
     const { error: e4 } = await db.from('withdrawals').update({
       status:'paid',
-      txid: (txid || null),
-      reviewed_by: reviewer,
-      reviewed_at: new Date().toISOString()
+      txid: (txid || null)
     }).eq('id', id);
     if(e4) throw e4;
 
@@ -792,8 +760,9 @@ async function markPaid(id){
   }
 }
 
+/* ====== REJECT (يكتب rejected_reason فقط) ====== */
 async function rejectWithdraw(id){
-  const { value: note } = await Swal.fire({
+  const { value: reason } = await Swal.fire({
     title:'سبب الرفض',
     input:'text',
     inputPlaceholder:'مثال: العنوان غير صحيح',
@@ -805,16 +774,11 @@ async function rejectWithdraw(id){
     confirmButtonColor:'#ef4444',
     cancelButtonColor:'#334155'
   });
-  if(note === undefined) return;
-
-  const { data: ses } = await db.auth.getSession();
-  const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
+  if(reason === undefined) return;
 
   const { error } = await db.from('withdrawals').update({
     status:'rejected',
-    admin_note: (note || null),
-    reviewed_by: reviewer,
-    reviewed_at: new Date().toISOString()
+    rejected_reason: (reason || null)
   }).eq('id', id);
 
   if(error) return Swal.fire('خطأ', error.message, 'error');
