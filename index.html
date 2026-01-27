@@ -1981,7 +1981,14 @@ async function submitRating(){
     document.getElementById('ratingSubmit').disabled = true;
     document.getElementById('ratingSubmit').classList.remove('btnA');
     document.getElementById('ratingSubmit').classList.add('btnS');
-    Swal.fire({ icon:'success', title:'تم التقييم ✅' });
+    Swal.fire({ icon: 'success', title: 'تم التقييم ✅' });
+
+// ✅ اخفاء التقييم بعد الإرسال + رجوع للهوم
+safeDom('custRating')?.classList.add('hidden');
+setMainTab('home');
+
+// ✅ تحديث سجل الطلبات عشان يبان التقييم
+loadCustomerHistory();
   }catch(e){
     console.error(e);
     Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
