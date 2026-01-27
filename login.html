@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>تسجيل دخول الأدمن | طلبات برو</title>
+  <title>تسجيل دخول | طلبات برو</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -47,18 +47,13 @@
       border: 1px solid rgba(255,255,255,.12);
       color:#e5e7eb;
     }
-    .hint{
-      font-size:12px;
-      opacity:.75;
-      line-height:1.7;
-    }
   </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-md glass p-6 space-y-4">
     <div class="text-center space-y-1">
-      <div class="text-2xl font-extrabold">تسجيل دخول الأدمن</div>
+      <div class="text-2xl font-extrabold">تسجيل الدخول</div>
       <div class="text-sm opacity-70">Email + Password (Supabase Auth)</div>
     </div>
 
@@ -69,24 +64,12 @@
 
     <button class="btn btnP w-full" onclick="login()">دخول</button>
     <button class="btn btnS w-full" onclick="resetPassword()">نسيت كلمة المرور؟</button>
-
-    <div class="hint">
-      ✅ الدخول للأدمن فقط عن طريق مطابقة <b>UID</b> (من Supabase Users)<br/>
-      لو مش نفس الـ UID → مش هتدخل لوحة الأدمن.
-    </div>
   </div>
 
 <script>
   const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // ✅ UID الأدمن من الصورة
-  const ADMIN_UID = 'b067967a-8c60-4fe0-be16-3b6dd4b338ba';
-
-  function isAdminSession(session){
-    return session?.user?.id === ADMIN_UID;
-  }
 
   async function login(){
     try{
@@ -98,16 +81,6 @@
 
       const { data, error } = await db.auth.signInWithPassword({ email, password });
       if(error) throw error;
-
-      const session = data?.session;
-      const uid = data?.user?.id;
-
-      // ✅ تحقق الأدمن بالـ UID
-      if(uid !== ADMIN_UID){
-        await db.auth.signOut();
-        Swal.close();
-        return Swal.fire('مرفوض','الحساب ده مش أدمن (UID غير مطابق).','error');
-      }
 
       Swal.close();
       location.href = './admin.html';
@@ -142,19 +115,10 @@
     }
   }
 
-  // لو داخل بالفعل -> لو أدمن روح للأدمن، لو مش أدمن اعمل خروج
+  // لو داخل بالفعل -> روح للوحة
   (async ()=>{
-    const { data, error } = await db.auth.getSession();
-    if(error) return;
-
-    const session = data?.session;
-    if(!session) return;
-
-    if(isAdminSession(session)){
-      location.href = './admin.html';
-    }else{
-      await db.auth.signOut();
-    }
+    const { data } = await db.auth.getSession();
+    if(data?.session) location.href = './admin.html';
   })();
 </script>
 </body>
