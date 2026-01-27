@@ -2874,64 +2874,49 @@ function setWithdrawStatus(message, state) {
 async function withdrawPi() {
   try {
     const btn = document.getElementById('withdrawBtn');
-    const originalLabel = btn?.dataset?.label || btn?.innerText;
-
+    
     if (!PI_USERNAME || !PI_UID) {
       setWithdrawStatus('❌ سجّل دخول أولاً', 'error');
       return;
     }
-
+    
     const amount = parseFloat(document.getElementById('wdAmountPi').value || "0");
     const walletAddress = (document.getElementById('wdWallet').value || '').trim();
-
-    if (!amount || amount <= 0) {
-      setWithdrawStatus('❌ اكتب كمية Pi صحيحة', 'error');
-      return;
-    }
-    if (!walletAddress || walletAddress.length < 10) {
-      setWithdrawStatus('❌ اكتب عنوان محفظة Pi صحيح', 'error');
-      return;
-    }
-
+    
+    if (!amount || amount <= 0) return setWithdrawStatus('❌ اكتب كمية Pi صحيحة', 'error');
+    if (!walletAddress || walletAddress.length < 10) return setWithdrawStatus('❌ اكتب عنوان محفظة Pi صحيح', 'error');
+    
     const available = parseFloat(document.getElementById('walletPi').innerText || "0") || 0;
-    if (amount > available) {
-      setWithdrawStatus('❌ المبلغ أكبر من الرصيد المتاح', 'error');
-      return;
-    }
-
-    setWithdrawStatus('جاري السحب...', 'loading');
+    if (amount > available) return setWithdrawStatus('❌ المبلغ أكبر من الرصيد المتاح', 'error');
+    
+    setWithdrawStatus('⏳ تم إرسال طلب السحب للأدمن للمراجعة...', 'loading');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري السحب...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
     }
-
-    const res = await fetch('/.netlify/functions/withdraw', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        uid: PI_UID,
-        username: PI_USERNAME,
-        amount,
-        walletAddress
-      })
-    });
-      
-    const out = await res.json().catch(() => ({}));
-    if (!res.ok || !out?.success) {
-      const msg = out?.error || out?.details || 'فشل السحب';
-      throw new Error(msg);
-    }
-
-    setWithdrawStatus(`✅ تم التحويل بنجاح ${out.txid ? `- ${out.txid}` : ''}`, 'success');
-
+    
+    // ✅ بدل التحويل المباشر: نسجل طلب pending
+    const { error } = await db.from('withdrawals').insert([{
+      pi_user_id: PI_UID,
+      username: PI_USERNAME,
+      amount: amount,
+      wallet_address: walletAddress,
+      status: 'pending', // مهم
+      txid: null,
+      approved_by: null,
+      approved_at: null,
+      rejected_reason: null
+    }]);
+    
+    if (error) throw error;
+    
+    setWithdrawStatus('✅ تم إرسال طلب السحب. انتظر موافقة الأدمن.', 'success');
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
-
-    await loadWalletPi();
+    
     await loadWithdrawHistory();
-
+    await loadWalletPi(); // الرصيد يفضل زي ما هو لحد ما الأدمن يوافق (هنخصم وقت الموافقة)
+    
   } catch (e) {
     console.error(e);
     setWithdrawStatus(`❌ ${e?.message || 'حصل خطأ'}`, 'error');
@@ -2943,31 +2928,6 @@ async function withdrawPi() {
     }
   }
 }
-
-async function copyWalletAddress(){
-  const walletInput = document.getElementById('wdWallet');
-  const val = walletInput.value.trim();
-  if (!val) return Swal.fire('لا يوجد عنوان للنسخ');
-  try{
-    await navigator.clipboard.writeText(val);
-    Swal.fire({ icon: 'success', title: 'تم النسخ ✅', timer: 1200, showConfirmButton: false });
-  }catch(e){
-    walletInput.select();
-    document.execCommand('copy');
-    Swal.fire({ icon: 'success', title: 'تم النسخ ✅', timer: 1200, showConfirmButton: false });
-  }
-}
-
-async function pasteWalletAddress(){
-  try{
-    const text = await navigator.clipboard.readText();
-    if (!text) return Swal.fire('لا يوجد محتوى في الحافظة');
-    document.getElementById('wdWallet').value = text.trim();
-  }catch(e){
-    Swal.fire('تعذر لصق العنوان. الصقه يدويًا.');
-  }
-}
-
 /* ================== WITHDRAW HISTORY ================== */
 async function loadWithdrawHistory() {
   try {
@@ -2985,7 +2945,7 @@ async function loadWithdrawHistory() {
     `;
       
     const { data, error } = await db.from('withdrawals')
-      .select('id,amount,wallet_address,created_at,txid')
+      .select('id,amount,wallet_address,created_at,txid,status,approved_at,rejected_reason')
       .eq('pi_user_id', PI_UID)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -3001,7 +2961,13 @@ async function loadWithdrawHistory() {
       <div class="soft p-3 space-y-1">
         <div class="row">
           <b class="mono text-emerald-500">${Number(w.amount||0).toFixed(6)} Pi</b>
-          <span class="chip chipG">مكتمل</span>
+          ${
+w.status === 'approved'
+? `<span class="chip chipG">موافَق عليه ✅</span>`
+: w.status === 'rejected'
+? `<span class="chip chipW">مرفوض ❌</span>`
+: `<span class="chip chipS">قيد المراجعة ⏳</span>`
+}
         </div>
 
         <div class="tiny muted break-all">
