@@ -1890,21 +1890,38 @@ function hideRating(){
   setRating(0);
 }
 
-async function refreshCustomerStatus(){
-  try{
-    if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
+async function refreshCustomerStatus() {
+  try {
     if (!PI_USERNAME || !ACTIVE_ORDER) return;
-    const { data, error } = await db.from('orders')
-      .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code,delivery_id')
+    
+    // جرّب بالـ columns كلها
+    let q = db.from('orders')
+      .select('id,status,customer_address,customer_lat,customer_lng,otp_code,delivery_id')
       .eq('id', ACTIVE_ORDER)
       .eq('customer_pi_username', PI_USERNAME)
       .single();
-    if (error) throw error;
-    if (data) {
-      await applyCustomerOrderState(data);
+    
+    let res = await q;
+    
+    // ✅ fallback لو الأعمدة مش موجودة أو query فشل بسببها
+    if (res.error && hasMissingLocationColumn(res.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      res = await db.from('orders')
+        .select('id,status,otp_code,delivery_id,pricing_snapshot')
+        .eq('id', ACTIVE_ORDER)
+        .eq('customer_pi_username', PI_USERNAME)
+        .single();
     }
-  }catch(e){
-    console.warn('refreshCustomerStatus failed', e);
+    
+    if (res.error) throw res.error;
+    
+    const data = res.data;
+    if (data) {
+      await applyCustomerOrderState(data); // دي اللي المفروض تودّي للتقييم عند delivered
+    }
+    
+  } catch (e) {
+    console.warn('refreshCustomerStatus failed', e?.message || e);
   }
 }
 
@@ -2578,7 +2595,27 @@ function listenStatus(){
       filter: `id=eq.${orderId}`
     }, (payload) => {
       try{
-        if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
+        statusChannel = db.channel('order-status-' + orderId)
+  .on('postgres_changes', {
+    event: 'UPDATE', schema:'public', table:'orders',
+    filter: `id=eq.${orderId}`
+  }, async (payload) => {
+    try{
+      if (ACTIVE_ORDER !== orderId) return;
+
+      const s = normalizeStatus(payload.new.status);
+
+      if(['delivered','completed'].includes(s)){
+        await finalizeCustomerDeliveredUI(payload.new);
+        return;
+      }
+
+      safeDom('custStatus') && (safeDom('custStatus').innerText = s);
+      updateCustomerTimeline(s);
+    } catch (err){
+      console.error('[listenStatus] UI update failed', err);
+    }
+  }).subscribe();
         if (ACTIVE_ORDER !== orderId) {
           console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
           return;
