@@ -1,12 +1,6 @@
 const StellarSdk = require('stellar-sdk');
 const { createClient } = require('@supabase/supabase-js');
 
-// Env
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
-
-// Pi Testnet (Stellar)
 const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
 const NETWORK_PASSPHRASE = 'Pi Testnet';
 
@@ -27,11 +21,14 @@ function toNum(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
-
 function isValidAmount(n) {
   return Number.isFinite(n) && n > 0;
 }
-
+function clampBalance(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, num);
+}
 function isValidStellarPublicKey(address) {
   try {
     return StellarSdk.StrKey.isValidEd25519PublicKey(address);
@@ -40,17 +37,11 @@ function isValidStellarPublicKey(address) {
   }
 }
 
-function clampBalance(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return 0;
-  return Math.max(0, num);
-}
-
 /**
- * ✅ مستحقات الدليفري من snapshot:
- * الأفضل: total_pi - platform_fee_pi
+ * ✅ مستحقات الدليفري:
+ * total_pi - platform_fee_pi
  * fallback: price_pi + delivery_fee_pi
- * fallback: delivery_fee_pi فقط
+ * fallback: delivery_fee_pi
  */
 function deliveryPayoutFromSnapshot(snapshot) {
   const s = snapshot || {};
@@ -69,10 +60,22 @@ function deliveryPayoutFromSnapshot(snapshot) {
   return Math.max(0, deliveryFee);
 }
 
-// Supabase client (Service Role)
-const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// ✅ createClient جوّه runtime بعد التأكد من env
+function getDb() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-async function getWithdrawnSum(uid) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    const missing = [];
+    if (!SUPABASE_URL) missing.push('SUPABASE_URL');
+    if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+    throw new Error(`Missing env: ${missing.join(', ')}`);
+  }
+
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+}
+
+async function getWithdrawnSum(db, uid) {
   const { data, error } = await db
     .from('withdrawals')
     .select('amount')
@@ -83,8 +86,8 @@ async function getWithdrawnSum(uid) {
   return (data || []).reduce((sum, r) => sum + toNum(r.amount), 0);
 }
 
-async function getEarnedSum(uid) {
-  // 1) cache: delivery_wallet (لو انت محافظ عليه كمستحقات الدليفري)
+async function getEarnedSum(db, uid) {
+  // 1) delivery_wallet (اختياري)
   const walletRes = await db
     .from('delivery_wallet')
     .select('balance_pi')
@@ -95,7 +98,7 @@ async function getEarnedSum(uid) {
     return toNum(walletRes.data.balance_pi);
   }
 
-  // 2) ledger: delivery_earnings (لازم يكون amount_pi = total - platform)
+  // 2) delivery_earnings
   const earnRes = await db
     .from('delivery_earnings')
     .select('amount_pi')
@@ -106,7 +109,7 @@ async function getEarnedSum(uid) {
     return (earnRes.data || []).reduce((sum, r) => sum + toNum(r.amount_pi), 0);
   }
 
-  // 3) fallback: orders snapshot
+  // 3) fallback من orders
   const ordersRes = await db
     .from('orders')
     .select('pricing_snapshot')
@@ -122,17 +125,14 @@ async function getEarnedSum(uid) {
 }
 
 exports.handler = async (event) => {
-  // CORS
   if (event.httpMethod === 'OPTIONS') return json(200, { ok: true });
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
   try {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return json(500, { error: 'Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY' });
-    }
-    if (!APP_WALLET_SECRET) {
-      return json(500, { error: 'APP_WALLET_SECRET is not defined' });
-    }
+    const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
+    if (!APP_WALLET_SECRET) return json(500, { error: 'APP_WALLET_SECRET is not defined' });
+
+    const db = getDb(); // ✅ هنا بس
 
     const body = JSON.parse(event.body || '{}');
 
@@ -144,16 +144,14 @@ exports.handler = async (event) => {
     if (!uid || !walletAddress || body.amount === undefined) {
       return json(400, { error: 'بيانات ناقصة', required: ['uid', 'amount', 'walletAddress'] });
     }
-    if (!isValidAmount(withdrawAmount)) {
-      return json(400, { error: 'قيمة السحب غير صحيحة' });
-    }
+    if (!isValidAmount(withdrawAmount)) return json(400, { error: 'قيمة السحب غير صحيحة' });
     if (!isValidStellarPublicKey(walletAddress)) {
       return json(400, { error: 'عنوان المحفظة غير صحيح (Stellar/Pi address)' });
     }
 
-    // 1) حساب الرصيد = مستحقات الدليفري (منتجات + توصيل) - المسحوبات
-    const earned = await getEarnedSum(uid);
-    const withdrawn = await getWithdrawnSum(uid);
+    // رصيد الدليفري = (منتجات + توصيل) - مسحوبات
+    const earned = await getEarnedSum(db, uid);
+    const withdrawn = await getWithdrawnSum(db, uid);
     const currentBalance = clampBalance(earned - withdrawn);
 
     if (currentBalance < withdrawAmount) {
@@ -161,11 +159,10 @@ exports.handler = async (event) => {
         error: 'رصيد حسابك غير كافٍ',
         balance: Number(currentBalance.toFixed(7)),
         requested: Number(withdrawAmount.toFixed(7)),
-        note: 'رصيدك بيحسب (فلوس المنتجات + التوصيل) لكل طلب تم تسليمه',
       });
     }
 
-    // 2) تنفيذ التحويل على Pi Testnet
+    // تحويل على testnet
     const server = new StellarSdk.Horizon.Server(PI_HORIZON_URL);
     const sourceKeys = StellarSdk.Keypair.fromSecret(APP_WALLET_SECRET);
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
@@ -188,15 +185,9 @@ exports.handler = async (event) => {
 
     const result = await server.submitTransaction(tx);
 
-    // 3) تسجيل السحب في Supabase
+    // تسجيل في withdrawals
     const { error: insertErr } = await db.from('withdrawals').insert([
-      {
-        pi_user_id: uid,
-        username,
-        amount: withdrawAmount,
-        wallet_address: walletAddress,
-        txid: result.hash,
-      },
+      { pi_user_id: uid, username, amount: withdrawAmount, wallet_address: walletAddress, txid: result.hash },
     ]);
 
     const balanceAfter = clampBalance(currentBalance - withdrawAmount);
@@ -205,7 +196,7 @@ exports.handler = async (event) => {
       return json(200, {
         success: true,
         txid: result.hash,
-        message: 'تم التحويل بنجاح (لكن فشل تسجيل العملية في قاعدة البيانات)',
+        message: 'تم التحويل (لكن فشل تسجيل العملية في قاعدة البيانات)',
         db_error: insertErr.message,
         balance_before: Number(currentBalance.toFixed(7)),
         withdrawn: Number(withdrawAmount.toFixed(7)),
@@ -220,30 +211,9 @@ exports.handler = async (event) => {
       balance_before: Number(currentBalance.toFixed(7)),
       withdrawn: Number(withdrawAmount.toFixed(7)),
       balance_after: Number(balanceAfter.toFixed(7)),
-      note: 'الدليفري بياخد (منتجات + توصيل). المنصة بتاخد platform fee.',
     });
   } catch (err) {
     console.error('withdraw error:', err);
-
-    let errorResponse = {
-      error: 'فشلت المعاملة',
-      details: err?.message || 'Unknown error',
-    };
-
-    if (err.response && err.response.data && err.response.data.extras) {
-      const codes = err.response.data.extras.result_codes;
-      const opCodes = codes.operations ? codes.operations.join(', ') : 'no_op_code';
-      errorResponse.details = `Blockchain Error: ${codes.transaction} (${opCodes})`;
-
-      if (codes.transaction === 'tx_insufficient_fee') {
-        errorResponse.error = 'رسوم الشبكة مرتفعة حالياً، حاول مرة أخرى';
-      } else if (opCodes.includes('op_underfunded')) {
-        errorResponse.error = 'محفظة النظام تحتاج شحن رصيد';
-      } else if (codes.transaction === 'tx_bad_seq') {
-        errorResponse.error = 'هناك تعارض تسلسلي (Sequence). أعد المحاولة بعد ثواني';
-      }
-    }
-
-    return json(500, errorResponse);
+    return json(500, { error: 'فشلت المعاملة', details: err?.message || 'Unknown error' });
   }
 };
