@@ -22,9 +22,9 @@
       --txt:#f3f4f6;
       --muted:rgba(243,244,246,.72);
 
-      --p:#6d28d9;      /* Purple dark */
+      --p:#6d28d9;
       --p2:#8b5cf6;
-      --y:#f6c453;      /* Yellow متوسط */
+      --y:#f6c453;
       --y2:#f59e0b;
 
       --ok:#22c55e;
@@ -105,7 +105,6 @@
     }
     ::placeholder{color:rgba(243,244,246,.55)}
 
-    /* Tables mobile */
     table{border-collapse:separate;border-spacing:0;width:100%}
     th,td{
       border-bottom:1px solid rgba(255,255,255,.10);
@@ -128,40 +127,16 @@
     }
 
     .muted{color:var(--muted)}
-    .kpi{
-      font-weight:900;
-      font-size:22px;
-      letter-spacing:.3px;
-    }
-    .statCard{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      min-height:120px;
-      justify-content:space-between;
-    }
-    .statValueRow{
-      display:flex;
-      align-items:baseline;
-      gap:8px;
-    }
-
-    .seg{
-      display:flex; gap:8px; flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .divider{
-      height:1px;
-      background: rgba(255,255,255,.10);
-      margin: 10px 0;
-    }
+    .kpi{font-weight:900;font-size:22px;letter-spacing:.3px}
+    .statCard{display:flex;flex-direction:column;gap:6px;min-height:120px;justify-content:space-between}
+    .statValueRow{display:flex;align-items:baseline;gap:8px}
+    .seg{display:flex; gap:8px; flex-wrap:wrap;align-items:center}
+    .divider{height:1px;background: rgba(255,255,255,.10);margin: 10px 0}
   </style>
 </head>
 
 <body class="pb-24">
 
-<!-- HEADER -->
 <header class="sticky top-0 z-50 px-3 pt-3">
   <div class="max-w-6xl mx-auto glass p-4 flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
@@ -180,7 +155,6 @@
 
 <div class="max-w-6xl mx-auto p-3 md:p-4 space-y-4">
 
-  <!-- STATS -->
   <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
     <div class="glass p-4 statCard">
       <div class="muted text-sm">إجمالي الطلبات</div>
@@ -203,7 +177,7 @@
     <div class="glass p-4 statCard">
       <div class="muted text-sm">Pi مسحوب</div>
       <div id="statWithdrawPi" class="kpi mono" style="color: var(--p2)">—</div>
-      <div class="text-[11px] muted mt-1">withdraw_requests.amount_pi</div>
+      <div class="text-[11px] muted mt-1">withdrawal_requests.amount</div>
     </div>
 
     <div class="glass p-4 statCard">
@@ -231,11 +205,10 @@
         <b id="statSiteProfitPi" class="mono" style="color: var(--p2)">—</b>
         <span class="muted">Pi</span>
       </div>
-      <div class="text-[11px] muted mt-1">10 ج لكل طلب</div>
+      <div class="text-[11px] muted mt-1">platform_fee لكل طلب</div>
     </div>
   </div>
 
-  <!-- FILTER BAR -->
   <div class="glass p-4 space-y-3">
     <div class="seg">
       <span class="badge">📦 الطلبات</span>
@@ -253,8 +226,7 @@
       </div>
 
       <div class="w-full md:w-80">
-        <input id="searchUser" class="input"
-          placeholder="بحث بالعميل / الكابتن..." oninput="loadOrders()"/>
+        <input id="searchUser" class="input" placeholder="بحث بالعميل / الدليفري..." oninput="loadOrders()"/>
       </div>
 
       <button class="btn btnP" onclick="loadOrders()">تحديث الطلبات</button>
@@ -279,7 +251,6 @@
     </div>
   </div>
 
-  <!-- ORDERS -->
   <div class="glass p-4">
     <div class="flex items-center justify-between mb-3 gap-2">
       <div>
@@ -299,7 +270,7 @@
             <th>المنتج</th>
             <th>النوع</th>
             <th>العميل</th>
-            <th>الكابتن</th>
+            <th>الدليفري</th>
             <th>EGP</th>
             <th>Pi</th>
             <th>ربح التاجر</th>
@@ -312,7 +283,6 @@
     </div>
   </div>
 
-  <!-- WITHDRAWS -->
   <div class="glass p-4">
     <div class="flex items-center justify-between mb-3 gap-2">
       <div>
@@ -329,7 +299,7 @@
         <thead>
           <tr>
             <th>الوقت</th>
-            <th>الكابتن</th>
+            <th>الدليفري</th>
             <th>المبلغ (Pi)</th>
             <th>عنوان محفظة Pi</th>
             <th>الحالة</th>
@@ -349,25 +319,34 @@ const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ========== AUTH GUARD (LOGIN ONLY) ========== */
-async function guardLogin() {
-  try {
+/* ========== AUTH (LOGIN ONLY) ========== */
+async function guardLogin(){
+  try{
     const { data, error } = await db.auth.getSession();
-    if (error) throw error;
-    
-    const session = data?.session;
-    if (!session) {
+    if(error) throw error;
+    if(!data?.session){
       location.href = './login.html';
       return false;
     }
     return true;
-  } catch (e) {
+  }catch(e){
     console.error(e);
-    try { await db.auth.signOut(); } catch {}
+    try{ await db.auth.signOut(); }catch{}
     location.href = './login.html';
     return false;
   }
 }
+
+async function logout(){
+  await db.auth.signOut();
+  location.href = './login.html';
+}
+
+// لو اتعمل SignOut من حتة تانية
+db.auth.onAuthStateChange((event) => {
+  if(event === 'SIGNED_OUT') location.href = './login.html';
+});
+
 /* ========== HELPERS ========== */
 function esc(s){
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -385,19 +364,55 @@ function badgeStatus(s){
     s==='shipping' ? 'border-orange-400/30 text-orange-200 bg-orange-500/10' :
     s==='arrived' ? 'border-blue-400/30 text-blue-200 bg-blue-500/10' :
     s==='delivered' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
+    s==='approved' ? 'border-purple-400/30 text-purple-200 bg-purple-500/10' :
+    s==='paid' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
+    s==='rejected' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
     s==='canceled' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
     'border-white/10 text-white/80 bg-white/5';
-
   return `<span class="${base} ${cls}">${esc(s)}</span>`;
 }
 
+function num(v, d=0){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function pick(obj, keys, fallback=null){
+  for(const k of keys){
+    if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
+  }
+  return fallback;
+}
+
+function getPricingSnapshot(order){
+  const raw = pick(order, ['pricing_snapshot','pricing_sr','pricing_snap','pricing'], null);
+  if(!raw) return {};
+  if(typeof raw === 'object') return raw;
+  try{ return JSON.parse(raw); }catch{ return {}; }
+}
+
+function getOrderProductName(o){
+  return pick(o, ['product_name','product','product_r','product_title','item_name'], '-');
+}
+function getOrderType(o){
+  return pick(o, ['order_type','order_typ','type'], 'any');
+}
+function getCustomerLabel(o){
+  return pick(o, ['customer_pi_username','customer_username','customer_user','customer','username','pi_username'], '-');
+}
+function getDeliveryLabel(o){
+  return pick(o, ['delivery_id','delivery_username','delivery_user','delivery_u','delivery'], '-');
+}
+
 function calcMerchantProfitEgp(order){
-  const price = Number(order?.price || 0);
+  // عندك في الجدول: price (افتراضي 0), delivery_fee (20), platform_fee (10), total_price
+  const price = num(pick(order, ['price'], 0), 0);
   if(price > 0) return price;
 
-  const total = Number(order?.total_price || 0);
-  const deliveryFee = Number(order?.delivery_fee || 0);
-  const platformFee = Number(order?.platform_fee || 10);
+  const total = num(pick(order, ['total_price','total_pric'], 0), 0);
+  const deliveryFee = num(pick(order, ['delivery_fee','delivery_f'], 0), 0);
+  const platformFee = num(pick(order, ['platform_fee','platform_'], 10), 10);
+
   const fallback = total - deliveryFee - platformFee;
   return fallback > 0 ? fallback : Math.max(0, total - platformFee);
 }
@@ -405,49 +420,45 @@ function calcMerchantProfitEgp(order){
 function sumMerchantProfitPi(orders){
   let totalPi = 0;
   (orders || []).forEach(o=>{
-    const piEgp = Number(o?.pricing_snapshot?.pi_egp || 0);
-    if(piEgp > 0){
-      totalPi += calcMerchantProfitEgp(o) / piEgp;
-    }
+    const snap = getPricingSnapshot(o);
+    const piEgp = num(snap.pi_egp, 0);
+    if(piEgp > 0) totalPi += (calcMerchantProfitEgp(o) / piEgp);
   });
   return totalPi;
 }
 
 function sumSiteProfitPi(orders){
-  // أرباح الموقع = platform_fee_egp لكل طلب (ثابت 10ج أو من الطلب)
-  // التحويل إلى Pi: platform_fee_egp / pricing_snapshot.pi_egp
-  // لو pi_egp غير موجود => 0
   let totalPi = 0;
   (orders || []).forEach(o=>{
-    const piEgp = Number(o?.pricing_snapshot?.pi_egp || 0);
-    const platformFee = Number(o?.platform_fee || 10);
-    if(piEgp > 0){
-      totalPi += (platformFee / piEgp);
-    }
+    const snap = getPricingSnapshot(o);
+    const piEgp = num(snap.pi_egp, 0);
+    const platformFee = num(pick(o, ['platform_fee','platform_'], 10), 10);
+    if(piEgp > 0) totalPi += (platformFee / piEgp);
   });
   return totalPi;
 }
 
 /* ========== STATS ========== */
+let __cacheOrders = [];
+let __cacheWithdraws = [];
+
 async function loadStats(){
-  const { data: orders, error: e1 } = await db.from('orders')
-    .select('status,pricing_snapshot,price,delivery_fee,total_price,platform_fee');
-  const { data: wds, error: e2 } = await db.from('withdraw_requests').select('status,amount_pi');
+  const orders = __cacheOrders || [];
+  const wds = __cacheWithdraws || [];
 
-  if(e1) console.warn(e1);
-  if(e2) console.warn(e2);
+  const totalOrders = orders.length;
+  const ordersPi = orders.reduce((sum,o)=>{
+    const snap = getPricingSnapshot(o);
+    return sum + num(snap.total_pi, 0);
+  }, 0);
 
-  const totalOrders = orders?.length || 0;
+  const totalWithdraws = wds.length;
+  const withdrawPi = wds.reduce((sum,w)=> sum + num(pick(w,['amount_pi','amount'],0),0), 0);
 
-  const ordersPi = (orders||[]).reduce((sum,o)=> sum + (Number(o?.pricing_snapshot?.total_pi)||0), 0);
-
-  const totalWithdraws = wds?.length || 0;
-  const withdrawPi = (wds||[]).reduce((sum,w)=> sum + (Number(w?.amount_pi)||0), 0);
-
-  const merchantProfitEgp = (orders||[]).reduce((sum,o)=> sum + calcMerchantProfitEgp(o), 0);
+  const merchantProfitEgp = orders.reduce((sum,o)=> sum + calcMerchantProfitEgp(o), 0);
   const merchantProfitPi = sumMerchantProfitPi(orders);
 
-  const siteProfitEgp = (orders||[]).reduce((sum,o)=> sum + (Number(o?.platform_fee || 10)), 0);
+  const siteProfitEgp = orders.reduce((sum,o)=> sum + num(pick(o,['platform_fee','platform_'],10),10), 0);
   const siteProfitPi = sumSiteProfitPi(orders);
 
   document.getElementById('statOrders').innerText = totalOrders;
@@ -468,7 +479,7 @@ async function loadOrders(){
   const q = document.getElementById('searchUser').value.trim().toLowerCase();
 
   let query = db.from('orders')
-    .select('id,created_at,product_name,order_type,customer_pi_username,delivery_id,total_price,status,pricing_snapshot,price,delivery_fee,platform_fee')
+    .select('*')
     .order('created_at',{ascending:false})
     .limit(200);
 
@@ -483,35 +494,42 @@ async function loadOrders(){
     return;
   }
 
-  const filtered = (data||[]).filter(o=>{
+  const list = (data||[]);
+  __cacheOrders = list;
+
+  const filtered = list.filter(o=>{
     if(!q) return true;
-    const a = (o.customer_pi_username||'').toLowerCase();
-    const b = (o.delivery_id||'').toLowerCase();
-    return a.includes(q) || b.includes(q);
+    const a = String(getCustomerLabel(o) || '').toLowerCase();
+    const b = String(getDeliveryLabel(o) || '').toLowerCase();
+    const p = String(getOrderProductName(o) || '').toLowerCase();
+    return a.includes(q) || b.includes(q) || p.includes(q);
   });
 
   tb.innerHTML = filtered.map(o=>{
-    const pi = Number(o?.pricing_snapshot?.total_pi || 0);
-    const egp = Number(o?.total_price || 0);
+    const snap = getPricingSnapshot(o);
+    const pi = num(snap.total_pi, 0);
+    const egp = num(pick(o,['total_price','total_pric'],0), 0);
     const merchantEgp = calcMerchantProfitEgp(o);
+
+    const id = o.id;
 
     return `
       <tr>
         <td class="muted">${esc(fmtDate(o.created_at))}</td>
-        <td><b>${esc(o.product_name)}</b></td>
-        <td class="muted">${esc(o.order_type || 'any')}</td>
-        <td>${esc(o.customer_pi_username || '-')}</td>
-        <td>${esc(o.delivery_id || '-')}</td>
+        <td><b>${esc(getOrderProductName(o))}</b></td>
+        <td class="muted">${esc(getOrderType(o))}</td>
+        <td>${esc(getCustomerLabel(o))}</td>
+        <td>${esc(getDeliveryLabel(o))}</td>
         <td class="mono">${egp.toFixed(2)}</td>
         <td class="mono" style="color:var(--y)">${pi ? pi.toFixed(3) : '—'}</td>
         <td class="mono" style="color:var(--ok)">${merchantEgp.toFixed(2)} ج</td>
         <td>${badgeStatus(o.status)}</td>
         <td>
           <div class="flex gap-1 flex-wrap">
-            <button class="btn btnB" onclick="setOrderStatus('${o.id}','shipping')">shipping</button>
-            <button class="btn btnB" onclick="setOrderStatus('${o.id}','arrived')">arrived</button>
-            <button class="btn btnG" onclick="setOrderStatus('${o.id}','delivered')">delivered</button>
-            <button class="btn btnR" onclick="setOrderStatus('${o.id}','canceled')">cancel</button>
+            <button class="btn btnB" onclick="setOrderStatus('${id}','shipping')">shipping</button>
+            <button class="btn btnB" onclick="setOrderStatus('${id}','arrived')">arrived</button>
+            <button class="btn btnG" onclick="setOrderStatus('${id}','delivered')">delivered</button>
+            <button class="btn btnR" onclick="setOrderStatus('${id}','canceled')">cancel</button>
           </div>
         </td>
       </tr>
@@ -553,12 +571,34 @@ async function setOrderStatus(id, st){
   loadOrders();
 }
 
-/* ========== WITHDRAWS ========== */
+/* ========== WITHDRAW REQUESTS ========== */
+function getWdDeliveryLabel(w){
+  return pick(w, ['delivery_username','delivery_id','delivery_user','delivery_u','username'], '-');
+}
+function getWdDeliveryUserId(w){
+  return pick(w, ['delivery_user_id','delivery_user','delivery_u','pi_user_id','user_id'], null);
+}
+function getWdAmount(w){
+  return num(pick(w,['amount_pi','amount'],0), 0);
+}
+function getWdWallet(w){
+  return pick(w, ['wallet_address','wallet_ad','wallet'], '-');
+}
+function getWdAdminNote(w){
+  return pick(w, ['admin_note','rejected_reason','rejected_r','note'], null);
+}
+function getWdReviewedBy(w){
+  return pick(w, ['reviewed_by','reviewed_'], null);
+}
+function getWdReviewedAt(w){
+  return pick(w, ['reviewed_at','reviewed_'], null);
+}
+
 async function loadWithdraws(){
   const st = document.getElementById('wdFilter').value;
 
-  let q = db.from('withdraw_requests')
-    .select('id,created_at,delivery_id,amount_pi,wallet_address,status,note')
+  let q = db.from('withdrawal_requests') // 👈 جدولك من الصورة
+    .select('*')
     .order('created_at',{ascending:false})
     .limit(200);
 
@@ -573,9 +613,12 @@ async function loadWithdraws(){
     return;
   }
 
-  tb.innerHTML = (data||[]).map(w=>{
-    const amountPi = Number(w.amount_pi || 0).toFixed(3);
-    const wallet = w.wallet_address || '-';
+  const list = (data||[]);
+  __cacheWithdraws = list;
+
+  tb.innerHTML = list.map(w=>{
+    const amountPi = getWdAmount(w).toFixed(3);
+    const wallet = getWdWallet(w);
 
     const actions = `
       <div class="flex gap-1 flex-wrap">
@@ -589,7 +632,7 @@ async function loadWithdraws(){
     return `
       <tr>
         <td class="muted">${esc(fmtDate(w.created_at))}</td>
-        <td><b>${esc(w.delivery_id)}</b></td>
+        <td><b>${esc(getWdDeliveryLabel(w))}</b></td>
         <td class="mono" style="color:var(--y)">${amountPi} Pi</td>
         <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(wallet)}</td>
         <td>${badgeStatus(w.status)}</td>
@@ -628,7 +671,17 @@ async function approveWithdraw(id){
   });
   if(!ok.isConfirmed) return;
 
-  const { error } = await db.from('withdraw_requests').update({ status:'approved' }).eq('id', id);
+  // نخزن مين راجع الطلب + وقت المراجعة (أعمدة موجودة عندك)
+  const { data: ses } = await db.auth.getSession();
+  const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
+
+  const { error } = await db.from('withdrawal_requests').update({
+    status:'approved',
+    reviewed_by: reviewer,
+    reviewed_at: new Date().toISOString(),
+    admin_note: null
+  }).eq('id', id);
+
   if(error) return Swal.fire('خطأ', error.message, 'error');
 
   Swal.fire({
@@ -644,24 +697,42 @@ async function approveWithdraw(id){
 
 /**
  * markPaid:
- * - يغير حالة السحب إلى paid
- * - يخصم amount_pi من delivery_wallet.balance_pi
+ * - يغير الحالة إلى paid
+ * - يخصم amount من delivery_wallet.balance_pi
+ * - يكتب txid (اختياري)
  */
 async function markPaid(id){
   try{
-    const { data: w, error: e1 } = await db.from('withdraw_requests')
-      .select('id,delivery_id,amount_pi,status')
+    const { data: w, error: e1 } = await db.from('withdrawal_requests')
+      .select('*')
       .eq('id', id)
       .single();
-
     if(e1) throw e1;
     if(!w) throw new Error('Withdraw not found');
     if(w.status !== 'approved') return Swal.fire('تنبيه','لازم يكون approved الأول','warning');
 
+    const amt = getWdAmount(w);
+    if(amt <= 0) return Swal.fire('خطأ','amount غير صحيح','error');
+
+    const deliveryUserId = getWdDeliveryUserId(w);
+    const deliveryUsername = getWdDeliveryLabel(w);
+
+    const { value: txid } = await Swal.fire({
+      title:'TXID (اختياري)',
+      input:'text',
+      inputPlaceholder:'اكتب txid لو موجود',
+      showCancelButton:true,
+      confirmButtonText:'متابعة',
+      cancelButtonText:'إلغاء',
+      background:'#0b0720',
+      color:'#f3f4f6'
+    });
+    if(txid === undefined) return;
+
     const ok = await Swal.fire({
       icon:'warning',
       title:'تأكيد تم الدفع',
-      html:`سيتم خصم <b class="mono">${Number(w.amount_pi).toFixed(3)} Pi</b> من رصيد الكابتن <b>${esc(w.delivery_id)}</b>`,
+      html:`سيتم خصم <b class="mono">${amt.toFixed(3)} Pi</b> من رصيد الدليفري <b>${esc(deliveryUsername)}</b>`,
       showCancelButton:true,
       confirmButtonText:'تم الدفع',
       cancelButtonText:'إلغاء',
@@ -672,26 +743,38 @@ async function markPaid(id){
     });
     if(!ok.isConfirmed) return;
 
-    const { data: wal, error: e2 } = await db.from('delivery_wallet')
-      .select('balance_pi')
-      .eq('delivery_id', w.delivery_id)
-      .maybeSingle();
+    // نجيب رصيد الدليفري
+    let walQ = db.from('delivery_wallet').select('*').limit(1);
+    if(deliveryUserId) walQ = walQ.eq('delivery_user_id', deliveryUserId);
+    else walQ = walQ.eq('delivery_username', deliveryUsername);
+
+    const { data: wal, error: e2 } = await walQ.maybeSingle();
     if(e2) throw e2;
 
-    const cur = Number(wal?.balance_pi || 0);
-    const amt = Number(w.amount_pi || 0);
+    const balance = num(pick(wal, ['balance_pi','balance_p','balance'], 0), 0);
+    if(balance < amt) return Swal.fire('خطأ','رصيد الدليفري غير كافي','error');
 
-    if(amt <= 0) return Swal.fire('خطأ','amount_pi غير صحيح','error');
-    if(cur < amt) return Swal.fire('خطأ','رصيد الكابتن غير كافي','error');
+    // نخصم
+    let updQ = db.from('delivery_wallet').update({
+      balance_pi: (balance - amt),
+      updated_at: new Date().toISOString()
+    });
+    if(deliveryUserId) updQ = updQ.eq('delivery_user_id', deliveryUserId);
+    else updQ = updQ.eq('delivery_username', deliveryUsername);
 
-    const { error: e3 } = await db.from('delivery_wallet')
-      .update({ balance_pi: (cur - amt) })
-      .eq('delivery_id', w.delivery_id);
+    const { error: e3 } = await updQ;
     if(e3) throw e3;
 
-    const { error: e4 } = await db.from('withdraw_requests')
-      .update({ status:'paid' })
-      .eq('id', id);
+    // نحدث طلب السحب
+    const { data: ses } = await db.auth.getSession();
+    const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
+
+    const { error: e4 } = await db.from('withdrawal_requests').update({
+      status:'paid',
+      txid: (txid || null),
+      reviewed_by: reviewer,
+      reviewed_at: new Date().toISOString()
+    }).eq('id', id);
     if(e4) throw e4;
 
     Swal.fire({
@@ -711,7 +794,7 @@ async function markPaid(id){
 
 async function rejectWithdraw(id){
   const { value: note } = await Swal.fire({
-    title:'سبب الرفض (اختياري)',
+    title:'سبب الرفض',
     input:'text',
     inputPlaceholder:'مثال: العنوان غير صحيح',
     showCancelButton:true,
@@ -724,9 +807,15 @@ async function rejectWithdraw(id){
   });
   if(note === undefined) return;
 
-  const { error } = await db.from('withdraw_requests')
-    .update({ status:'rejected', note: note || null })
-    .eq('id', id);
+  const { data: ses } = await db.auth.getSession();
+  const reviewer = ses?.session?.user?.email || ses?.session?.user?.id || null;
+
+  const { error } = await db.from('withdrawal_requests').update({
+    status:'rejected',
+    admin_note: (note || null),
+    reviewed_by: reviewer,
+    reviewed_at: new Date().toISOString()
+  }).eq('id', id);
 
   if(error) return Swal.fire('خطأ', error.message, 'error');
 
@@ -742,13 +831,18 @@ async function rejectWithdraw(id){
 }
 
 /* ========== INIT ========== */
-(async () => {
+async function refreshAll(){
+  await Promise.allSettled([loadOrders(), loadWithdraws()]);
+  await loadStats();
+}
+
+(async ()=>{
   const ok = await guardLogin();
-  if (!ok) return;
+  if(!ok) return;
   await refreshAll();
 })();
-
 </script>
 
 </body>
 </html>
+```0
