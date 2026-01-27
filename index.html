@@ -691,240 +691,249 @@ CHANGELOG (Top 10 UI/UX Updates)
       color: var(--txt) !important;
       border: 1px solid rgba(16,185,129,.2) !important;
       border-radius: 14px !important;
-      box-shadow: 0 12px 25px rgba(16,185,129,.1) !important;
-    }
-
-    /* Header tag */
-    .piTag{
-      font-size:11px;
-      padding:6px 10px;
-      border-radius:999px;
-      background: rgba(16,185,129,.12);
-      border:1px solid rgba(16,185,129,.25);
-      color:#065f46;
-    }
-
-    /* Cards / lists */
-    .orderCard{
-      padding:14px;
-      border-radius:18px;
-      border:1px solid rgba(16,185,129,.15);
-      background: rgba(255,255,255,.9);
-      box-shadow: 0 12px 25px rgba(16,185,129,.12);
-    }
-    .orderCard .title{
-      font-size:14px;
-      font-weight:800;
-      margin-bottom:6px;
-    }
-    .orderCard .meta{
-      font-size:12px;
-      color:var(--muted);
-    }
-    .orderCard .meta b{color:var(--txt)}
-    .orderCard .actions{
-      display:flex;
-      gap:8px;
-      margin-top:10px;
-    }
-    .orderCard .actions .btn{flex:1}
-    .nearList{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-
-    /* Customer card */
-    .custCard{
-      padding:16px;
-      border-radius:18px;
-      background: rgba(255,255,255,.92);
-      border:1px solid rgba(16,185,129,.2);
-    }
-    .custCard .title{
-      font-size:14px;
-      font-weight:900;
-    }
-    .custCard .row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-    }
-
-    /* Tags */
-    .tag{
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid rgba(16,185,129,.2);
-      background: rgba(16,185,129,.1);
-    }
-    .tag.warn{ background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.25); color:#92400e; }
-    .tag.bad{ background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.25); color:#991b1b; }
-    .tag.info{ background: rgba(96,165,250,.12); border-color: rgba(96,165,250,.25); color:#1e3a8a; }
-    .tag.ok{ background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.25); color:#166534; }
-
-    /* Header */
-    .topBar .wrap{
-      max-width: 480px;
-      margin: 0 auto;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 10px 14px;
-      gap:10px;
-    }
-    .topBar .title{
-      font-size:15px;
-      font-weight:900;
-    }
-    .topBar .sub{
-      font-size:11px;
-      color:var(--muted);
-    }
-
-    /* Container */
-    .app{
-      max-width: 480px;
-      margin: 0 auto;
-      padding-bottom: 120px;
-    }
-
-    .hidden{display:none}
-
-    /* Images in history */
-    .historyImage{
-      width:100%;
-      max-height:160px;
-      border-radius:12px;
-      border:1px solid rgba(16,185,129,.2);
-      object-fit:cover;
-    }
-
-    /* Table-like rows */
-    .tableRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      padding:10px 12px;
-      border-radius:14px;
-      background: rgba(255,255,255,.9);
-      border:1px solid rgba(16,185,129,.15);
-    }
-    .tableRow .left{
-      display:flex; flex-direction:column;
-      gap:2px;
-    }
-
-    /* Debug checklist */
-    .debugBox{
-      padding:14px;
-      border-radius:16px;
-      background: rgba(255,255,255,.9);
-      border:1px dashed rgba(16,185,129,.2);
-      font-size:12px;
-      line-height:1.7;
+      box-shadow: 0 10px 20px rgba(16,185,129,.12) !important;
     }
   </style>
 </head>
-<body>
-  <div class="topBar">
-    <div class="wrap">
-      <button class="headerBack hidden" id="headerBack" onclick="handleHeaderBack()">
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
 
-      <div class="flex items-center gap-2">
-        <div class="brandBadge">
-          <i class="fa-solid fa-bag-shopping"></i>
+<body class="safeBottom">
+  <!-- HEADER -->
+  <header class="sticky top-0 z-50 topBar">
+    <div class="px-3 pt-3 pb-3">
+      <div class="max-w-lg mx-auto flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button id="headerBack" class="headerBack hidden" onclick="handleHeaderBack()">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <div class="brandBadge">
+            <i class="fa-solid fa-basket-shopping text-white"></i>
+          </div>
+          <div class="leading-tight">
+            <div class="font-black text-base">QuickCart</div>
+            <div class="tiny -mt-0.5">طلب سريع • دليفري قريب منك</div>
+          </div>
         </div>
-        <div>
-          <div class="title">QuickCart</div>
-          <div class="sub">متجر سريع • طلبات فورية</div>
-        </div>
-      </div>
 
-      <div class="flex items-center gap-2">
-        <span class="piTag" id="piTag">Web</span>
+        <div class="flex items-center gap-2">
+          <div id="headerSearch" class="headerSearch hidden">
+            <i class="fa-solid fa-magnifying-glass text-emerald-500"></i>
+            <input id="homeSearch" placeholder="ابحث عن مطعم أو منتج" />
+          </div>
+          <button id="roleToggle" onclick="toggleRole()" class="chip chipS hidden">
+            <i class="fa-solid fa-user"></i> User
+          </button>
+          <a id="adminLink" href="./admin.html" class="chip chipP hidden">
+            <i class="fa-solid fa-shield-halved"></i> Admin
+          </a>
+          <span id="piTag" class="chip chipB">
+            <i class="fa-brands fa-pied-piper-alt"></i> …
+          </span>
+        </div>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- HEADER SEARCH -->
-  <div class="topBar" style="border-top:1px solid rgba(16,185,129,.1);">
-    <div class="wrap">
-      <button class="headerBack hidden" id="headerBack" onclick="handleHeaderBack()">
-        <i class="fa-solid fa-chevron-right"></i>
+  <main class="max-w-lg mx-auto p-3 space-y-3">
+    <!-- LOGIN -->
+    <div id="loginBox" class="glass p-4 text-center space-y-3">
+      <div class="flex items-center justify-center gap-2">
+        <span class="miniIcon"><i class="fa-solid fa-right-to-bracket"></i></span>
+        <div class="text-right">
+          <div class="font-extrabold">تسجيل الدخول</div>
+          <div class="tiny muted">افتح داخل Pi Browser عشان الدفع يشتغل 100%</div>
+        </div>
+      </div>
+
+      <button id="loginBtn" onclick="piLogin()" class="btn btnP w-full">
+        <i class="fa-brands fa-pied-piper-alt"></i>
+        تسجيل الدخول بـ Pi
       </button>
 
-      <div class="headerSearch" id="headerSearch">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input id="homeSearch" placeholder="ابحث عن مطعم أو منتج" />
-      </div>
-
-      <div class="flex items-center gap-2">
-        <span class="piTag" id="piSdkBadge"><i class="fa-solid fa-circle-check"></i> <span id="piStateText">SDK</span></span>
-      </div>
+      <button onclick="devLogin()" class="text-xs underline muted">
+        دخول تجريبي (اختبار خارج Pi Browser)
+      </button>
     </div>
-  </div>
 
-  <main class="app safeBottom">
-    <!-- LOGIN / HERO -->
-    <section id="loginBox" class="pageSection space-y-3 glass">
-      <div class="secTitle">
-        <b>مرحبًا 👋</b>
-        <span class="chip chipP" id="piTag2">Web</span>
-      </div>
-      <div class="text-sm muted">سجّل دخولك لبدء الطلبات والدفع عبر Pi.</div>
+<!-- ================= HOME TAB ================= -->
+<div id="homeTab" class="pageShell tabPane">
 
-      <div class="infoCard space-y-2" id="piHint">
-        <div class="text-sm font-bold">تحتاج فتح الموقع داخل Pi Browser</div>
-        <div class="tiny">لو بتستخدم متصفح عادي، الدفع هيكون محدود أو غير متاح.</div>
-      </div>
+      <!-- STATUS + RATES -->
+  <section class="glass pageSection space-y-3">
+        <div class="secTitle">
+          <b><i class="fa-solid fa-signal mr-1"></i> الحالة والأسعار</b>
+          <span class="chip chipS"><i class="fa-regular fa-clock"></i> تحديث تلقائي</span>
+        </div>
 
-      <div class="space-y-2">
-        <button class="btn btnA w-full" onclick="piLogin()">
-          <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول عبر Pi
-        </button>
-        <button class="btn btnS w-full" onclick="devLogin()">
-          <i class="fa-solid fa-flask"></i> دخول تجريبي (DEV)
-        </button>
-      </div>
-    </section>
+        <div class="miniCard space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-sm">
+              <span class="muted">حالة Pi:</span>
+              <b id="piStateText" class="mr-1">جاري التحقق...</b>
+            </div>
+            <div class="flex gap-2">
+              <span class="chip chipB"><i class="fa-solid fa-globe"></i> <span id="piTag2">Auto</span></span>
+              <span id="piSdkBadge" class="chip chipG"><i class="fa-solid fa-bolt"></i> SDK</span>
+            </div>
+          </div>
+          <div class="tiny muted">
+            Pi كل <b>30 ثانية</b> — USD/EGP كل <b>60 ثانية</b>. | 1 Pi ≈ <span class="mono" id="piEgpOne">—</span> ج
+          </div>
+          <div id="rateHint" class="tiny hidden" style="color:#b45309">تعذر جلب الأسعار حاليًا. جرّب تحديث الصفحة أو الاتصال بالإنترنت.</div>
+          <div id="piHint" class="tiny hidden" style="color:#b45309">يفضل استخدام Pi Browser لإكمال الدفع.</div>
+        </div>
 
-    <!-- MAIN TABS -->
-    <div id="homeTab" class="pageShell tabPane active">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="miniCard">
+            <div class="flex items-center gap-2">
+              <span class="miniIcon"><i class="fa-solid fa-coins"></i></span>
+              <div>
+                <div class="tiny muted">سعر Pi (USDT)</div>
+                <div class="font-black mono text-base"><span id="piUsdt">—</span></div>
+                <div class="tiny muted">مصدر: OKX</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="miniCard">
+            <div class="flex items-center gap-2">
+              <span class="miniIcon"><i class="fa-solid fa-money-bill-wave"></i></span>
+              <div>
+                <div class="tiny muted">سعر USD (EGP)</div>
+                <div class="font-black mono text-base"><span id="usdEgp">—</span></div>
+                <div class="tiny muted">مصدر: open.er-api.com</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= CUSTOMER (HOME) ================= -->
-      <div id="customerHome" class="space-y-3">
-
-        <!-- INTRO -->
-        <section class="glass pageSection space-y-3">
+      <div id="customerHome" class="hidden space-y-3">
+    <section class="glass pageSection space-y-3">
           <div class="secTitle">
-            <b>صباح الخير، <span id="custName">ضيف</span> 👋</b>
-            <span class="chip chipS">Pi Wallet</span>
+            <b><i class="fa-solid fa-bag-shopping mr-1"></i> طلب جديد</b>
+            <span class="chip chipP"><i class="fa-solid fa-credit-card"></i> Pi Pay</span>
           </div>
 
-          <div class="miniCard space-y-2">
-            <div class="row">
-              <div class="text-sm">حالة Pi SDK:</div>
-              <span class="chip chipP"><i class="fa-solid fa-circle-check"></i> Ready</span>
+          <div class="miniCard space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-sm">
+                أهلًا <b id="custName">—</b>
+                <div class="tiny muted">نرتّب لك الطلب خطوة بخطوة</div>
+              </div>
+              <span class="miniIcon"><i class="fa-solid fa-location-dot"></i></span>
             </div>
-            <div class="row">
-              <div class="text-sm">الوضع:</div>
-              <span class="chip chipB" id="piSdkBadge2">Browser</span>
+
+            <div class="stepper">
+              <div class="step"><div class="num">1</div>نوع الطلب</div>
+              <div class="step"><div class="num">2</div>بيانات المنتج</div>
+              <div class="step"><div class="num">3</div>العنوان</div>
+              <div class="step"><div class="num">4</div>الملخص والدفع</div>
             </div>
-            <div class="tiny muted">قم بفتح الموقع داخل Pi Browser لضمان المدفوعات.</div>
+
+            <div class="divider"></div>
+
+            <div class="space-y-2">
+              <label class="tiny muted">1) اختيار نوع الطلب</label>
+              <select id="orderType">
+                <option value="any">نوع الطلب: أي حاجة</option>
+                <option value="market">سوبر ماركت</option>
+                <option value="pharmacy">صيدلية</option>
+                <option value="restaurant">مطعم</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="tiny muted">2) بيانات المنتج + السعر</label>
+              <input id="prod" placeholder="اسم المنتج" />
+              <input id="price" type="number" placeholder="سعر المنتج بالجنيه المصري" oninput="recalcInvoice()" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="tiny muted">3) العنوان والموقع</label>
+              <input id="custAddress" placeholder="العنوان بالتفصيل" />
+              <div class="soft p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm"><span class="muted">موقعك الحالي</span></div>
+                  <button class="chip chipG" onclick="setCustomerLocation()">
+                    <i class="fa-solid fa-crosshairs"></i> تحديد
+                  </button>
+                </div>
+                <div id="custLocStatus" class="tiny muted">لم يتم تحديد الموقع بعد.</div>
+                <div id="custLocHint" class="tiny hidden" style="color:#b45309">لو واجهت مشكلة، فعّل GPS واسمح للموقع.</div>
+                <a id="custMapLink" class="tiny linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">
+                  فتح الموقع على Google Maps
+                </a>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="tiny muted">ملاحظات إضافية</label>
+              <textarea id="notes" class="mt-2" placeholder="ملاحظات/بدائل (اختياري)"></textarea>
+            </div>
           </div>
 
+          <!-- INVOICE -->
+          <div class="miniCard space-y-3">
+            <div class="secTitle">
+              <b><i class="fa-solid fa-receipt mr-1"></i> تفاصيل الحساب</b>
+              <span class="chip chipS">
+                <i class="fa-solid fa-truck-fast"></i> توصيل: <b>20</b>ج
+                <span class="mx-1">•</span>
+                <i class="fa-solid fa-store"></i> موقع: <b>10</b>ج
+              </span>
+            </div>
+
+            <div class="text-sm space-y-2">
+              <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="invProdEgp">0</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">رسوم التوصيل</span><b><span id="invDelFeeEgp">20</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">رسوم الموقع</span><b><span id="invPlatFeeEgp">10</span> ج</b></div>
+
+              <div class="divider"></div>
+
+              <div class="flex items-center justify-between">
+                <span class="font-black">الإجمالي</span>
+                <b class="text-emerald-500"><span id="invTotalEgp">0</span> ج</b>
+              </div>
+
+              <div class="soft p-3 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="muted text-sm">الإجمالي بـ Pi (تقريبي)</span>
+                  <span id="invPreviewBadge" class="chip chipG hidden">Pi جاهز</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="muted text-sm">Pi الإجمالي</span>
+                  <b class="mono text-emerald-600 text-sm" id="invTotalPi">0.000000</b>
+                </div>
+                <div id="invSkeleton" class="skeletonBadge hidden"></div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="payAndCreate()" class="btn btnA w-full">
+            <i class="fa-solid fa-bolt"></i>
+            ادفع بـ Pi واطلب
+          </button>
+          <div class="tiny muted text-center">
+            بالضغط على “ادفع” أنت توافق على إنشاء الطلب والبدء في التنفيذ.
+          </div>
+        </section>
+
+        <section class="glass pageSection space-y-3">
+          <div class="sectionHeader">
+            <div>
+              <h3>خدمات QuickCart</h3>
+              <div class="sectionSub">اختصر وقتك مع أقسام مخصصة لكل احتياج.</div>
+            </div>
+            <span class="chip chipS"><i class="fa-solid fa-layer-group"></i> أقسام</span>
+          </div>
           <div class="featureGrid">
             <div class="miniCard">
               <div class="flex items-center gap-2">
                 <span class="miniIcon"><i class="fa-solid fa-burger"></i></span>
                 <div>
-                  <div class="text-sm font-bold">مطاعم</div>
-                  <div class="tiny muted">وجبات ساخنة وتوصيل سريع</div>
+                  <div class="text-sm font-bold">مطاعم قريبة</div>
+                  <div class="tiny muted">اختيارات سريعة لعشاء اليوم</div>
                 </div>
               </div>
             </div>
@@ -1127,21 +1136,56 @@ CHANGELOG (Top 10 UI/UX Updates)
           <div class="miniCard space-y-3 text-center">
             <div class="text-sm">قيّم تجربة التوصيل من 1 إلى 5 نجوم.</div>
             <div class="ratingStars" id="ratingStars">
-              <button class="ratingStar" onclick="selectRating(1)">1</button>
-              <button class="ratingStar" onclick="selectRating(2)">2</button>
-              <button class="ratingStar" onclick="selectRating(3)">3</button>
-              <button class="ratingStar" onclick="selectRating(4)">4</button>
-              <button class="ratingStar" onclick="selectRating(5)">5</button>
+              <button type="button" class="ratingStar" data-rating="1"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="2"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="3"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="4"><i class="fa-solid fa-star"></i></button>
+              <button type="button" class="ratingStar" data-rating="5"><i class="fa-solid fa-star"></i></button>
             </div>
+            <div id="ratingValue" class="tiny muted">اختر تقييمك.</div>
             <textarea id="ratingNote" placeholder="ملاحظة اختيارية للدليفري"></textarea>
-            <button class="btn btnP w-full" onclick="submitRating()">
+            <button id="ratingSubmit" class="btn btnA w-full" onclick="submitRating()">
               إرسال التقييم
             </button>
+            <button class="btn btnS w-full" onclick="rejectCaptain()">
+              رفض الكابتن
+            </button>
+            <div id="ratingThanks" class="tiny muted hidden">تم إرسال التقييم، شكرًا لك.</div>
           </div>
         </section>
 
-        <!-- HISTORY -->
-        <section class="glass pageSection space-y-2">
+        <!-- CHAT -->
+        <section id="custChat" class="hidden glass pageSection space-y-2">
+          <div class="secTitle">
+            <b><i class="fa-solid fa-comments mr-1"></i> الشات (لحظي)</b>
+            <div class="flex gap-2">
+              <button class="chip chipS" onclick="quick('customer','أنا في الطريق؟')">
+                <i class="fa-solid fa-paper-plane"></i> في الطريق؟
+              </button>
+              <button class="chip chipS" onclick="quick('customer','لو مش موجود، بديل؟')">
+                <i class="fa-solid fa-repeat"></i> بديل؟
+              </button>
+            </div>
+          </div>
+
+          <div id="chatC" class="flex flex-col gap-2 h-52 overflow-y-auto soft p-3"></div>
+
+          <div class="flex gap-2 items-center">
+            <input id="msgC" class="flex-1" placeholder="اكتب رسالة..." />
+            <label class="chip chipS cursor-pointer">
+              <i class="fa-regular fa-image"></i>
+              <input type="file" id="imgC" accept="image/*" class="hidden" />
+              صورة
+            </label>
+            <button onclick="sendMsg('customer')" class="btn btnA" style="padding:12px 14px">
+              <i class="fa-solid fa-arrow-up"></i>
+            </button>
+          </div>
+          <div class="tiny muted">✅ = اتبعت | ✅✅ = اتقريت</div>
+        </section>
+
+        <!-- CUSTOMER HISTORY -->
+    <section class="glass pageSection space-y-2">
           <div class="secTitle">
             <b><i class="fa-solid fa-clock-rotate-left mr-1"></i> سجل طلباتي</b>
             <button class="chip chipS" onclick="loadCustomerHistory()">
@@ -1154,19 +1198,49 @@ CHANGELOG (Top 10 UI/UX Updates)
 
       <!-- ================= DELIVERY (TRACK) ================= -->
       <div id="deliveryTrackTab" class="hidden space-y-3">
-        <main class="chatLayout">
-          <header class="chatStickyHeader">
-            <div class="secTitle">
-              <b><i class="fa-solid fa-comments mr-1"></i> محادثة مع العميل</b>
-              <button class="chip chipS" onclick="refreshDeliveryChat()">
-                <i class="fa-solid fa-rotate"></i> تحديث
-              </button>
+
+        <!-- DELIVERY CHAT -->
+        <main id="delChat" class="hidden page">
+          <section class="card order-card">
+            <header class="card-head">
+              <b><i class="fa-solid fa-clipboard-list mr-1"></i> تفاصيل الطلب</b>
+              <span class="chip chipS"><i class="fa-solid fa-location-crosshairs"></i> مباشر</span>
+            </header>
+            <div class="space-y-1" id="delOrderDetails">
+              <div class="flex items-center justify-between"><span class="muted">الحالة</span><b id="dStatus">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">المنتج</span><b id="dProd" class="truncate">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">نوع الطلب</span><b id="dType">—</b></div>
+              <div class="flex items-center justify-between"><span class="muted">سعر المنتج</span><b><span id="dProdEgp">—</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">العنوان</span><b id="dAddress" class="truncate">—</b></div>
+              <div class="flex items-center justify-between">
+                <span class="muted">الموقع</span>
+                <a id="dMapLink" class="linkP hidden" target="_blank" rel="noopener noreferrer" onclick="return openMapUrl(this.href)">فتح على الخريطة</a>
+              </div>
+              <div class="divider"></div>
+              <div class="flex items-center justify-between"><span class="muted">توصيل</span><b><span id="dDelFeeEgp">20</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">رسوم موقع</span><b><span id="dPlatFeeEgp">10</span> ج</b></div>
+              <div class="divider"></div>
+              <div class="flex items-center justify-between"><span class="font-black">الإجمالي</span><b class="text-emerald-500"><span id="dTotalEgp">—</span> ج</b></div>
+              <div class="flex items-center justify-between"><span class="muted">الإجمالي بـ Pi</span><b class="mono text-emerald-600"><span id="dTotalPi">—</span> Pi</b></div>
+              <div class="tiny muted">ملاحظات: <span id="dNotes">—</span></div>
             </div>
-            <div class="tiny muted">رسائل سريعة مع العميل أثناء التوصيل.</div>
-          </header>
+          </section>
 
           <section class="card chat-card">
-            <div id="delChat" class="chat-messages"></div>
+            <header class="card-head">
+              <b><i class="fa-solid fa-comments mr-1"></i> الشات</b>
+            </header>
+            <div class="flex gap-2 flex-wrap">
+              <button class="chip chipS" onclick="quick('delivery','أنا في الطريق 🛵')">
+                <i class="fa-solid fa-motorcycle"></i> في الطريق
+              </button>
+              <button class="chip chipS" onclick="quick('delivery','المنتج غير متوفر، بديل؟')">
+                <i class="fa-solid fa-ban"></i> غير متوفر
+              </button>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+              <div id="chatD" class="chat-list"></div>
+            </div>
             <div class="chat-composer items-center">
               <input id="msgD" class="flex-1" placeholder="رسالة..." />
               <label class="chip chipS cursor-pointer">
@@ -1194,7 +1268,6 @@ CHANGELOG (Top 10 UI/UX Updates)
             </div>
           </section>
         </main>
-
 
         <!-- WITHDRAW HISTORY -->
     <section class="glass pageSection space-y-2">
@@ -1237,36 +1310,115 @@ CHANGELOG (Top 10 UI/UX Updates)
               <div class="text-sm font-bold">الدعم</div>
               <div class="tiny muted">تواصل سريع مع خدمة العملاء.</div>
             </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
           </div>
           <div class="listCard">
-            <span class="listIcon"><i class="fa-solid fa-question"></i></span>
+            <span class="listIcon"><i class="fa-solid fa-file-contract"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">الشروط والأحكام</div>
+              <div class="tiny muted">تعرف على سياسات الاستخدام.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-circle-question"></i></span>
             <div class="flex-1">
               <div class="text-sm font-bold">الأسئلة الشائعة</div>
-              <div class="tiny muted">حل سريع لأي مشكلة في الطلب.</div>
+              <div class="tiny muted">إجابات لأكثر الاستفسارات.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-circle-info"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">عن التطبيق</div>
+              <div class="tiny muted">نسخة QuickCart ورؤيتنا.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-share-nodes"></i></span>
+            <div class="flex-1">
+              <div class="text-sm font-bold">مشاركة التطبيق</div>
+              <div class="tiny muted">شارك التطبيق مع أصدقائك.</div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-emerald-500"></i>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>لماذا QuickCart؟</h3>
+            <div class="sectionSub">واجهة مرتبة لكل احتياجاتك اليومية.</div>
+          </div>
+          <span class="chip chipP"><i class="fa-solid fa-star"></i> مميز</span>
+        </div>
+        <div class="infoCard">
+          <div class="text-sm">تجربة طلب سلسة مع متابعة لحظية، شات مباشر، ودفع آمن بـ Pi.</div>
+        </div>
+        <div class="featureGrid">
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-shield-halved"></i></span>
+            <div>
+              <div class="text-sm font-bold">حماية الطلب</div>
+              <div class="tiny muted">كود تسليم سري لضمان الأمان.</div>
             </div>
           </div>
           <div class="listCard">
-            <span class="listIcon"><i class="fa-solid fa-shield"></i></span>
-            <div class="flex-1">
-              <div class="text-sm font-bold">سياسة الخصوصية</div>
-              <div class="tiny muted">معلومات حول حماية بياناتك.</div>
+            <span class="listIcon"><i class="fa-solid fa-comments"></i></span>
+            <div>
+              <div class="text-sm font-bold">تواصل فوري</div>
+              <div class="tiny muted">شات نصي وصور مع الكابتن.</div>
             </div>
           </div>
           <div class="listCard">
-            <span class="listIcon"><i class="fa-solid fa-bug"></i></span>
-            <div class="flex-1">
-              <div class="text-sm font-bold">Debug Checklist</div>
-              <div class="tiny muted">تأكد أن الدفع و Pi SDK يعملان.</div>
+            <span class="listIcon"><i class="fa-solid fa-location-dot"></i></span>
+            <div>
+              <div class="text-sm font-bold">تتبع مباشر</div>
+              <div class="tiny muted">عرض موقع الطلب على الخريطة.</div>
             </div>
           </div>
-          <div class="debugBox">
-            <div>✅ افتح الموقع داخل Pi Browser للتأكد من Pi SDK.</div>
-            <div>✅ جرّب تسجيل الدخول ثم ادفع 0.1 Pi.</div>
-            <div>✅ تحقق من جدول orders في Supabase.</div>
-            <div>✅ جرّب قبول الطلب كدليفري والتسليم.</div>
-            <div>✅ راقب القنوات realtime من خلال Console logs أثناء تغيير الحالة.</div>
-            <div>✅ تأكد أن قسم تقييم الكابتن ظهر وتم عمل scroll إليه تلقائيًا.</div>
+          <div class="listCard">
+            <span class="listIcon"><i class="fa-solid fa-wallet"></i></span>
+            <div>
+              <div class="text-sm font-bold">سحب مباشر</div>
+              <div class="tiny muted">تحويل أرباحك سريعًا لمحفظتك.</div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>الدعم والمساعدة</h3>
+            <div class="sectionSub">جاهزين نساعدك في أي وقت.</div>
+          </div>
+          <span class="chip chipB"><i class="fa-solid fa-headset"></i> دعم</span>
+        </div>
+        <div class="miniCard space-y-2">
+          <div class="text-sm">تواصل معنا عبر البريد أو من خلال الشات داخل الطلب.</div>
+          <div class="flex flex-wrap gap-2">
+            <span class="chip chipS"><i class="fa-solid fa-envelope"></i> support@quickcart.app</span>
+            <span class="chip chipS"><i class="fa-solid fa-phone"></i> 15777</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass pageSection space-y-3">
+        <div class="sectionHeader">
+          <div>
+            <h3>Debug checklist</h3>
+            <div class="sectionSub">خطوات سريعة للتأكد من حالة التسليم والتقييم.</div>
+          </div>
+          <span class="chip chipS"><i class="fa-solid fa-bug"></i> Debug</span>
+        </div>
+        <div class="miniCard space-y-2 text-sm">
+          <div>✅ تحقق أن status أصبح <b>delivered</b> عبر سجل الطلبات أو صفحة المتابعة.</div>
+          <div>✅ راقب القنوات realtime من خلال Console logs أثناء تغيير الحالة.</div>
+          <div>✅ تأكد أن قسم تقييم الكابتن ظهر وتم عمل scroll إليه تلقائيًا.</div>
         </div>
       </section>
     </div>
@@ -1294,8 +1446,8 @@ CHANGELOG (Top 10 UI/UX Updates)
 /* ================== CONFIG ================== */
 Pi.init({ version: "2.0", sandbox: false });
 
-const SUPABASE_URL = window.SUPABASE_URL || '';
-const SUPABASE_KEY = window.SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================== FEES ================== */
@@ -1591,425 +1743,910 @@ function setActiveOrderId(orderId){
 }
 
 async function restoreActiveOrder(){
-  const cached = localStorage.getItem(activeOrderStorageKey());
-  if(!cached) return;
-  ACTIVE_ORDER = cached;
-  await loadOrderDetailsForDelivery(cached);
-  markSeen('delivery');
-  listenDeliveryStatus();
-}
+  if(!PI_USERNAME) return;
 
-function markSeen(role){
-  const key = `qc_seen_${role}_${PI_USERNAME || 'guest'}`;
-  localStorage.setItem(key, Date.now().toString());
-}
+  const storedId = localStorage.getItem(activeOrderStorageKey());
 
-/* ================== NAV ================== */
-function setActiveTab(tabId) {
-  const tabs = document.querySelectorAll('.tabPane');
-  tabs.forEach(t => t.classList.add('hidden'));
-  document.getElementById(tabId).classList.remove('hidden');
-  setTimeout(() => document.getElementById(tabId).classList.add('active'), 50);
-}
-
-/* ================== CART ================== */
-let CART = [];
-
-function addToCart(name, price){
-  CART.push({ name, price: Number(price || 0) });
-  renderCart();
-}
-
-function removeFromCart(idx){
-  CART.splice(idx, 1);
-  renderCart();
-}
-
-function renderCart(){
-  const box = document.getElementById('cartList');
-  if(!box) return;
-  if(!CART.length){
-    box.innerHTML = `<div class="tiny muted">السلة فاضية.</div>`;
+  const customerOrder = await findActiveOrderForCustomer(storedId);
+  if (customerOrder) {
+    setActiveOrderId(customerOrder.id);
+    setRole('customer');
+    setMainTab('track');
+    await applyCustomerOrderState(customerOrder);
+    listenStatus();
+    startChat();
     return;
   }
-  box.innerHTML = CART.map((c, i) => `
-    <div class="tableRow">
-      <div class="left">
-        <div><b>${escapeHtml(c.name)}</b></div>
-        <div class="tiny muted">${Number(c.price).toFixed(2)} ج</div>
-      </div>
-      <button class="btn btnS" onclick="removeFromCart(${i})"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  `).join('');
-}
 
-function cartTotal(){
-  return CART.reduce((sum, i) => sum + Number(i.price || 0), 0);
-}
-
-/* ================== INVOICE ================== */
-function recalcInvoice(){
-  const price = cartTotal();
-  const delFee = DELIVERY_FEE_EGP;
-  const platformFee = PLATFORM_FEE_EGP;
-  const total = price + delFee + platformFee;
-
-  document.getElementById('invPrice').innerText = price.toFixed(2);
-  document.getElementById('invDel').innerText = delFee.toFixed(2);
-  document.getElementById('invPlatform').innerText = platformFee.toFixed(2);
-  document.getElementById('invTotal').innerText = total.toFixed(2);
-
-  const piEgp = PI_USDT * USD_EGP;
-  const totalPi = piEgp ? total / piEgp : 0;
-  document.getElementById('invTotalPi').innerText = totalPi ? totalPi.toFixed(6) : '—';
-}
-
-function orderDataFromForm() {
-  const productName = document.getElementById('prod').value.trim();
-  const price = parseFloat(document.getElementById('price').value || "0");
-  const notes = document.getElementById('notes').value.trim();
-  const orderType = document.getElementById('orderType').value;
-  const customerAddress = document.getElementById('custAddress').value.trim();
-
-  if (!productName || !price || price <= 0 || !customerAddress) {
-    Swal.fire('يرجى إدخال بيانات صحيحة');
-    return null;
+  const deliveryOrder = await findActiveOrderForDelivery(storedId);
+  if (deliveryOrder) {
+    setActiveOrderId(deliveryOrder.id);
+    setRole('delivery');
+    setMainTab('track');
+    await loadOrderDetailsForDelivery(deliveryOrder.id);
+    document.getElementById('delChat').classList.remove('hidden');
+    startChat();
+    markSeen('delivery');
+    listenDeliveryStatus();
+    return;
   }
 
-  return {
-    product_name: productName,
-    price,
-    notes,
-    order_type: orderType,
-    customer_address: customerAddress
-  };
+  setActiveOrderId(null);
+  setRole('customer');
+  setMainTab('home');
 }
 
-async function payOrder(){
-  try {
-    if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
-    const data = orderDataFromForm();
-    if (!data) return;
+async function findActiveOrderForCustomer(orderId){
+  const activeStatuses = ['pending', 'accepted', 'shipping', 'arrived', 'delivered'];
 
-    const total = cartTotal() + DELIVERY_FEE_EGP + PLATFORM_FEE_EGP;
-    const totalPi = egpToPi(total);
+  if (orderId) {
+    const { data } = await db.from('orders')
+      .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code')
+      .eq('id', orderId)
+      .eq('customer_pi_username', PI_USERNAME)
+      .single();
+    if (data && activeStatuses.includes(data.status)) return data;
+  }
+
+  const { data } = await db.from('orders')
+    .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code')
+    .eq('customer_pi_username', PI_USERNAME)
+    .in('status', activeStatuses)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  return data?.[0] || null;
+}
+
+async function findActiveOrderForDelivery(orderId){
+  const activeStatuses = ['accepted', 'shipping', 'arrived'];
+
+  if (orderId) {
+    const { data } = await db.from('orders')
+      .select('id,status')
+      .eq('id', orderId)
+      .eq('delivery_id', PI_USERNAME)
+      .single();
+    if (data && activeStatuses.includes(data.status)) return data;
+  }
+
+  const { data } = await db.from('orders')
+    .select('id,status')
+    .eq('delivery_id', PI_USERNAME)
+    .in('status', activeStatuses)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  return data?.[0] || null;
+}
+
+function updateCustomerTimeline(status){
+  const steps = ['pending','accepted','shipping','arrived','delivered'];
+  const currentIndex = steps.indexOf(status);
+  document.querySelectorAll('#custTimeline .timelineItem').forEach((item) => {
+    const itemStatus = item.getAttribute('data-status');
+    const index = steps.indexOf(itemStatus);
+    item.classList.toggle('active', index !== -1 && index <= currentIndex);
+  });
+}
+
+async function finalizeCustomerDeliveredUI(order){
+  safeDom('custTrack')?.classList.add('hidden');
+  safeDom('custChat')?.classList.add('hidden');
+  setMainTab('track');
+  const rating = safeDom('custRating');
+  rating?.classList.remove('hidden');
+  rating?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  LAST_DELIVERED_ORDER_ID = order?.id || LAST_DELIVERED_ORDER_ID;
+  setActiveOrderId(null);
+
+  if (statusPollTimer) clearInterval(statusPollTimer);
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  if (statusChannel) {
+    try { db.removeChannel(statusChannel); } catch {}
+    statusChannel = null;
+  }
+  if (chatChannel) {
+    try { db.removeChannel(chatChannel); } catch {}
+    chatChannel = null;
+  }
+
+  await loadRatingState(order);
+}
+
+async function applyCustomerOrderState(order){
+  const status = normalizeStatus(order.status || 'pending');
+  if (['delivered','completed'].includes(status)) {
+    await finalizeCustomerDeliveredUI(order);
+    return;
+  }
+  safeDom('custTrack')?.classList.remove('hidden');
+  safeDom('custChat')?.classList.remove('hidden');
+  if (safeDom('custStatus')) safeDom('custStatus').innerText = status || 'pending';
+  updateCustomerTimeline(status || 'pending');
+  if (safeDom('otp')) safeDom('otp').innerText = order.otp_code || '';
+  safeDom('otpBox')?.classList.toggle('hidden', !order.otp_code);
+  if (safeDom('custAddressView')) safeDom('custAddressView').innerText = order.customer_address || '—';
+  hideRating();
+  const trackLink = safeDom('custTrackMapLink');
+  if (trackLink && typeof order.customer_lat === 'number' && typeof order.customer_lng === 'number') {
+    trackLink.href = buildMapUrl(order.customer_lat, order.customer_lng);
+    trackLink.classList.remove('hidden');
+    trackLink.onclick = () => openMapUrl(trackLink.href);
+  } else {
+    trackLink?.classList.add('hidden');
+  }
+}
+
+function hideRating(){
+  document.getElementById('custRating').classList.add('hidden');
+  document.getElementById('ratingThanks').classList.add('hidden');
+  document.getElementById('ratingSubmit').disabled = false;
+  document.getElementById('ratingSubmit').classList.remove('btnS');
+  document.getElementById('ratingSubmit').classList.add('btnA');
+  document.getElementById('ratingNote').value = '';
+  document.getElementById('ratingValue').innerText = 'اختر تقييمك.';
+  setRating(0);
+}
+
+async function refreshCustomerStatus(){
+  try{
+    if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
+    if (!PI_USERNAME || !ACTIVE_ORDER) return;
+    const { data, error } = await db.from('orders')
+      .select('id,product_name,status,customer_address,customer_lat,customer_lng,otp_code,delivery_id')
+      .eq('id', ACTIVE_ORDER)
+      .eq('customer_pi_username', PI_USERNAME)
+      .single();
+    if (error) throw error;
+    if (data) {
+      await applyCustomerOrderState(data);
+    }
+  }catch(e){
+    console.warn('refreshCustomerStatus failed', e);
+  }
+}
+
+function setRating(value){
+  ACTIVE_RATING = value;
+  const stars = document.querySelectorAll('#ratingStars .ratingStar');
+  stars.forEach((star) => {
+    const rating = Number(star.dataset.rating);
+    star.classList.toggle('active', rating <= value);
+  });
+  const label = value ? `تقييمك الحالي: ${value} نجوم` : 'اختر تقييمك.';
+  document.getElementById('ratingValue').innerText = label;
+}
+
+function initRatingStars(){
+  const stars = document.querySelectorAll('#ratingStars .ratingStar');
+  stars.forEach((star) => {
+    star.addEventListener('click', () => {
+      const rating = Number(star.dataset.rating);
+      setRating(rating);
+    });
+  });
+}
+
+async function loadRatingState(order){
+  if (!order?.id || !order?.delivery_id) return;
+  try {
+    const { data, error } = await db.from('delivery_ratings')
+      .select('id,rating')
+      .eq('order_id', order.id)
+      .eq('customer_pi_username', PI_USERNAME)
+      .limit(1);
+    if (error) throw error;
+    if (data && data.length) {
+      setRating(Number(data[0].rating) || 0);
+      document.getElementById('ratingThanks').classList.remove('hidden');
+      const submit = document.getElementById('ratingSubmit');
+      submit.disabled = true;
+      submit.classList.remove('btnA');
+      submit.classList.add('btnS');
+    } else {
+      document.getElementById('ratingThanks').classList.add('hidden');
+      document.getElementById('ratingSubmit').disabled = false;
+    }
+  } catch (e) {
+    console.warn('loadRatingState failed', e);
+  }
+}
+
+async function submitRating(){
+  try{
+    const orderId = ACTIVE_ORDER || LAST_DELIVERED_ORDER_ID;
+    if (!orderId) return;
+    if (!PI_USERNAME) return Swal.fire('سجّل دخول أولاً');
+    if (ACTIVE_RATING < 1) return Swal.fire('اختار تقييم من 1 إلى 5');
+
+    const note = document.getElementById('ratingNote').value.trim();
+    const { data: order, error: orderErr } = await db.from('orders')
+      .select('delivery_id')
+      .eq('id', orderId)
+      .single();
+    if (orderErr) throw orderErr;
+
+    const { error } = await db.from('delivery_ratings').insert([{
+      order_id: orderId,
+      delivery_id: order?.delivery_id || null,
+      customer_pi_username: PI_USERNAME,
+      rating: ACTIVE_RATING,
+      comment: note || null
+    }]);
+    if (error) throw error;
+
+    document.getElementById('ratingThanks').classList.remove('hidden');
+    document.getElementById('ratingSubmit').disabled = true;
+    document.getElementById('ratingSubmit').classList.remove('btnA');
+    document.getElementById('ratingSubmit').classList.add('btnS');
+    Swal.fire({ icon:'success', title:'تم التقييم ✅' });
+  }catch(e){
+    console.error(e);
+    Swal.fire({ icon:'error', title:'فشل إرسال التقييم', text: e?.message || 'حصل خطأ' });
+  }
+}
+
+async function rejectCaptain(){
+  setRating(1);
+  document.getElementById('ratingNote').value = 'رفض الكابتن';
+  await submitRating();
+}
+
+/* ================== UI: INVOICE ================== */
+function recalcInvoice(){
+  const prodEgp = parseFloat(document.getElementById('price').value || "0") || 0;
+  const totalEgp = prodEgp + DELIVERY_FEE_EGP + PLATFORM_FEE_EGP;
+  const totalPi = egpToPi(totalEgp);
+
+  document.getElementById('invProdEgp').innerText = prodEgp.toFixed(2);
+  document.getElementById('invDelFeeEgp').innerText = DELIVERY_FEE_EGP.toFixed(2);
+  document.getElementById('invPlatFeeEgp').innerText = PLATFORM_FEE_EGP.toFixed(2);
+  document.getElementById('invTotalEgp').innerText = totalEgp.toFixed(2);
+  document.getElementById('invTotalPi').innerText = totalPi ? totalPi.toFixed(6) : '0.000000';
+
+  const hasRates = PI_USDT > 0 && USD_EGP > 0;
+  document.getElementById('invSkeleton').classList.toggle('hidden', prodEgp > 0 && hasRates);
+  document.getElementById('invPreviewBadge').classList.toggle('hidden', !hasRates);
+}
+
+/* ================== CUSTOMER: PAY + CREATE ORDER ================== */
+async function payAndCreate() {
+  try {
+    if (!PI_USERNAME) return Swal.fire('لازم تسجل دخول الأول');
+
+    const product = document.getElementById('prod').value.trim();
+    const orderType = document.getElementById('orderType').value;
+    const notes = document.getElementById('notes').value.trim();
+    const address = document.getElementById('custAddress').value.trim();
+    const prodEgp = parseFloat(document.getElementById('price').value || "0") || 0;
+
+    if (!product || prodEgp <= 0) return Swal.fire('اكتب اسم المنتج وسعر صحيح');
+    if (!address) return Swal.fire('اكتب العنوان بالتفصيل');
+    if (!CUSTOMER_LOCATION) return Swal.fire('من فضلك حدّد موقعك أولاً');
+
+    if (!(PI_USDT > 0 && USD_EGP > 0)) {
+      await refreshRates();
+      if (!(PI_USDT > 0 && USD_EGP > 0)) return Swal.fire('مقدرناش نجيب USD/EGP دلوقتي، جرّب تاني');
+    }
+
+    const totalEgp = prodEgp + DELIVERY_FEE_EGP + PLATFORM_FEE_EGP;
+    const totalPi = egpToPi(totalEgp);
+    const amountPi = Number(totalPi || 0).toFixed(6);
+
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
 
     const confirm = await Swal.fire({
-      icon: 'question',
-      title: 'تأكيد الطلب',
+      title: 'تأكيد الدفع',
       html: `
         <div style="text-align:right">
-          <div>المنتج: <b>${escapeHtml(data.product_name)}</b></div>
-          <div>السعر: <b>${total.toFixed(2)} ج</b></div>
-          <div>بالـ Pi: <b>${Number(totalPi||0).toFixed(6)} Pi</b></div>
+          <div>سعر المنتج: <b>${prodEgp.toFixed(2)} ج</b></div>
+          <div>رسوم التوصيل: <b>${DELIVERY_FEE_EGP.toFixed(2)} ج</b></div>
+          <div>رسوم الموقع: <b>${PLATFORM_FEE_EGP.toFixed(2)} ج</b></div>
+          <hr/>
+          <div>الإجمالي: <b style="color:#16a34a">${totalEgp.toFixed(2)} ج</b></div>
+          <div>يعادل تقريبًا: <b style="color:#7c3aed">${amountPi} Pi</b></div>
+          <div style="font-size:12px;opacity:.75;margin-top:6px">
+            (1 Pi ≈ ${(PI_USDT*USD_EGP).toFixed(3)} ج)
+          </div>
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: 'ادفع الآن',
+      confirmButtonText: 'ادفع',
       cancelButtonText: 'إلغاء'
     });
     if (!confirm.isConfirmed) return;
 
-    Swal.fire({ title: 'جاري تنفيذ الدفع...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+    if (!window.Pi || !Pi.createPayment) {
+      return Swal.fire('Pi Payment غير متاح.. افتح داخل Pi Browser');
+    }
 
-    const paymentData = {
-      amount: Number(totalPi||0).toFixed(6),
-      memo: `Order-${Date.now()}`,
-      metadata: { customer: PI_USERNAME }
-    };
+    Swal.fire({ title: 'جاري الدفع...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
-    if (!window.Pi || !Pi.createPayment) throw new Error('Pi SDK غير متاح');
-
-    const payment = await Pi.createPayment(paymentData, {
-      onReadyForServerApproval: async (paymentId) => {
-        await fetch('/.netlify/functions/approve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentId })
-        });
-      },
-      onReadyForServerCompletion: async (paymentId, txid) => {
-        await fetch('/.netlify/functions/complete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentId, txid })
-        });
-      },
-      onCancel: () => {
-        console.log('Payment canceled');
-      },
-      onError: (error) => {
-        console.error('Payment error:', error);
-      }
+    const paymentResult = await new Promise((resolve, reject) => {
+      Pi.createPayment({
+        amount: amountPi,
+        memo: `QuickCart | ${product} | Total ${totalEgp.toFixed(2)} EGP`,
+        metadata: {
+          product, orderType, prodEgp,
+          deliveryFee: DELIVERY_FEE_EGP,
+          platformFee: PLATFORM_FEE_EGP,
+          totalEgp,
+          pi_usdt: PI_USDT,
+          usd_egp: USD_EGP
+        }
+      }, {
+        onReadyForServerApproval: async (paymentId) => {
+          await fetch('/api/pi/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId })
+          });
+        },
+        onReadyForServerCompletion: async (paymentId, txid) => {
+          await fetch('/api/pi/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, txid })
+          });
+          resolve({ paymentId, txid });
+        },
+        onCancel: (paymentId) => reject(new Error('تم إلغاء الدفع')),
+        onError: (err) => reject(err || new Error('فشل الدفع'))
+      });
     });
 
-    const payload = {
-      ...data,
-      customer_pi_username: PI_USERNAME,
+    // بعد نجاح الدفع: نكتب الطلب في DB
+    const deliveryFeePi = egpToPi(DELIVERY_FEE_EGP);
+    const platformFeePi = egpToPi(PLATFORM_FEE_EGP);
+
+    const basePayload = {
+      product_name: product,
+      order_type: orderType,
+      notes: notes || null,
+
+      price: prodEgp,
+      delivery_fee: DELIVERY_FEE_EGP,
+      platform_fee: PLATFORM_FEE_EGP,
+
+      total_price: totalEgp,
       status: 'pending',
-      total_price: total,
+      otp_code: otp,
+      customer_pi_username: PI_USERNAME,
+      can_modify_until: new Date(Date.now() + 60_000).toISOString(),
+
       pricing_snapshot: {
-        total_pi: Number(totalPi||0),
-        platform_fee_pi: Number(egpToPi(PLATFORM_FEE_EGP)||0),
-        pi_egp: Number(PI_USDT*USD_EGP||0)
-      }
+        pi_usdt: PI_USDT,
+        usd_egp: USD_EGP,
+        pi_egp: (PI_USDT * USD_EGP),
+        total_pi: Number(amountPi),
+
+        delivery_fee_pi: deliveryFeePi ? Number(deliveryFeePi.toFixed(6)) : 0,
+        platform_fee_pi: platformFeePi ? Number(platformFeePi.toFixed(6)) : 0
+      },
+      payment_id: paymentResult?.paymentId || null,
+      payment_txid: paymentResult?.txid || null
     };
 
-    const { data: order, error } = await db.from('orders').insert([payload]).select().single();
+    const payloadWithLocation = {
+      ...basePayload,
+      customer_address: address,
+      customer_lat: CUSTOMER_LOCATION?.lat ?? null,
+      customer_lng: CUSTOMER_LOCATION?.lng ?? null
+    };
+
+    let insertResult = await db.from('orders').insert([payloadWithLocation]).select();
+    if (insertResult.error && hasMissingLocationColumn(insertResult.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      basePayload.pricing_snapshot = {
+        ...basePayload.pricing_snapshot,
+        customer_location: {
+          address,
+          lat: CUSTOMER_LOCATION?.lat ?? null,
+          lng: CUSTOMER_LOCATION?.lng ?? null
+        }
+      };
+      insertResult = await db.from('orders').insert([basePayload]).select();
+    }
+
+    const { data, error } = insertResult;
+
     if (error) throw error;
 
-    setActiveOrderId(order.id);
+    setActiveOrderId(data?.[0]?.id || null);
     setMainTab('track');
-    await refreshCustomerStatus();
-    await refreshRates();
-    await loadCustomerHistory();
+
+    document.getElementById('custTrack').classList.remove('hidden');
+    document.getElementById('custChat').classList.remove('hidden');
+    document.getElementById('custStatus').innerText = 'pending';
+    updateCustomerTimeline('pending');
+    document.getElementById('otp').innerText = otp;
+    document.getElementById('otpBox').classList.remove('hidden');
+    document.getElementById('custAddressView').innerText = address;
+    const trackLink = document.getElementById('custTrackMapLink');
+    trackLink.href = buildMapUrl(CUSTOMER_LOCATION.lat, CUSTOMER_LOCATION.lng);
+    trackLink.classList.remove('hidden');
+    trackLink.onclick = () => openMapUrl(trackLink.href);
 
     Swal.close();
+
+    listenStatus();
+    startChat();
+    loadCustomerHistory();
+
   } catch (e) {
     console.error(e);
-    Swal.fire({ icon: 'error', title: 'فشل الدفع', text: e?.message || 'حدث خطأ' });
+    Swal.fire({ icon: 'error', title: 'فشل العملية', text: e?.message || 'حصل خطأ' });
   }
 }
 
-/* ================== CUSTOMER: TRACK ================== */
-async function refreshCustomerStatus(){
-  try{
-    if(!PI_USERNAME || !ACTIVE_ORDER) return;
-
-    const { data, error } = await db.from('orders')
-      .select('status,customer_address,customer_lat,customer_lng,otp_code')
-      .eq('id', ACTIVE_ORDER)
-      .eq('customer_pi_username', PI_USERNAME)
-      .single();
-
-    if(error) throw error;
-
-    const status = data.status || 'pending';
-    document.getElementById('custStatus').innerText = status;
-    updateTimeline(status);
-
-    if (data.customer_address) {
-      document.getElementById('custAddressView').innerText = data.customer_address;
-    }
-
-    if (data.customer_lat && data.customer_lng) {
-      const link = document.getElementById('custTrackMapLink');
-      link.href = buildMapUrl(data.customer_lat, data.customer_lng);
-      link.classList.remove('hidden');
-      link.onclick = () => openMapUrl(link.href);
-    }
-
-    if (status === 'delivered' && data.otp_code) {
-      document.getElementById('otpBox').classList.remove('hidden');
-      document.getElementById('otp').innerText = data.otp_code;
-    }
-  }catch(e){
-    console.error(e);
-  }
+/* ================== DELIVERY: LOAD + ACCEPT (RPC Lock) ================== */
+function ordersSkeleton(){
+  return `
+    <div class="skeletonCard">
+      <div class="skeletonLine mid"></div>
+      <div class="skeletonLine"></div>
+      <div class="skeletonLine short"></div>
+    </div>
+    <div class="skeletonCard">
+      <div class="skeletonLine mid"></div>
+      <div class="skeletonLine"></div>
+      <div class="skeletonLine short"></div>
+    </div>
+  `;
 }
 
-function updateTimeline(status){
-  document.querySelectorAll('#custTimeline .timelineItem').forEach(item => {
-    const s = item.getAttribute('data-status');
-    item.classList.toggle('active', s === status);
-  });
-}
-
-/* ================== CUSTOMER: HISTORY ================== */
-async function loadCustomerHistory(){
-  try{
-    if(!PI_USERNAME) return;
-    const box = document.getElementById('custHistory');
-    box.innerHTML = ordersSkeleton();
-
-    const { data, error } = await db.from('orders')
-      .select('id,product_name,order_type,total_price,status,created_at,pricing_snapshot,delivery_id')
-      .eq('customer_pi_username', PI_USERNAME)
-      .order('created_at', { ascending:false })
-      .limit(50);
-
-    if(error) throw error;
-
-    if(!data?.length){
-      box.innerHTML = `<div class="tiny">لا يوجد طلبات بعد.</div>`;
-      return;
-    }
-
-    const orderIds = data.map(o => o.id);
-    let ratingMap = {};
-    if (orderIds.length) {
-      const { data: ratings } = await db.from('delivery_ratings')
-        .select('order_id,rating')
-        .in('order_id', orderIds);
-      (ratings || []).forEach(r => {
-        ratingMap[r.order_id] = r.rating;
-      });
-    }
-
-    box.innerHTML = data.map(o => {
-      const totalEgp = Number(o.total_price||0);
-      const totalPi = Number(o?.pricing_snapshot?.total_pi || (egpToPi(totalEgp) || 0));
-      const s = o.status || 'pending';
-      const rating = ratingMap[o.id];
-
-      const color =
-        s==='delivered' ? 'text-emerald-500' :
-        s==='canceled' ? 'text-red-400' :
-        'text-emerald-600';
-
-      return `
-        <div class="soft p-3">
-          <div class="row">
-            <b class="truncate">${escapeHtml(o.product_name)}</b>
-            <span class="chip ${color}">${escapeHtml(s)}</span>
-          </div>
-          <div class="tiny mt-1">نوع: <b>${escapeHtml(o.order_type||'any')}</b>${o.delivery_id ? ` | كابتن: <b>${escapeHtml(o.delivery_id)}</b>` : ``}</div>
-          <div class="row mt-1">
-            <span class="tiny">الإجمالي</span>
-            <b class="text-emerald-500">${totalEgp.toFixed(2)} ج</b>
-          </div>
-          <div class="row mt-1">
-            <span class="tiny">بالـ Pi</span>
-            <b class="mono text-emerald-600">${Number(totalPi||0).toFixed(6)} Pi</b>
-          </div>
-          ${typeof rating === 'number' ? `<div class="tiny mt-1">تقييم الكابتن: <b>${rating}</b> ⭐</div>` : ``}
-          <div class="tiny mt-1">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
-        </div>
-      `;
-    }).join('');
-
-  }catch(e){
-    console.error(e);
-    document.getElementById('custHistory').innerHTML = `<div class="tiny" style="color:#fca5a5">فشل تحميل سجل الطلبات</div>`;
-  }
-}
-
-/* ================== DELIVERY: ORDERS ================== */
 async function loadOrders(){
   try{
-    if(!PI_USERNAME) return Swal.fire('سجّل دخول كابتن الأول');
-    if(!DELIVERY_LOCATION) return Swal.fire('حدد موقعك أولاً');
+    const box = document.getElementById('ordersBox');
+    box.innerHTML = ordersSkeleton();
 
-    document.getElementById('ordersBox').innerHTML = ordersSkeleton();
-
-    const { data, error } = await db.from('orders')
-      .select('id,product_name,order_type,total_price,status,created_at,customer_lat,customer_lng,customer_address,pricing_snapshot')
+    let result = await db.from('orders')
+      .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot,customer_lat,customer_lng,customer_address')
       .eq('status','pending')
-      .order('created_at', { ascending:false })
-      .limit(50);
+      .order('created_at',{ascending:false});
 
-    if(error) throw error;
+    if (result.error && hasMissingLocationColumn(result.error)) {
+      HAS_LOCATION_COLUMNS = false;
+      result = await db.from('orders')
+        .select('id,product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status,created_at,pricing_snapshot')
+        .eq('status','pending')
+        .order('created_at',{ascending:false});
+    }
 
-    const near = (data || []).filter(o => {
-      const loc = { lat: o.customer_lat, lng: o.customer_lng };
-      const d = distanceKm(DELIVERY_LOCATION, loc);
-      return d !== null && d <= 5;
-    });
+    const { data, error } = result;
+    if (error) throw error;
 
-    if(!near.length){
-      document.getElementById('ordersBox').innerHTML = `
-        <div class="emptyState">
-          <div class="text-sm font-bold">لا توجد طلبات قريبة حالياً</div>
-          <div class="tiny muted">حاول تحديث القائمة لاحقًا.</div>
+    if (!data?.length) {
+      box.innerHTML = `<div class="emptyState">لا توجد طلبات حالياً</div>`;
+      return;
+    }
+
+    if (!DELIVERY_LOCATION && HAS_LOCATION_COLUMNS) {
+      box.innerHTML = `
+        <div class="emptyState space-y-2">
+          <div class="text-sm font-bold">حدد موقعك أولاً</div>
+          <div class="tiny muted">سنظهر لك الطلبات القريبة ضمن 5 كم.</div>
+          <button class="btn btnA" onclick="setDeliveryLocation()">
+            <i class="fa-solid fa-crosshairs"></i> تحديد موقعي
+          </button>
         </div>
       `;
       return;
     }
 
-    document.getElementById('ordersBox').innerHTML = near.map(o => {
-      const totalEgp = Number(o.total_price||0);
-      const totalPi = Number(o?.pricing_snapshot?.total_pi || (egpToPi(totalEgp) || 0));
+    const filtered = HAS_LOCATION_COLUMNS
+      ? data.filter(o => {
+          if (typeof o.customer_lat !== 'number' || typeof o.customer_lng !== 'number') return false;
+          const dist = distanceKm(
+            DELIVERY_LOCATION,
+            { lat: o.customer_lat, lng: o.customer_lng }
+          );
+          return dist !== null && dist <= 5;
+        })
+      : data;
+
+    if (!filtered.length) {
+      box.innerHTML = `<div class="emptyState">لا توجد طلبات قريبة ضمن 5 كم الآن.</div>`;
+      return;
+    }
+
+    box.innerHTML = filtered.map(o => {
+      const delFee = (o.delivery_fee ?? DELIVERY_FEE_EGP);
+      const platFee = (o.platform_fee ?? PLATFORM_FEE_EGP);
+      const totalEgp = (o.total_price ?? ((o.price||0)+delFee+platFee));
+      const totalPi = egpToPi(totalEgp);
+      const dist = HAS_LOCATION_COLUMNS
+        ? distanceKm(
+            DELIVERY_LOCATION,
+            { lat: o.customer_lat, lng: o.customer_lng }
+          )
+        : null;
+      const mapUrl = (HAS_LOCATION_COLUMNS && typeof o.customer_lat === 'number' && typeof o.customer_lng === 'number')
+        ? buildMapUrl(o.customer_lat, o.customer_lng)
+        : '#';
+
       return `
-        <div class="orderCard">
-          <div class="title">${escapeHtml(o.product_name)}</div>
-          <div class="meta">نوع: <b>${escapeHtml(o.order_type||'any')}</b></div>
-          <div class="meta">العنوان: <b>${escapeHtml(o.customer_address||'')}</b></div>
-          <div class="row mt-2">
-            <span class="tiny">الإجمالي</span>
-            <b class="text-emerald-500">${totalEgp.toFixed(2)} ج</b>
+      <div class="glass p-4 space-y-2">
+        <div class="row">
+          <div class="min-w-0">
+            <b class="text-base truncate">${escapeHtml(o.product_name)}</b>
+            <div class="tiny">${new Date(o.created_at).toLocaleString('ar-EG')}</div>
+            <div class="tiny">نوع: <b>${escapeHtml(o.order_type || 'any')}</b></div>
+            ${HAS_LOCATION_COLUMNS ? `<div class="tiny">المسافة: <b>${dist ? dist.toFixed(2) : '—'} كم</b></div>` : ``}
           </div>
-          <div class="row mt-1">
-            <span class="tiny">بالـ Pi</span>
-            <b class="mono text-emerald-600">${Number(totalPi||0).toFixed(6)} Pi</b>
-          </div>
-          <div class="actions">
-            <button class="btn btnA" onclick="acceptOrder('${o.id}')"><i class="fa-solid fa-check"></i> قبول</button>
-            <button class="btn btnS" onclick="openMap('${o.customer_lat}','${o.customer_lng}')"><i class="fa-solid fa-map"></i> خريطة</button>
-          </div>
+          <div class="text-sm font-extrabold text-emerald-500">${Number(totalEgp).toFixed(2)} ج</div>
         </div>
+
+        <div class="soft p-3 text-sm space-y-1">
+          <div class="row"><span class="muted">سعر المنتج</span><b>${Number(o.price||0).toFixed(2)} ج</b></div>
+          ${HAS_LOCATION_COLUMNS ? `<div class="row"><span class="muted">العنوان</span><b class="truncate">${escapeHtml(o.customer_address || '—')}</b></div>` : ``}
+          <div class="row"><span class="muted">توصيل</span><b>${Number(delFee).toFixed(2)} ج</b></div>
+          <div class="row"><span class="muted">رسوم موقع</span><b>${Number(platFee).toFixed(2)} ج</b></div>
+          <div class="border-t border-emerald-100 pt-2 row"><span class="font-extrabold">الإجمالي</span><b class="text-emerald-500">${Number(totalEgp).toFixed(2)} ج</b></div>
+          <div class="row"><span class="muted">يعادل بـ Pi</span><b class="mono text-emerald-600">${totalPi ? totalPi.toFixed(6) : '—'} Pi</b></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="acceptOrder('${o.id}')" class="btn btnG">قبول الطلب</button>
+          <button onclick="return openMapUrl('${mapUrl}')" class="btn btnS">
+            <i class="fa-solid fa-map"></i> فتح الخريطة
+          </button>
+        </div>
+      </div>
       `;
     }).join('');
 
   }catch(e){
     console.error(e);
-    document.getElementById('ordersBox').innerHTML = `<div class="tiny" style="color:#fca5a5">فشل تحميل الطلبات</div>`;
+    document.getElementById('ordersBox').innerHTML =
+      `<div class="glass p-4 text-center" style="color:#fca5a5">خطأ في جلب الطلبات: ${escapeHtml(e?.message||'')}</div>`;
   }
 }
 
-function openMap(lat, lng){
-  if(!lat || !lng) return;
-  openMapUrl(buildMapUrl(lat, lng));
-}
-
-async function acceptOrder(orderId){
+async function acceptOrder(id){
   try{
-    if(!PI_USERNAME) return Swal.fire('سجّل دخول');
-    const { error } = await db.from('orders')
-      .update({ status:'accepted', delivery_id: PI_USERNAME })
-      .eq('id', orderId)
-      .eq('status', 'pending');
-    if(error) throw error;
+    if(!PI_USERNAME) return Swal.fire('سجّل دخول كابتن الأول');
 
-    setActiveOrderId(orderId);
-    await loadOrderDetailsForDelivery(orderId);
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: 'تأكيد القبول',
+      text: 'هل أنت متأكد من قبول الطلب الآن؟',
+      showCancelButton: true,
+      confirmButtonText: 'نعم، قبول',
+      cancelButtonText: 'إلغاء'
+    });
+    if (!ok.isConfirmed) return;
+
+    Swal.fire({ title:'جاري القبول...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false });
+
+    const { error } = await db.rpc('accept_order_once', {
+      p_order_id: id,
+      p_delivery_id: PI_USERNAME
+    });
+
+    if (error) throw error;
+
+    setActiveOrderId(id);
+    setMainTab('track');
+    await loadOrderDetailsForDelivery(id);
+
+    document.getElementById('delChat').classList.remove('hidden');
+    Swal.close();
+
+    startChat();
     markSeen('delivery');
     listenDeliveryStatus();
-    await loadOrders();
+    loadDeliveryHistory();
+
   }catch(e){
     console.error(e);
-    Swal.fire('فشل قبول الطلب');
+    Swal.fire({ icon:'error', title:'فشل القبول', text: e?.message || 'حصل خطأ' });
   }
 }
 
 async function loadOrderDetailsForDelivery(orderId){
-  try{
-    const { data, error } = await db.from('orders')
-      .select('product_name,order_type,notes,price,delivery_fee,total_price,platform_fee,customer_address,customer_lat,customer_lng,status')
+  let result = await db.from('orders')
+    .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,customer_address,customer_lat,customer_lng,status')
+    .eq('id', orderId)
+    .single();
+
+  if(result.error && hasMissingLocationColumn(result.error)) {
+    HAS_LOCATION_COLUMNS = false;
+    result = await db.from('orders')
+      .select('product_name,order_type,notes,price,delivery_fee,platform_fee,total_price,status')
       .eq('id', orderId)
       .single();
+  }
+
+  const { data, error } = result;
+  if(error){ console.warn(error); return; }
+
+  const delFee = (data.delivery_fee ?? DELIVERY_FEE_EGP);
+  const platFee = (data.platform_fee ?? PLATFORM_FEE_EGP);
+  const totalEgp = (data.total_price ?? ((data.price||0)+delFee+platFee));
+  const totalPi = egpToPi(totalEgp);
+
+  document.getElementById('dStatus').innerText = data.status || 'pending';
+  document.getElementById('dProd').innerText = data.product_name || '—';
+  document.getElementById('dType').innerText = data.order_type || 'any';
+  document.getElementById('dProdEgp').innerText = Number(data.price||0).toFixed(2);
+  const mapLink = document.getElementById('dMapLink');
+  if (HAS_LOCATION_COLUMNS && data.customer_address) {
+    document.getElementById('dAddress').innerText = data.customer_address;
+  } else {
+    document.getElementById('dAddress').innerText = '—';
+  }
+  if (HAS_LOCATION_COLUMNS && typeof data.customer_lat === 'number' && typeof data.customer_lng === 'number') {
+    mapLink.href = buildMapUrl(data.customer_lat, data.customer_lng);
+    mapLink.classList.remove('hidden');
+    mapLink.onclick = () => openMapUrl(mapLink.href);
+  } else {
+    mapLink.href = '#';
+    mapLink.classList.add('hidden');
+  }
+  document.getElementById('dDelFeeEgp').innerText = Number(delFee).toFixed(2);
+  document.getElementById('dPlatFeeEgp').innerText = Number(platFee).toFixed(2);
+  document.getElementById('dTotalEgp').innerText = Number(totalEgp).toFixed(2);
+  document.getElementById('dTotalPi').innerText = totalPi ? totalPi.toFixed(6) : '—';
+  document.getElementById('dNotes').innerText = data.notes ? data.notes : '—';
+}
+
+/* ================== REALTIME: CHAT ================== */
+let chatChannel = null;
+let chatPollTimer = null;
+
+function startChat(){
+  if(!ACTIVE_ORDER) return;
+
+  if (chatChannel) {
+    try { db.removeChannel(chatChannel); } catch {}
+    chatChannel = null;
+  }
+
+  loadMessages();
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  chatPollTimer = setInterval(loadMessages, 8000);
+
+  chatChannel = db.channel('chat-room-' + ACTIVE_ORDER)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'chat_messages',
+      filter: `order_id=eq.${ACTIVE_ORDER}`
+    }, (payload) => {
+      if (payload.new?.order_id !== ACTIVE_ORDER) return;
+      appendMsg(payload.new, ACTIVE_ROLE);
+      scrollChatToBottom(ACTIVE_ROLE);
+      markSeen(currentRole());
+    })
+    .subscribe();
+}
+
+async function loadMessages(){
+  const { data, error } = await db.from('chat_messages')
+    .select('*')
+    .eq('order_id', ACTIVE_ORDER)
+    .order('created_at', { ascending: true });
+
+  if(error){ console.error(error); return; }
+
+  if (ACTIVE_ROLE === 'customer') {
+    safeDom('chatC') && (safeDom('chatC').innerHTML = '');
+  } else {
+    safeDom('chatD') && (safeDom('chatD').innerHTML = '');
+  }
+  (data||[]).forEach((msg) => appendMsg(msg, ACTIVE_ROLE));
+  scrollChatToBottom(ACTIVE_ROLE);
+
+  markSeen(currentRole());
+}
+
+function currentRole(){
+  return ACTIVE_ROLE;
+}
+
+async function uploadChatImage(file){
+  // Bucket: chat
+  const path = `chat/${ACTIVE_ORDER}/${Date.now()}_${file.name}`;
+  const up = await db.storage.from('chat').upload(path, file, { upsert: false });
+  if (up.error) throw up.error;
+  return db.storage.from('chat').getPublicUrl(path).data.publicUrl;
+}
+
+async function sendMsg(sender){
+  try{
+    if(!ACTIVE_ORDER) return Swal.fire('مفيش طلب نشط');
+
+    const input = sender === 'customer' ? document.getElementById('msgC') : document.getElementById('msgD');
+    const fileEl = sender === 'customer' ? document.getElementById('imgC') : document.getElementById('imgD');
+
+    const text = (input.value || '').trim();
+    const file = fileEl.files?.[0];
+
+    if(!text && !file) return;
+
+    let image_url = null;
+    if(file){
+      try{
+        image_url = await uploadChatImage(file);
+      }catch(e){
+        console.warn("Image upload failed:", e);
+        image_url = null; // fallback بدون فشل
+      }
+    }
+
+    const { error } = await db.from('chat_messages').insert([{
+      order_id: ACTIVE_ORDER,
+      sender,
+      message_text: text || null,
+      image_url,
+      seen_at: null
+    }]);
     if(error) throw error;
 
-    const el = document.getElementById('delChat');
-    if(!el) return;
+    input.value = '';
+    fileEl.value = '';
 
-    const delFee = (data.delivery_fee ?? DELIVERY_FEE_EGP);
-    const platformFee = (data.platform_fee ?? PLATFORM_FEE_EGP);
-    const total = (data.total_price ?? (Number(data.price||0) + delFee + platformFee));
-
-    const totalPi = egpToPi(total);
-
-    el.innerHTML = `
-      <div class="tiny muted">طلب: <b>${escapeHtml(data.product_name)}</b></div>
-      <div class="tiny muted">نوع: <b>${escapeHtml(data.order_type||'any')}</b></div>
-      <div class="tiny muted">العنوان: <b>${escapeHtml(data.customer_address||'')}</b></div>
-      <div class="tiny muted">ملاحظات: <b>${escapeHtml(data.notes||'—')}</b></div>
-      <div class="tiny muted">الإجمالي: <b>${Number(total||0).toFixed(2)} ج</b></div>
-      <div class="tiny muted">بالـ Pi: <b>${Number(totalPi||0).toFixed(6)} Pi</b></div>
-    `;
-
-    document.getElementById('delChat').classList.remove('hidden');
   }catch(e){
     console.error(e);
+    Swal.fire({ icon:'error', title:'فشل إرسال الرسالة', text: e?.message || 'حصل خطأ' });
   }
 }
 
-async function setOrderStatus(st){
+function quick(role, txt){
+  if(role==='customer') document.getElementById('msgC').value = txt;
+  else document.getElementById('msgD').value = txt;
+}
+
+function appendMsg(m, targetRole){
+  const bubble = `
+    <div class="msg ${m.sender==='customer'?'c':'d'}">
+      ${m.message_text ? escapeHtml(m.message_text) : ''}
+      ${m.image_url ? `<img loading="lazy" src="${m.image_url}" class="mt-2 chatImage" />` : ''}
+      <div class="mt-1 tiny">${m.seen_at ? '✅✅' : '✅'}</div>
+    </div>
+  `;
+  if (targetRole === 'customer') {
+    safeDom('chatC')?.insertAdjacentHTML('beforeend', bubble);
+  } else {
+    safeDom('chatD')?.insertAdjacentHTML('beforeend', bubble);
+  }
+  scrollChatToBottom(targetRole);
+}
+
+function scrollChatToBottom(role){
+  const el = role === 'delivery'
+    ? document.getElementById('chatD')
+    : document.getElementById('chatC');
+
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollTop = el.scrollHeight;
+  });
+}
+
+function scrollChatToBottom(role){
+  const target = role === 'customer' ? safeDom('chatC') : safeDom('chatD');
+  if (!target) return;
+  requestAnimationFrame(() => {
+    target.scrollTop = target.scrollHeight;
+  });
+}
+
+async function markSeen(viewerRole){
+  try{
+    if(!ACTIVE_ORDER) return;
+    if (!['customer','delivery'].includes(viewerRole)) return;
+    await db.from('chat_messages')
+      .update({ seen_at: new Date().toISOString() })
+      .eq('order_id', ACTIVE_ORDER)
+      .neq('sender', viewerRole)
+      .is('seen_at', null);
+  }catch(e){
+    console.warn('markSeen failed:', e);
+  }
+}
+
+/* ================== REALTIME: STATUS ================== */
+let statusChannel = null;
+let deliveryStatusChannel = null;
+let statusPollTimer = null;
+
+function listenStatus(){
   if(!ACTIVE_ORDER) return;
-  if(!PI_USERNAME) return Swal.fire('سجّل دخول');
+
+  if (statusChannel) {
+    try { db.removeChannel(statusChannel); } catch {}
+    statusChannel = null;
+  }
+
+  if (statusPollTimer) clearInterval(statusPollTimer);
+  refreshCustomerStatus();
+  statusPollTimer = setInterval(refreshCustomerStatus, 15000);
+
+  const orderId = ACTIVE_ORDER;
+  statusChannel = db.channel('order-status-' + orderId)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${orderId}`
+    }, (payload) => {
+      try{
+        if (!ACTIVE_ORDER && LAST_DELIVERED_ORDER_ID) return;
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
+        }
+        const s = normalizeStatus(payload.new.status);
+        if(['delivered','completed'].includes(s)){
+          console.log('[listenStatus] delivered detected', payload.new.id);
+          finalizeCustomerDeliveredUI(payload.new);
+          return;
+        }
+        safeDom('custStatus') && (safeDom('custStatus').innerText = s);
+        updateCustomerTimeline(s);
+
+        if(['accepted','shipping','arrived','delivered','completed'].includes(s)){
+          safeDom('custChat')?.classList.remove('hidden');
+        }
+      } catch (err){
+        console.error('[listenStatus] UI update failed', err);
+      }
+    }).subscribe();
+}
+
+function listenDeliveryStatus(){
+  if(!ACTIVE_ORDER) return;
+
+  if (deliveryStatusChannel) {
+    try { db.removeChannel(deliveryStatusChannel); } catch {}
+    deliveryStatusChannel = null;
+  }
+
+  const orderId = ACTIVE_ORDER;
+  deliveryStatusChannel = db.channel('delivery-status-' + orderId)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema:'public', table:'orders',
+      filter: `id=eq.${orderId}`
+    }, (payload) => {
+      try{
+        if (ACTIVE_ORDER !== orderId) {
+          console.log('[listenDeliveryStatus] ignore stale order', orderId, ACTIVE_ORDER);
+          return;
+        }
+        const s = normalizeStatus(payload.new.status || 'pending');
+        const statusEl = safeDom('dStatus');
+        if (statusEl) statusEl.innerText = s;
+
+        if (['delivered','completed'].includes(s)) {
+          console.log('[listenDeliveryStatus] delivered detected', payload.new.id);
+          safeDom('delChat')?.classList.add('hidden');
+          setActiveOrderId(null);
+          loadOrders();
+          loadWalletPi();
+          loadDeliveryHistory();
+          if (deliveryStatusChannel) {
+            try { db.removeChannel(deliveryStatusChannel); } catch {}
+            deliveryStatusChannel = null;
+          }
+          if (chatChannel) {
+            try { db.removeChannel(chatChannel); } catch {}
+            chatChannel = null;
+          }
+          if (chatPollTimer) clearInterval(chatPollTimer);
+        }
+      }catch(err){
+        console.error('[listenDeliveryStatus] UI update failed', err);
+      }
+    }).subscribe();
+}
+
+/* ================== DELIVERY STATUS + OTP ================== */
+async function setOrderStatus(st){
+  if(!ACTIVE_ORDER) return Swal.fire('اختر طلب أولاً');
   const ok = await Swal.fire({
     icon: 'question',
-    title: 'تأكيد الحالة',
-    text: 'هل أنت متأكد من تحديث حالة الطلب؟',
+    title: 'تأكيد الوصول',
+    text: 'هل وصلت لموقع العميل بالفعل؟',
     showCancelButton: true,
     confirmButtonText: 'نعم، وصلت',
     cancelButtonText: 'إلغاء'
@@ -2193,16 +2830,17 @@ async function loadWalletPi() {
 
     // fallback: حساب محلي في حال فشل السيرفر
     const withdrawnSum = await getWithdrawnSum();
-    const { data: earnings, error: e2 } = await db.from('delivery_earnings')
-      .select('amount_pi')
-      .eq('delivery_id', PI_UID)
+    const { data: orders, error: e2 } = await db.from('orders')
+      .select('pricing_snapshot,status,delivery_id,price,delivery_fee,total_price,platform_fee')
+      .eq('delivery_id', PI_USERNAME)
+      .eq('status', 'delivered')
       .limit(1000);
 
     if (e2) throw e2;
 
     let earned = 0;
-    (earnings || []).forEach((row) => {
-      earned += toNum(row.amount_pi);
+    (orders || []).forEach(o => {
+      earned += calcDeliveryEarningsPi(o);
     });
 
     const available = Math.max(0, earned - withdrawnSum);
@@ -2291,12 +2929,7 @@ async function withdrawPi() {
     document.getElementById('wdAmountPi').value = '';
     document.getElementById('wdWallet').value = '';
 
-    const balanceAfter = Number(out?.balance_after);
-    if (Number.isFinite(balanceAfter)) {
-      document.getElementById('walletPi').innerText = balanceAfter.toFixed(6);
-    } else {
-      await loadWalletPi();
-    }
+    await loadWalletPi();
     await loadWithdrawHistory();
 
   } catch (e) {
