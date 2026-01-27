@@ -1,23 +1,39 @@
 const StellarSdk = require('stellar-sdk');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. إعدادات قاعدة البيانات (Supabase)
-const SUPABASE_URL = process.env.SUPABASE_URL; 
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
-
-// 2) App wallet secret (محفظة النظام اللي هتدفع منها)
+// Env
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const APP_WALLET_SECRET = process.env.APP_WALLET_SECRET;
 
-// 3) Pi Testnet (Stellar)
+// Pi Testnet (Stellar)
 const PI_HORIZON_URL = 'https://api.testnet.minepi.com';
 const NETWORK_PASSPHRASE = 'Pi Testnet';
 
 const headers = {
-  'Content-Type': 'application/json',
+  'Content-Type': 'application/json; charset=utf-8',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+const json = (statusCode, payload) => ({
+  statusCode,
+  headers,
+  body: JSON.stringify(payload),
+});
+
+function isValidAmount(n) {
+  return Number.isFinite(n) && n > 0;
+}
+
+function isValidStellarPublicKey(address) {
+  try {
+    return StellarSdk.StrKey.isValidEd25519PublicKey(address);
+  } catch (_) {
+    return false;
+  }
+}
 
 function clampBalance(value) {
   const num = Number(value);
@@ -25,34 +41,36 @@ function clampBalance(value) {
   return Math.max(0, num);
 }
 
+// ✅ عميل Supabase مرة واحدة فقط
+const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
 exports.handler = async (event) => {
-  // السماح فقط بطلبات POST
+  // CORS
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers };
+    return json(200, { ok: true });
   }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return json(405, { error: 'Method Not Allowed' });
   }
 
   try {
     // تحقق من env
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      return json(500, { error: 'Missing Supabase environment variables (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)' });
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return json(500, { error: 'Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY' });
     }
     if (!APP_WALLET_SECRET) {
-      return json(500, { error: 'APP_WALLET_SECRET is not defined in environment variables' });
+      return json(500, { error: 'APP_WALLET_SECRET is not defined' });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const body = JSON.parse(event.body || '{}');
-    const uid = body.uid; // ده لازم يساوي delivery_earnings.delivery_id
+
+    const uid = body.uid; // delivery_earnings.delivery_id
     const username = body.username || null;
     const walletAddress = body.walletAddress;
     const withdrawAmount = Number(body.amount);
 
     // تحقق من المدخلات
-    if (!uid || !walletAddress || !body.amount) {
+    if (!uid || !walletAddress || body.amount === undefined) {
       return json(400, { error: 'بيانات ناقصة', required: ['uid', 'amount', 'walletAddress'] });
     }
     if (!isValidAmount(withdrawAmount)) {
@@ -62,42 +80,35 @@ exports.handler = async (event) => {
       return json(400, { error: 'عنوان المحفظة غير صحيح (Stellar/Pi address)' });
     }
 
-    // --- 1) حساب رصيد الدليفري من قاعدة البيانات ---
-    // جدولك: delivery_earnings (delivery_id, amount_pi, ...)
-    const { data: earnings, error: earnErr } = await supabase
+    // --- 1) حساب الرصيد من قاعدة البيانات ---
+    const { data: earnings, error: earnErr } = await db
       .from('delivery_earnings')
       .select('amount_pi')
       .eq('delivery_id', uid);
 
-    // التحقق من المدخلات
-    if (!uid || !amount || !walletAddress) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'بيانات ناقصة' }) };
-    }
-    if (!Number.isFinite(withdrawAmount) || withdrawAmount <= 0) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'قيمة السحب غير صحيحة' }) };
-    }
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'إعدادات قاعدة البيانات غير متوفرة' }) };
+    if (earnErr) {
+      return json(500, { error: 'Database error reading earnings', details: earnErr.message });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // --- خطوة 1: التحقق من الرصيد في قاعدة البيانات ---
-    const { data: earnings } = await supabase
-      .from('delivery_earnings')
-      .select('amount_pi')
-      .eq('delivery_pi_user_id', uid);
-    const { data: withdrawals } = await supabase
+    const { data: withdrawals, error: wdErr } = await db
       .from('withdrawals')
       .select('amount')
       .eq('pi_user_id', uid);
 
-    const totalEarned = earnings ? earnings.reduce((sum, row) => sum + parseFloat(row.amount_pi || 0), 0) : 0;
-    const totalWithdrawn = withdrawals ? withdrawals.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) : 0;
+    if (wdErr) {
+      return json(500, { error: 'Database error reading withdrawals', details: wdErr.message });
+    }
+
+    const totalEarned = (earnings || []).reduce((sum, row) => sum + Number(row.amount_pi || 0), 0);
+    const totalWithdrawn = (withdrawals || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const currentBalance = clampBalance(totalEarned - totalWithdrawn);
 
     if (currentBalance < withdrawAmount) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'رصيد حسابك غير كافٍ' }) };
+      return json(400, {
+        error: 'رصيد حسابك غير كافٍ',
+        balance: Number(currentBalance.toFixed(7)),
+        requested: Number(withdrawAmount.toFixed(7)),
+      });
     }
 
     // --- 2) تنفيذ التحويل على Pi Testnet ---
@@ -107,7 +118,7 @@ exports.handler = async (event) => {
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
 
     const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: '100000', // 0.01 Pi تقريباً (حسب إعدادك)
+      fee: '100000',
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(
@@ -120,34 +131,32 @@ exports.handler = async (event) => {
       .setTimeout(30)
       .build();
 
-    // توقيع المعاملة
-    transaction.sign(sourceKeys);
+    tx.sign(sourceKeys);
 
-    // إرسال المعاملة للبلوكشين
-    const result = await server.submitTransaction(transaction);
+    const result = await server.submitTransaction(tx);
 
-    // --- خطوة 3: تسجيل العملية بنجاح في Supabase ---
-    await supabase.from('withdrawals').insert([{
-      pi_user_id: uid,
-      username: username,
-      amount: withdrawAmount,
-      wallet_address: walletAddress,
-      txid: result.hash
-    }]);
+    // --- 3) تسجيل السحب في Supabase ---
+    const { error: insertErr } = await db.from('withdrawals').insert([
+      {
+        pi_user_id: uid,
+        username,
+        amount: withdrawAmount,
+        wallet_address: walletAddress,
+        txid: result.hash,
+      },
+    ]);
+
+    if (insertErr) {
+      // التحويل حصل لكن التسجيل فشل
+      return json(200, {
+        success: true,
+        txid: result.hash,
+        message: 'تم التحويل بنجاح (لكن فشل تسجيل العملية في قاعدة البيانات)',
+        db_error: insertErr.message,
+      });
+    }
 
     const balanceAfter = clampBalance(currentBalance - withdrawAmount);
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ 
-        success: true, 
-        txid: result.hash, 
-        balance_before: currentBalance,
-        withdrawn: withdrawAmount,
-        balance_after: balanceAfter
-      })
-    };
 
     return json(200, {
       success: true,
@@ -155,17 +164,16 @@ exports.handler = async (event) => {
       message: 'تم التحويل بنجاح',
       balance_before: Number(currentBalance.toFixed(7)),
       withdrawn: Number(withdrawAmount.toFixed(7)),
-      balance_after: Number((currentBalance - withdrawAmount).toFixed(7)),
+      balance_after: Number(balanceAfter.toFixed(7)),
     });
   } catch (err) {
-    console.error('--- ERROR LOG START ---');
+    console.error('withdraw error:', err);
 
     let errorResponse = {
       error: 'فشلت المعاملة',
       details: err?.message || 'Unknown error',
     };
 
-    // Stellar/Horizon errors
     if (err.response && err.response.data && err.response.data.extras) {
       const codes = err.response.data.extras.result_codes;
       const opCodes = codes.operations ? codes.operations.join(', ') : 'no_op_code';
@@ -180,13 +188,6 @@ exports.handler = async (event) => {
       }
     }
 
-    console.error(errorResponse.details);
-    console.error('--- ERROR LOG END ---');
-
-    return { 
-      statusCode: 500, 
-      headers,
-      body: JSON.stringify(errorResponse) 
-    };
+    return json(500, errorResponse);
   }
 };
