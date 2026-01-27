@@ -23,6 +23,11 @@ const json = (statusCode, payload) => ({
   body: JSON.stringify(payload),
 });
 
+function toNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function isValidAmount(n) {
   return Number.isFinite(n) && n > 0;
 }
@@ -41,20 +46,87 @@ function clampBalance(value) {
   return Math.max(0, num);
 }
 
-// ✅ عميل Supabase مرة واحدة فقط
+/**
+ * ✅ مستحقات الدليفري من snapshot:
+ * الأفضل: total_pi - platform_fee_pi
+ * fallback: price_pi + delivery_fee_pi
+ * fallback: delivery_fee_pi فقط
+ */
+function deliveryPayoutFromSnapshot(snapshot) {
+  const s = snapshot || {};
+  const total = toNum(s.total_pi);
+  const platform = toNum(s.platform_fee_pi);
+
+  if (total > 0) {
+    const payout = total - platform;
+    return payout > 0 ? payout : 0;
+  }
+
+  const price = toNum(s.price_pi);
+  const deliveryFee = toNum(s.delivery_fee_pi);
+  if (price > 0 || deliveryFee > 0) return Math.max(0, price + deliveryFee);
+
+  return Math.max(0, deliveryFee);
+}
+
+// Supabase client (Service Role)
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+async function getWithdrawnSum(uid) {
+  const { data, error } = await db
+    .from('withdrawals')
+    .select('amount')
+    .eq('pi_user_id', uid)
+    .limit(5000);
+
+  if (error) throw new Error(error.message);
+  return (data || []).reduce((sum, r) => sum + toNum(r.amount), 0);
+}
+
+async function getEarnedSum(uid) {
+  // 1) cache: delivery_wallet (لو انت محافظ عليه كمستحقات الدليفري)
+  const walletRes = await db
+    .from('delivery_wallet')
+    .select('balance_pi')
+    .eq('delivery_id', uid)
+    .maybeSingle();
+
+  if (!walletRes.error && walletRes.data && walletRes.data.balance_pi !== null) {
+    return toNum(walletRes.data.balance_pi);
+  }
+
+  // 2) ledger: delivery_earnings (لازم يكون amount_pi = total - platform)
+  const earnRes = await db
+    .from('delivery_earnings')
+    .select('amount_pi')
+    .eq('delivery_id', uid)
+    .limit(5000);
+
+  if (!earnRes.error && earnRes.data && earnRes.data.length) {
+    return (earnRes.data || []).reduce((sum, r) => sum + toNum(r.amount_pi), 0);
+  }
+
+  // 3) fallback: orders snapshot
+  const ordersRes = await db
+    .from('orders')
+    .select('pricing_snapshot')
+    .eq('delivery_id', uid)
+    .eq('status', 'delivered')
+    .limit(5000);
+
+  if (ordersRes.error) throw new Error(ordersRes.error.message);
+
+  return (ordersRes.data || []).reduce((sum, o) => {
+    return sum + deliveryPayoutFromSnapshot(o?.pricing_snapshot);
+  }, 0);
+}
 
 exports.handler = async (event) => {
   // CORS
-  if (event.httpMethod === 'OPTIONS') {
-    return json(200, { ok: true });
-  }
-  if (event.httpMethod !== 'POST') {
-    return json(405, { error: 'Method Not Allowed' });
-  }
+  if (event.httpMethod === 'OPTIONS') return json(200, { ok: true });
+  if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
   try {
-    // تحقق من env
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return json(500, { error: 'Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY' });
     }
@@ -64,12 +136,11 @@ exports.handler = async (event) => {
 
     const body = JSON.parse(event.body || '{}');
 
-    const uid = body.uid; // delivery_earnings.delivery_id
+    const uid = body.uid;
     const username = body.username || null;
-    const walletAddress = body.walletAddress;
+    const walletAddress = (body.walletAddress || '').trim();
     const withdrawAmount = Number(body.amount);
 
-    // تحقق من المدخلات
     if (!uid || !walletAddress || body.amount === undefined) {
       return json(400, { error: 'بيانات ناقصة', required: ['uid', 'amount', 'walletAddress'] });
     }
@@ -80,41 +151,23 @@ exports.handler = async (event) => {
       return json(400, { error: 'عنوان المحفظة غير صحيح (Stellar/Pi address)' });
     }
 
-    // --- 1) حساب الرصيد من قاعدة البيانات ---
-    const { data: earnings, error: earnErr } = await db
-      .from('delivery_earnings')
-      .select('amount_pi')
-      .eq('delivery_id', uid);
-
-    if (earnErr) {
-      return json(500, { error: 'Database error reading earnings', details: earnErr.message });
-    }
-
-    const { data: withdrawals, error: wdErr } = await db
-      .from('withdrawals')
-      .select('amount')
-      .eq('pi_user_id', uid);
-
-    if (wdErr) {
-      return json(500, { error: 'Database error reading withdrawals', details: wdErr.message });
-    }
-
-    const totalEarned = (earnings || []).reduce((sum, row) => sum + Number(row.amount_pi || 0), 0);
-    const totalWithdrawn = (withdrawals || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
-    const currentBalance = clampBalance(totalEarned - totalWithdrawn);
+    // 1) حساب الرصيد = مستحقات الدليفري (منتجات + توصيل) - المسحوبات
+    const earned = await getEarnedSum(uid);
+    const withdrawn = await getWithdrawnSum(uid);
+    const currentBalance = clampBalance(earned - withdrawn);
 
     if (currentBalance < withdrawAmount) {
       return json(400, {
         error: 'رصيد حسابك غير كافٍ',
         balance: Number(currentBalance.toFixed(7)),
         requested: Number(withdrawAmount.toFixed(7)),
+        note: 'رصيدك بيحسب (فلوس المنتجات + التوصيل) لكل طلب تم تسليمه',
       });
     }
 
-    // --- 2) تنفيذ التحويل على Pi Testnet ---
+    // 2) تنفيذ التحويل على Pi Testnet
     const server = new StellarSdk.Horizon.Server(PI_HORIZON_URL);
     const sourceKeys = StellarSdk.Keypair.fromSecret(APP_WALLET_SECRET);
-
     const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
 
     const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
@@ -135,7 +188,7 @@ exports.handler = async (event) => {
 
     const result = await server.submitTransaction(tx);
 
-    // --- 3) تسجيل السحب في Supabase ---
+    // 3) تسجيل السحب في Supabase
     const { error: insertErr } = await db.from('withdrawals').insert([
       {
         pi_user_id: uid,
@@ -146,17 +199,19 @@ exports.handler = async (event) => {
       },
     ]);
 
+    const balanceAfter = clampBalance(currentBalance - withdrawAmount);
+
     if (insertErr) {
-      // التحويل حصل لكن التسجيل فشل
       return json(200, {
         success: true,
         txid: result.hash,
         message: 'تم التحويل بنجاح (لكن فشل تسجيل العملية في قاعدة البيانات)',
         db_error: insertErr.message,
+        balance_before: Number(currentBalance.toFixed(7)),
+        withdrawn: Number(withdrawAmount.toFixed(7)),
+        balance_after: Number(balanceAfter.toFixed(7)),
       });
     }
-
-    const balanceAfter = clampBalance(currentBalance - withdrawAmount);
 
     return json(200, {
       success: true,
@@ -165,6 +220,7 @@ exports.handler = async (event) => {
       balance_before: Number(currentBalance.toFixed(7)),
       withdrawn: Number(withdrawAmount.toFixed(7)),
       balance_after: Number(balanceAfter.toFixed(7)),
+      note: 'الدليفري بياخد (منتجات + توصيل). المنصة بتاخد platform fee.',
     });
   } catch (err) {
     console.error('withdraw error:', err);
