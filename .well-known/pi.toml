@@ -1,1 +1,26 @@
+# Donate Way — Pi TOML
+# Place this file at: https://nexthand.netlify.app/.well-known/pi.toml
+
+VERSION="2.0.0"
+
+NETWORK_PASSPHRASE="Pi Testnet"
+HORIZON_URL="https://api.testnet.minepi.com"
+
+ACCOUNTS=[
+  "GBQ3H472BMOMTFRSK5P26FBRVOE3ZFCB5F3FTGXEGOV5CN7RAB6TRPJR"
+]
+
+[DOCUMENTATION]
+ORG_NAME="QUICKCART"
+ORG_URL="https://nexthand.netlify.app"
+ORG_LOGO="https://nexthand.netlify.app/token_512.png"
+ORG_DESCRIPTION="QUICKCART"
+
+[[CURRENCIES]]
+code="QUICKCART"
+issuer="GBQ3H472BMOMTFRSK5P26FBRVOE3ZFCB5F3FTGXEGOV5CN7RAB6TRPJR"
+display_decimals=2
+name="QUICKCART"
+desc="QUICKCART"
+image="https://nexthand.netlify.app/token_512.png"
 
