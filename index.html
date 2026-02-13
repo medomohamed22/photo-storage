@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donate Way Notifications</title>
+    <title>تنبيهات Donate Way</title>
     
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -13,134 +12,199 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f3e5f5;
+            margin: 0;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            overflow: hidden;
+        }
+
+        /* المحتوى الأساسي للصفحة */
+        .main-content {
             text-align: center;
+            color: #666;
+        }
+        .main-content h1 { color: #673ab7; }
+
+        /* --- تصميم النافذة المنبثقة (Popup) --- */
+        
+        /* 1. الخلفية المعتمة */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* تعتيم الخلفية */
+            backdrop-filter: blur(5px); /* تأثير ضبابي */
+            display: none; /* مخفي افتراضياً */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .container {
+        /* 2. جسم النافذة */
+        .modal-box {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 85%;
-            max-width: 400px;
+            max-width: 350px;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: scale(0.7);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .bell-icon {
+        /* أيقونة الجرس */
+        .bell-anim {
             font-size: 50px;
-            margin-bottom: 20px;
-            display: block;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: ring 1.5s infinite ease-in-out;
         }
 
-        h2 { color: #673ab7; margin: 0 0 10px; }
-        p { color: #666; margin-bottom: 30px; line-height: 1.6; }
-
-        .btn-notify {
-            background: #ff5252;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
+        /* النصوص */
+        .modal-title {
+            margin: 0 0 10px;
+            color: #333;
+            font-size: 20px;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
-            transition: transform 0.2s;
+        }
+        .modal-desc {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        /* الأزرار */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-allow {
+            background: #673ab7; /* بنفسجي */
+            color: white;
+            box-shadow: 0 4px 15px rgba(103, 58, 183, 0.4);
         }
         
-        .btn-notify:active { transform: scale(0.95); }
-        .btn-notify:disabled { background: #4CAF50; cursor: default; box-shadow: none; }
-
-        #log-area {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
+        .btn-cancel {
             background: #eee;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: left;
-            direction: ltr;
-            display: none; /* مخفي إلا عند وجود خطأ */
+            color: #555;
         }
+
+        /* أنيميشن الظهور */
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        /* أنيميشن الجرس */
+        @keyframes ring {
+            0% { transform: rotate(0); }
+            10% { transform: rotate(15deg); }
+            20% { transform: rotate(-15deg); }
+            30% { transform: rotate(10deg); }
+            40% { transform: rotate(-10deg); }
+            100% { transform: rotate(0); }
+        }
+
+        #status-log { margin-top: 20px; font-size: 12px; color: green; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <span class="bell-icon">🔔</span>
-        <h2>تفعيل التنبيهات</h2>
-        <p>اضغط الزر بالأسفل لاستقبال إشعارات عند وصول تبرعات جديدة.</p>
+    <div class="main-content">
+        <h1>Donate Way</h1>
+        <p>جاري تحميل النظام...</p>
+        <div id="status-log"></div>
+    </div>
 
-        <button id="notifyBtn" class="btn-notify" onclick="requestPermission()">
-            اشترك في الإشعارات
-        </button>
-
-        <div id="log-area"></div>
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="bell-anim">🔔</div>
+            <h3 class="modal-title">تفعيل التنبيهات</h3>
+            <p class="modal-desc">
+                هل تود استقبال إشعارات فورية عند وصول تبرعات جديدة أو تحديثات على حسابك؟
+            </p>
+            <div class="btn-group">
+                <button class="btn btn-cancel" onclick="closeModal()">لاحقاً</button>
+                <button class="btn btn-allow" onclick="subscribeUser()">نعم، تفعيل</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // دالة لعرض الأخطاء للمساعدة
-        function log(msg) {
-            const el = document.getElementById('log-area');
-            el.style.display = 'block';
-            el.innerHTML += `> ${msg}<br>`;
-        }
-
-        // 1. تهيئة Pi SDK فقط (بدون تسجيل دخول)
+        // 1. تهيئة Pi SDK
         const Pi = window.Pi;
         try {
             Pi.init({ version: "2.0", sandbox: false });
-            // لا نطلب authenticate هنا، فقط init لكي يعمل الموقع داخل المتصفح
-        } catch (e) {
-            log("Pi Init Error: " + e);
-        }
+        } catch (e) { console.error(e); }
 
-        // 2. تهيئة OneSignal
+        // 2. إعداد OneSignal والتحكم في النافذة
         window.OneSignalDeferred = window.OneSignalDeferred || [];
+        
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
                 appId: "46c0fdfe-2b48-474f-b840-8b1a44c22d02",
                 allowLocalhostAsSecureOrigin: true,
             });
-            
-            // التحقق إذا كان المشترك مفعل سابقاً
+
+            // التحقق: هل المستخدم مشترك بالفعل؟
             if (OneSignal.User.PushSubscription.optedIn) {
-                const btn = document.getElementById('notifyBtn');
-                btn.innerText = "✅ الإشعارات مفعلة بالفعل";
-                btn.disabled = true;
+                document.getElementById('status-log').innerText = "✅ أنت مشترك بالفعل في الإشعارات";
+            } else {
+                // إذا لم يكن مشتركاً -> أظهر النافذة بعد ثانية ونصف
+                setTimeout(() => {
+                    openModal();
+                }, 1500);
             }
         });
 
-        // 3. دالة الزر (الاشتراك المباشر)
-        function requestPermission() {
-            const btn = document.getElementById('notifyBtn');
-            btn.innerText = "جاري الطلب...";
+        // دوال التحكم في النافذة (Open/Close)
+        function openModal() {
+            document.getElementById('customModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.remove('active');
+        }
+
+        // دالة الاشتراك عند الضغط على "نعم"
+        function subscribeUser() {
+            const allowBtn = document.querySelector('.btn-allow');
+            allowBtn.innerText = "جاري التفعيل...";
             
             window.OneSignalDeferred.push(async function(OneSignal) {
                 try {
-                    // طلب الإذن مباشرة
+                    // طلب الإذن
                     await OneSignal.User.PushSubscription.optIn();
                     
-                    // انتظار النتيجة
+                    // إغلاق النافذة بعد قليل
                     setTimeout(() => {
-                        if (OneSignal.User.PushSubscription.optedIn) {
-                            btn.innerText = "✅ تم التفعيل بنجاح";
-                            btn.style.backgroundColor = "#4CAF50";
-                            btn.disabled = true;
-                        } else {
-                            btn.innerText = "⚠️ حاول مرة أخرى";
-                            alert("لم يتم التفعيل. تأكد من إعدادات المتصفح أو أن الموقع آمن (HTTPS).");
-                        }
-                    }, 2500);
+                        closeModal();
+                        document.getElementById('status-log').innerText = "🎉 تم تفعيل الإشعارات بنجاح!";
+                    }, 2000); // ننتظر ثانيتين لنري المستخدم النتيجة
 
                 } catch (error) {
-                    log("Error: " + error);
-                    btn.innerText = "حدث خطأ";
+                    allowBtn.innerText = "حدث خطأ";
+                    alert("تعذر التفعيل. تأكد من إعدادات المتصفح.");
                 }
             });
         }
