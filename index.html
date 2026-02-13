@@ -1,105 +1,185 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>اختبار إشعارات Pi Browser</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi App Ads Integration</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h2 { color: #6c238b; } /* لون Pi المميز */
+        
+        /* تنسيق الأزرار */
+        button {
+            background-color: #fdb927; /* لون ذهبي */
+            color: #333;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            max-width: 300px;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: scale(1.02); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
 
-<style>
-body{
-  font-family: Arial, sans-serif;
-  background:#0f172a;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  margin:0;
-}
-.card{
-  background:#111827;
-  padding:25px;
-  border-radius:16px;
-  width:95%;
-  max-width:420px;
-  box-shadow:0 10px 30px rgba(0,0,0,.4);
-}
-h2{margin-top:0}
-.result{
-  background:#020617;
-  padding:12px;
-  border-radius:10px;
-  margin-top:10px;
-  font-size:14px;
-  line-height:1.6;
-  word-break:break-all;
-}
-.ok{color:#22c55e}
-.bad{color:#ef4444}
-.warn{color:#f59e0b}
-button{
-  width:100%;
-  padding:12px;
-  border:0;
-  border-radius:10px;
-  background:#7c3aed;
-  color:#fff;
-  font-weight:bold;
-  cursor:pointer;
-  margin-top:12px;
-}
-</style>
+        /* تنسيق منطقة البانر الإعلاني */
+        .ad-banner-area {
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(45deg, #6c238b, #4a148c);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            display: none; /* مخفي افتراضياً حتى يتم تسجيل الدخول */
+            border: 2px dashed #fdb927;
+        }
+        .ad-banner-area h3 { margin: 0; font-size: 18px; }
+        .ad-banner-area p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+
+        #userInfo { margin-top: 15px; font-weight: bold; color: #333; }
+        #statusMessage { margin-top: 10px; color: green; font-size: 14px; }
+        .error { color: red; }
+    </style>
 </head>
-
 <body>
 
-<div class="card">
-  <h2>اختبار Web Push في Pi Browser</h2>
-  <div id="log" class="result">اضغط زر الاختبار...</div>
-  <button onclick="runTest()">ابدأ الاختبار</button>
+<div class="container">
+    <h2>تطبيق Pi التجريبي</h2>
+    
+    <div id="loginSection">
+        <p>يجب تسجيل الدخول للوصول للميزات</p>
+        <button onclick="login()">تسجيل الدخول باستخدام Pi</button>
+    </div>
+    <div id="userInfo"></div>
+
+    <hr>
+
+    <div id="myBannerAd" class="ad-banner-area" onclick="showInterstitialAd()">
+        <h3>📢 إعلان مميز</h3>
+        <p>اضغط هنا لدعم الموقع ومشاهدة العرض</p>
+    </div>
+
+    <hr>
+
+    <h3>🎁 اربح مكافأة</h3>
+    <p>شاهد فيديو قصير للحصول على نقاط</p>
+    <button id="rewardAdBtn" onclick="showRewardedAd()" disabled>شاهد فيديو (Reward Ad)</button>
+    
+    <div id="statusMessage"></div>
 </div>
 
 <script>
-function log(text, cls=""){
-  const el = document.getElementById("log");
-  el.innerHTML += `<div class="${cls}">${text}</div>`;
-}
+    // 1. تهيئة الـ SDK للوضع الحقيقي
+    Pi.init({ version: "2.0", sandbox: false });
 
-async function runTest(){
-  const el = document.getElementById("log");
-  el.innerHTML = "جاري الفحص...<br>";
+    // تعريف المتغيرات
+    let currentUser = null;
 
-  const hasNotification = "Notification" in window;
-  const hasSW = "serviceWorker" in navigator;
-  const hasPush = "PushManager" in window;
-  const permission = (window.Notification && Notification.permission) || "no Notification API";
+    // 2. دالة تسجيل الدخول
+    async function login() {
+        try {
+            const scopes = ['username', 'payments'];
+            // onIncompletePayment ضرورية لعمل الدالة حتى لو كانت فارغة
+            const authResult = await Pi.authenticate(scopes, onIncompletePayment);
+            
+            currentUser = authResult.user;
+            
+            // تحديث الواجهة
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('userInfo').innerText = "أهلاً بك: " + currentUser.username;
+            
+            // تفعيل مناطق الإعلانات
+            document.getElementById('myBannerAd').style.display = 'block';
+            document.getElementById('rewardAdBtn').disabled = false;
+            
+            logStatus("تم تسجيل الدخول بنجاح!");
 
-  log("Notification API: " + hasNotification, hasNotification ? "ok" : "bad");
-  log("Service Worker: " + hasSW, hasSW ? "ok" : "bad");
-  log("PushManager: " + hasPush, hasPush ? "ok" : "bad");
-  log("Permission: " + permission, permission === "granted" ? "ok" : "warn");
-
-  if(hasNotification){
-    try{
-      const p = await Notification.requestPermission();
-      log("طلب الإذن: " + p, p === "granted" ? "ok" : "warn");
-
-      if(p === "granted"){
-        new Notification("Test Notification", {
-          body: "لو ظهر الإشعار خارج Pi Browser يبقى Web Push مدعوم ✅"
-        });
-      }
-    }catch(e){
-      log("فشل طلب الإذن", "bad");
+        } catch (error) {
+            console.error(error);
+            logStatus("فشل تسجيل الدخول. تأكد من فتح الرابط في Pi Browser", true);
+        }
     }
-  }
 
-  if(hasNotification && hasSW && hasPush){
-    log("النتيجة: المتصفح ممكن يدعم Web Push", "ok");
-  }else{
-    log("النتيجة: Pi Browser لا يدعم Web Push كامل ❌", "bad");
-  }
-}
+    // دالة معالجة المدفوعات المعلقة (إجبارية)
+    function onIncompletePayment(payment) {
+        console.log("Incomplete payment found:", payment);
+        // يمكنك إضافة كود إكمال الدفع هنا لاحقاً
+    }
+
+    // 3. كود الإعلان البيني (عند الضغط على البانر)
+    async function showInterstitialAd() {
+        try {
+            logStatus("جاري تحميل الإعلان...");
+            
+            // طلب الإعلان
+            const adId = await Pi.Ads.requestAd("interstitial");
+            
+            // عرض الإعلان
+            const response = await Pi.Ads.showAd(adId);
+            
+            if (response.result === "AD_CLOSED") {
+                logStatus("شكراً لدعمك! تم إغلاق الإعلان.");
+            } else {
+                logStatus("لم يتم إكمال الإعلان.");
+            }
+            
+        } catch (error) {
+            console.error(error);
+            logStatus("لا يوجد إعلان متاح حالياً.", true);
+        }
+    }
+
+    // 4. كود إعلان الفيديو بمكافأة (Rewarded Ad)
+    async function showRewardedAd() {
+        try {
+            logStatus("جاري تحضير الفيديو...");
+            
+            // طلب إعلان من نوع Rewarded
+            const adId = await Pi.Ads.requestAd("rewarded");
+            
+            // عرض الإعلان
+            const response = await Pi.Ads.showAd(adId);
+            
+            // التحقق من النتيجة: هل شاهده للنهاية؟
+            if (response.result === "AD_REWARDED") {
+                logStatus("🎉 مبروك! لقد شاهدت الإعلان وحصلت على المكافأة.");
+                // هنا ترسل طلب للسيرفر لإضافة النقاط للمستخدم
+                // sendRewardToServer(currentUser.uid);
+            } else if (response.result === "AD_CLOSED") {
+                logStatus("تم إغلاق الفيديو قبل اكتماله، لن تحصل على المكافأة.", true);
+            }
+            
+        } catch (error) {
+            console.error(error);
+            logStatus("تعذر تحميل الفيديو حالياً.", true);
+        }
+    }
+
+    // دالة مساعدة لعرض الرسائل
+    function logStatus(msg, isError = false) {
+        const el = document.getElementById('statusMessage');
+        el.innerText = msg;
+        el.className = isError ? "error" : "";
+    }
 </script>
 
 </body>
