@@ -3,182 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار إشعارات Pi - Donate Way</title>
+    <title>تفعيل الإشعارات</title>
     
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    
+
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
-          appId: "46c0fdfe-2b48-474f-b840-8b1a44c22d02", // المعرف الخاص بك
-          safari_web_id: "web.onesignal.auto.xxxxx", // (اختياري)
-          notifyButton: {
-            enable: false, // سنستخدم الزر الخاص بنا
-          },
-          allowLocalhostAsSecureOrigin: true, // للسماح بالتجربة المحلية
+          appId: "46c0fdfe-2b48-474f-b840-8b1a44c22d02",
+          // تفعيل الرسالة المنزلقة (Slidedown) بدلاً من نافذة النظام المباشرة
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  type: "push",
+                  autoPrompt: false, // لا تظهر تلقائياً، سنشغلها بالزر
+                  text: {
+                    actionMessage: "هل تود استقبال إشعارات عند وصول تبرعات جديدة؟",
+                    acceptButton: "نعم، فعلها",
+                    cancelButton: "لا شكراً"
+                  }
+                }
+              ]
+            }
+          }
         });
-        console.log("OneSignal Init Completed");
       });
     </script>
 
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #ede7f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+        .btn {
+            background: #e53935; color: white; padding: 15px 30px; 
+            border: none; border-radius: 10px; font-size: 18px; width: 100%;
+            margin-top: 20px; display: none;
         }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 400px;
-        }
-        h2 { color: #673ab7; margin-bottom: 15px; }
-        p { color: #666; font-size: 14px; margin-bottom: 20px; }
-        
-        button {
-            width: 100%;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 10px;
-            transition: 0.3s;
-        }
-
-        #loginBtn {
-            background-color: #FBC02D; /* Pi Gold */
-            color: #333;
-        }
-        #loginBtn:active { transform: scale(0.98); }
-
-        #notifyBtn {
-            background-color: #E53935; /* Red */
-            color: white;
-            display: none; /* مخفي في البداية */
-        }
-        #notifyBtn:active { transform: scale(0.98); }
-
-        .debug-area {
-            margin-top: 20px;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 5px;
-            font-size: 12px;
-            color: #333;
-            text-align: left;
-            display: none; /* مخفي إلا عند الحاجة */
+        .log-box {
+            background: #333; color: #0f0; padding: 10px; 
+            margin-top: 20px; text-align: left; font-size: 12px; 
+            border-radius: 5px; min-height: 100px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Donate Way</h2>
-        <p id="statusMsg">يرجى تسجيل الدخول لتجربة الإشعارات</p>
-
-        <button id="loginBtn" onclick="loginWithPi()">🔑 تسجيل دخول Pi Network</button>
-
-        <button id="notifyBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات الآن</button>
-
-        <div id="debugLog" class="debug-area"></div>
-    </div>
+    <h3>نظام الإشعارات</h3>
+    <button id="piLogin" class="btn" style="display:block; background:#fbc02d; color:black" onclick="login()">1. تسجيل دخول Pi</button>
+    <button id="notifyBtn" class="btn" onclick="showSlidePrompt()">2. تفعيل الإشعارات</button>
+    
+    <div id="logs" class="log-box">سجل العمليات سيظهر هنا...</div>
 
     <script>
-        // دالة مساعدة لإظهار الأخطاء على الشاشة
-        function log(msg) {
-            const debugDiv = document.getElementById('debugLog');
-            debugDiv.style.display = 'block';
-            debugDiv.innerHTML += `> ${msg}<br>`;
-            console.log(msg);
-        }
-
-        // 1. تهيئة Pi Network
         const Pi = window.Pi;
-        try {
-            Pi.init({ version: "2.0", sandbox: false });
-            log("Pi SDK تم تهيئته بنجاح.");
-        } catch (e) {
-            log("خطأ في Pi SDK: " + e);
+        Pi.init({ version: "2.0", sandbox: false });
+
+        function log(txt) {
+            document.getElementById('logs').innerHTML += `> ${txt}<br>`;
         }
 
-        // دالة تسجيل الدخول
-        async function loginWithPi() {
-            try {
-                log("جاري طلب المصادقة...");
-                const scopes = ['username', 'payments'];
-                const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                
-                log("تم تسجيل الدخول: " + authResult.user.username);
-                document.getElementById('statusMsg').innerText = "أهلاً بك، " + authResult.user.username;
-                
-                // تبديل الأزرار
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('notifyBtn').style.display = 'block';
+        // فحص الأمان فوراً
+        if (location.protocol !== 'https:') {
+            log("❌ خطأ: الموقع لا يعمل بـ HTTPS. الإشعارات لن تعمل!");
+        } else {
+            log("✅ الاتصال آمن (HTTPS).");
+        }
 
-                // ربط اليوزر بـ OneSignal
+        async function login() {
+            try {
+                const scopes = ['username', 'payments'];
+                const authResult = await Pi.authenticate(scopes, () => {});
+                log("تم الدخول: " + authResult.user.username);
+                
+                document.getElementById('piLogin').style.display = 'none';
+                document.getElementById('notifyBtn').style.display = 'block';
+                
+                // ربط المستخدم
                 window.OneSignalDeferred.push(function(OneSignal) {
                     OneSignal.login(authResult.user.uid);
-                    log("تم ربط المستخدم بـ OneSignal ID");
                 });
-
-            } catch (error) {
-                log("فشل تسجيل الدخول: " + error);
-                alert("فشل تسجيل الدخول: " + error);
-            }
+            } catch (e) { log("خطأ دخول: " + e); }
         }
 
-        function onIncompletePaymentFound(payment) { 
-            log("وجد عملية دفع غير مكتملة");
-        };
-
-        // 2. دالة تفعيل الإشعارات (المعدلة للتتبع)
-        function enableNotifications() {
-            alert("1. تم ضغط الزر.. جاري الاتصال بخدمة الإشعارات"); // رسالة 1
+        function showSlidePrompt() {
+            log("جاري إظهار نافذة الطلب (Slidedown)...");
             
             window.OneSignalDeferred.push(async function(OneSignal) {
                 try {
-                    log("محاولة طلب الإذن...");
-
-                    // التحقق من دعم المتصفح
-                    if (!OneSignal.User.PushSubscription) {
-                        alert("2. خطأ: المتصفح لا يدعم أو الخدمة لم تجهز بعد.");
-                        return;
-                    }
-
-                    // طلب الإذن (Opt-In)
-                    await OneSignal.User.PushSubscription.optIn();
+                    // استخدام واجهة OneSignal بدلاً من المتصفح
+                    await OneSignal.Slidedown.promptPush();
                     
-                    alert("3. تم إرسال أمر التفعيل للمتصفح. انتظر قليلاً...");
-
-                    // التحقق مما حدث
-                    setTimeout(() => {
-                        let isEnabled = OneSignal.User.PushSubscription.optedIn;
-                        if(isEnabled) {
-                            alert("✅ نجاح! الإشعارات مفعلة.");
-                            document.getElementById('notifyBtn').innerText = "✅ الإشعارات مفعلة";
+                    log("تم استدعاء النافذة. هل ظهرت؟");
+                    
+                    // مراقبة التغيير
+                    OneSignal.User.PushSubscription.addEventListener("change", function(event) {
+                        if (event.current.optedIn) {
+                            log("🎉 مبروك! تم تفعيل الإشعارات بنجاح.");
+                            document.getElementById('notifyBtn').innerText = "✅ مفعلة";
                             document.getElementById('notifyBtn').disabled = true;
-                            document.getElementById('notifyBtn').style.backgroundColor = "#4CAF50";
-                        } else {
-                            alert("⚠️ لم يتم التفعيل. هل قمت بحظر الموقع سابقاً؟");
                         }
-                    }, 2000);
+                    });
 
-                } catch (error) {
-                    alert("خطأ برمجي: " + error);
-                    log("Error: " + error);
+                } catch (e) {
+                    log("خطأ في OneSignal: " + e);
+                    // إذا فشل الـ Slidedown نجرب الطريقة العادية كاحتياطي
+                    OneSignal.User.PushSubscription.optIn();
                 }
             });
         }
