@@ -3,27 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donate Way Notifications</title>
+    <title>اختبار إشعارات Pi - Donate Way</title>
     
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
-          appId: "46c0fdfe-2b48-474f-b840-8b1a44c22d02",
-          
-          // (إعداد إضافي مهم) للسماح بالتجربة على السيرفر المحلي
-          allowLocalhostAsSecureOrigin: true, 
+          appId: "46c0fdfe-2b48-474f-b840-8b1a44c22d02", // المعرف الخاص بك
+          safari_web_id: "web.onesignal.auto.xxxxx", // (اختياري)
+          notifyButton: {
+            enable: false, // سنستخدم الزر الخاص بنا
+          },
+          allowLocalhostAsSecureOrigin: true, // للسماح بالتجربة المحلية
         });
+        console.log("OneSignal Init Completed");
       });
     </script>
 
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f3e5f5; /* خلفية فاتحة */
+            background-color: #ede7f6;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,109 +35,151 @@
             margin: 0;
             text-align: center;
         }
-        .card {
+        .container {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(103, 58, 183, 0.2);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             width: 90%;
             max-width: 400px;
         }
-        h2 { color: #673ab7; margin-bottom: 10px; }
-        p { color: #555; margin-bottom: 25px; }
+        h2 { color: #673ab7; margin-bottom: 15px; }
+        p { color: #666; font-size: 14px; margin-bottom: 20px; }
         
         button {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             font-size: 16px;
             font-weight: bold;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
             margin-bottom: 10px;
+            transition: 0.3s;
         }
 
-        /* زر تسجيل الدخول */
-        #piLoginBtn {
-            background-color: #fbc02d;
+        #loginBtn {
+            background-color: #FBC02D; /* Pi Gold */
             color: #333;
-            box-shadow: 0 4px 10px rgba(251, 192, 45, 0.4);
         }
-        #piLoginBtn:hover { background-color: #f9a825; }
+        #loginBtn:active { transform: scale(0.98); }
 
-        /* زر الإشعارات (مخفي) */
         #notifyBtn {
-            background-color: #ff5252;
+            background-color: #E53935; /* Red */
             color: white;
-            display: none; /* مخفي افتراضياً */
-            box-shadow: 0 4px 10px rgba(255, 82, 82, 0.4);
-            animation: popIn 0.5s ease;
+            display: none; /* مخفي في البداية */
         }
-        #notifyBtn:hover { background-color: #ff1744; }
+        #notifyBtn:active { transform: scale(0.98); }
 
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .debug-area {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #333;
+            text-align: left;
+            display: none; /* مخفي إلا عند الحاجة */
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div class="container">
         <h2>Donate Way</h2>
-        <p id="message">يرجى تسجيل الدخول لتفعيل التنبيهات</p>
+        <p id="statusMsg">يرجى تسجيل الدخول لتجربة الإشعارات</p>
 
-        <button id="piLoginBtn" onclick="loginPi()">⚡ تسجيل دخول Pi</button>
-        <button id="notifyBtn" onclick="askNotificationPermission()">🔔 تفعيل الإشعارات الآن</button>
+        <button id="loginBtn" onclick="loginWithPi()">🔑 تسجيل دخول Pi Network</button>
+
+        <button id="notifyBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات الآن</button>
+
+        <div id="debugLog" class="debug-area"></div>
     </div>
 
     <script>
-        // 1. إعداد Pi Network
+        // دالة مساعدة لإظهار الأخطاء على الشاشة
+        function log(msg) {
+            const debugDiv = document.getElementById('debugLog');
+            debugDiv.style.display = 'block';
+            debugDiv.innerHTML += `> ${msg}<br>`;
+            console.log(msg);
+        }
+
+        // 1. تهيئة Pi Network
         const Pi = window.Pi;
-        Pi.init({ version: "2.0", sandbox: false });
+        try {
+            Pi.init({ version: "2.0", sandbox: false });
+            log("Pi SDK تم تهيئته بنجاح.");
+        } catch (e) {
+            log("خطأ في Pi SDK: " + e);
+        }
 
         // دالة تسجيل الدخول
-        async function loginPi() {
+        async function loginWithPi() {
             try {
-                // طلب الصلاحيات
+                log("جاري طلب المصادقة...");
                 const scopes = ['username', 'payments'];
                 const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
                 
-                // عند النجاح
-                document.getElementById('message').innerHTML = `أهلاً بك <b>${authResult.user.username}</b><br>يمكنك الآن تفعيل الإشعارات`;
-                document.getElementById('piLoginBtn').style.display = 'none'; // إخفاء زر الدخول
-                document.getElementById('notifyBtn').style.display = 'block'; // إظهار زر الإشعارات
+                log("تم تسجيل الدخول: " + authResult.user.username);
+                document.getElementById('statusMsg').innerText = "أهلاً بك، " + authResult.user.username;
+                
+                // تبديل الأزرار
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('notifyBtn').style.display = 'block';
 
-                // (مهم) ربط اسم مستخدم Pi بـ OneSignal
-                // هذا يجعلنا نعرف من صاحب الإشعار لاحقاً
+                // ربط اليوزر بـ OneSignal
                 window.OneSignalDeferred.push(function(OneSignal) {
                     OneSignal.login(authResult.user.uid);
+                    log("تم ربط المستخدم بـ OneSignal ID");
                 });
 
             } catch (error) {
-                console.error(error);
-                alert("حدث خطأ في تسجيل الدخول");
+                log("فشل تسجيل الدخول: " + error);
+                alert("فشل تسجيل الدخول: " + error);
             }
         }
 
-        function onIncompletePaymentFound(payment) {
-            console.log("مدفوعات معلقة:", payment);
+        function onIncompletePaymentFound(payment) { 
+            log("وجد عملية دفع غير مكتملة");
         };
 
-        // 2. دالة طلب الإذن للإشعارات (تعمل عند ضغط الزر الأحمر)
-        function askNotificationPermission() {
+        // 2. دالة تفعيل الإشعارات (المعدلة للتتبع)
+        function enableNotifications() {
+            alert("1. تم ضغط الزر.. جاري الاتصال بخدمة الإشعارات"); // رسالة 1
+            
             window.OneSignalDeferred.push(async function(OneSignal) {
-                // أمر إظهار نافذة السماح
-                await OneSignal.User.PushSubscription.optIn();
-                
-                // تغيير النص بعد الضغط
-                document.getElementById('notifyBtn').innerText = "جاري التفعيل...";
-                setTimeout(() => {
-                   document.getElementById('notifyBtn').innerText = "✅ تم تفعيل الإشعارات";
-                   document.getElementById('notifyBtn').disabled = true;
-                   document.getElementById('notifyBtn').style.backgroundColor = "#4CAF50";
-                }, 2000);
+                try {
+                    log("محاولة طلب الإذن...");
+
+                    // التحقق من دعم المتصفح
+                    if (!OneSignal.User.PushSubscription) {
+                        alert("2. خطأ: المتصفح لا يدعم أو الخدمة لم تجهز بعد.");
+                        return;
+                    }
+
+                    // طلب الإذن (Opt-In)
+                    await OneSignal.User.PushSubscription.optIn();
+                    
+                    alert("3. تم إرسال أمر التفعيل للمتصفح. انتظر قليلاً...");
+
+                    // التحقق مما حدث
+                    setTimeout(() => {
+                        let isEnabled = OneSignal.User.PushSubscription.optedIn;
+                        if(isEnabled) {
+                            alert("✅ نجاح! الإشعارات مفعلة.");
+                            document.getElementById('notifyBtn').innerText = "✅ الإشعارات مفعلة";
+                            document.getElementById('notifyBtn').disabled = true;
+                            document.getElementById('notifyBtn').style.backgroundColor = "#4CAF50";
+                        } else {
+                            alert("⚠️ لم يتم التفعيل. هل قمت بحظر الموقع سابقاً؟");
+                        }
+                    }, 2000);
+
+                } catch (error) {
+                    alert("خطأ برمجي: " + error);
+                    log("Error: " + error);
+                }
             });
         }
     </script>
