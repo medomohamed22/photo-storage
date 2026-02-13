@@ -1,213 +1,106 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تنبيهات Donate Way</title>
-    
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اختبار إشعارات Pi Browser</title>
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f3e5f5;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        /* المحتوى الأساسي للصفحة */
-        .main-content {
-            text-align: center;
-            color: #666;
-        }
-        .main-content h1 { color: #673ab7; }
-
-        /* --- تصميم النافذة المنبثقة (Popup) --- */
-        
-        /* 1. الخلفية المعتمة */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); /* تعتيم الخلفية */
-            backdrop-filter: blur(5px); /* تأثير ضبابي */
-            display: none; /* مخفي افتراضياً */
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        /* 2. جسم النافذة */
-        .modal-box {
-            background: white;
-            width: 85%;
-            max-width: 350px;
-            padding: 25px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            transform: scale(0.7);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* أيقونة الجرس */
-        .bell-anim {
-            font-size: 50px;
-            margin-bottom: 15px;
-            display: inline-block;
-            animation: ring 1.5s infinite ease-in-out;
-        }
-
-        /* النصوص */
-        .modal-title {
-            margin: 0 0 10px;
-            color: #333;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .modal-desc {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-
-        /* الأزرار */
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 12px 20px;
-            border-radius: 10px;
-            border: none;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .btn-allow {
-            background: #673ab7; /* بنفسجي */
-            color: white;
-            box-shadow: 0 4px 15px rgba(103, 58, 183, 0.4);
-        }
-        
-        .btn-cancel {
-            background: #eee;
-            color: #555;
-        }
-
-        /* أنيميشن الظهور */
-        .modal-overlay.active {
-            display: flex;
-            opacity: 1;
-        }
-        .modal-overlay.active .modal-box {
-            transform: scale(1);
-        }
-
-        /* أنيميشن الجرس */
-        @keyframes ring {
-            0% { transform: rotate(0); }
-            10% { transform: rotate(15deg); }
-            20% { transform: rotate(-15deg); }
-            30% { transform: rotate(10deg); }
-            40% { transform: rotate(-10deg); }
-            100% { transform: rotate(0); }
-        }
-
-        #status-log { margin-top: 20px; font-size: 12px; color: green; }
-    </style>
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#0f172a;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+}
+.card{
+  background:#111827;
+  padding:25px;
+  border-radius:16px;
+  width:95%;
+  max-width:420px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+h2{margin-top:0}
+.result{
+  background:#020617;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+  font-size:14px;
+  line-height:1.6;
+  word-break:break-all;
+}
+.ok{color:#22c55e}
+.bad{color:#ef4444}
+.warn{color:#f59e0b}
+button{
+  width:100%;
+  padding:12px;
+  border:0;
+  border-radius:10px;
+  background:#7c3aed;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:12px;
+}
+</style>
 </head>
+
 <body>
 
-    <div class="main-content">
-        <h1>Donate Way</h1>
-        <p>جاري تحميل النظام...</p>
-        <div id="status-log"></div>
-    </div>
+<div class="card">
+  <h2>اختبار Web Push في Pi Browser</h2>
+  <div id="log" class="result">اضغط زر الاختبار...</div>
+  <button onclick="runTest()">ابدأ الاختبار</button>
+</div>
 
-    <div id="customModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="bell-anim">🔔</div>
-            <h3 class="modal-title">تفعيل التنبيهات</h3>
-            <p class="modal-desc">
-                هل تود استقبال إشعارات فورية عند وصول تبرعات جديدة أو تحديثات على حسابك؟
-            </p>
-            <div class="btn-group">
-                <button class="btn btn-cancel" onclick="closeModal()">لاحقاً</button>
-                <button class="btn btn-allow" onclick="subscribeUser()">نعم، تفعيل</button>
-            </div>
-        </div>
-    </div>
+<script>
+function log(text, cls=""){
+  const el = document.getElementById("log");
+  el.innerHTML += `<div class="${cls}">${text}</div>`;
+}
 
-    <script>
-        // 1. تهيئة Pi SDK
-        const Pi = window.Pi;
-        try {
-            Pi.init({ version: "2.0", sandbox: false });
-        } catch (e) { console.error(e); }
+async function runTest(){
+  const el = document.getElementById("log");
+  el.innerHTML = "جاري الفحص...<br>";
 
-        // 2. إعداد OneSignal والتحكم في النافذة
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-                appId: "46c0fdfe-2b48-474f-b840-8b1a44c22d02",
-                allowLocalhostAsSecureOrigin: true,
-            });
+  const hasNotification = "Notification" in window;
+  const hasSW = "serviceWorker" in navigator;
+  const hasPush = "PushManager" in window;
+  const permission = (window.Notification && Notification.permission) || "no Notification API";
 
-            // التحقق: هل المستخدم مشترك بالفعل؟
-            if (OneSignal.User.PushSubscription.optedIn) {
-                document.getElementById('status-log').innerText = "✅ أنت مشترك بالفعل في الإشعارات";
-            } else {
-                // إذا لم يكن مشتركاً -> أظهر النافذة بعد ثانية ونصف
-                setTimeout(() => {
-                    openModal();
-                }, 1500);
-            }
+  log("Notification API: " + hasNotification, hasNotification ? "ok" : "bad");
+  log("Service Worker: " + hasSW, hasSW ? "ok" : "bad");
+  log("PushManager: " + hasPush, hasPush ? "ok" : "bad");
+  log("Permission: " + permission, permission === "granted" ? "ok" : "warn");
+
+  if(hasNotification){
+    try{
+      const p = await Notification.requestPermission();
+      log("طلب الإذن: " + p, p === "granted" ? "ok" : "warn");
+
+      if(p === "granted"){
+        new Notification("Test Notification", {
+          body: "لو ظهر الإشعار خارج Pi Browser يبقى Web Push مدعوم ✅"
         });
+      }
+    }catch(e){
+      log("فشل طلب الإذن", "bad");
+    }
+  }
 
-        // دوال التحكم في النافذة (Open/Close)
-        function openModal() {
-            document.getElementById('customModal').classList.add('active');
-        }
+  if(hasNotification && hasSW && hasPush){
+    log("النتيجة: المتصفح ممكن يدعم Web Push", "ok");
+  }else{
+    log("النتيجة: Pi Browser لا يدعم Web Push كامل ❌", "bad");
+  }
+}
+</script>
 
-        function closeModal() {
-            document.getElementById('customModal').classList.remove('active');
-        }
-
-        // دالة الاشتراك عند الضغط على "نعم"
-        function subscribeUser() {
-            const allowBtn = document.querySelector('.btn-allow');
-            allowBtn.innerText = "جاري التفعيل...";
-            
-            window.OneSignalDeferred.push(async function(OneSignal) {
-                try {
-                    // طلب الإذن
-                    await OneSignal.User.PushSubscription.optIn();
-                    
-                    // إغلاق النافذة بعد قليل
-                    setTimeout(() => {
-                        closeModal();
-                        document.getElementById('status-log').innerText = "🎉 تم تفعيل الإشعارات بنجاح!";
-                    }, 2000); // ننتظر ثانيتين لنري المستخدم النتيجة
-
-                } catch (error) {
-                    allowBtn.innerText = "حدث خطأ";
-                    alert("تعذر التفعيل. تأكد من إعدادات المتصفح.");
-                }
-            });
-        }
-    </script>
 </body>
 </html>
