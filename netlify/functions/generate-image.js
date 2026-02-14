@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// netlify/functions/generate-image.js
 
 export async function handler(event, context) {
     // السماح فقط بطلبات POST
@@ -9,65 +10,58 @@ export async function handler(event, context) {
     try {
         const body = JSON.parse(event.body);
         const userPrompt = body.prompt;
-        const apiKey = process.env.GEMINI_API_KEY;
+        
+        // جلب المفتاح من إعدادات Netlify الآمنة
+        const API_KEY = process.env.POLLINATIONS_API_KEY;
 
-        if (!apiKey) {
-            return { statusCode: 500, body: JSON.stringify({ error: "API Key missing" }) };
+        if (!userPrompt) {
+            return { statusCode: 400, body: JSON.stringify({ error: "الرجاء إدخال وصف للصورة" }) };
         }
 
-        console.log(`Using Model: gemini-2.5-flash-image for prompt: ${userPrompt}`);
+        console.log(`Generating image for: ${userPrompt}`);
 
-        // 1. إعداد الاتصال بجوجل
-        const genAI = new GoogleGenerativeAI(apiKey);
+        // إعداد الرابط (Flux Model)
+        const encodedPrompt = encodeURIComponent(userPrompt);
+        const seed = Math.floor(Math.random() * 1000000);
+        const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=1024&height=1024&seed=${seed}&nologo=true`;
 
-        // 2. تحديد الموديل بالاسم الذي طلبته
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash-image",
-            generationConfig: {
-                responseMimeType: "image/jpeg" // إجبار الموديل على إخراج صورة
-            }
+        // إعداد الهيدر (هنا نضع المفتاح بأمان)
+        const headers = {
+            "User-Agent": "My-Netlify-App/1.0",
+        };
+
+        // نضيف المفتاح فقط إذا كان موجوداً
+        if (API_KEY) {
+            headers["Authorization"] = `Bearer ${API_KEY}`;
+        }
+
+        // الاتصال بـ Pollinations من السيرفر
+        const response = await fetch(url, {
+            method: "GET",
+            headers: headers
         });
 
-        // 3. إرسال الطلب
-        const result = await model.generateContent(userPrompt);
-        const response = result.response;
-
-        // 4. استخراج بيانات الصورة (Base64)
-        // في هذا الإصدار، الصورة تأتي عادة في inlineData
-        let base64Image = null;
-        
-        const candidates = response.candidates;
-        if (candidates && candidates[0].content && candidates[0].content.parts) {
-            for (const part of candidates[0].content.parts) {
-                if (part.inlineData && part.inlineData.data) {
-                    base64Image = part.inlineData.data;
-                    break;
-                }
-            }
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`خطأ من المصدر (${response.status}): ${errorText}`);
         }
 
-        if (!base64Image) {
-            console.error("No image found in response:", JSON.stringify(response));
-            return { 
-                statusCode: 500, 
-                body: JSON.stringify({ error: "النموذج لم يرسل صورة. تأكد من أن حسابك يدعم هذا الموديل." }) 
-            };
-        }
+        // تحويل الصورة إلى Base64 لإرسالها للفرونت اند
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Image = buffer.toString('base64');
 
-        // 5. إرجاع الصورة للموقع
         return {
             statusCode: 200,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ image: base64Image })
         };
 
     } catch (error) {
-        console.error("Gemini API Error:", error);
+        console.error("Server Error:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ 
-                error: error.message || "حدث خطأ أثناء الاتصال بجوجل",
-                details: error.toString()
-            })
+            body: JSON.stringify({ error: "حدث خطأ أثناء معالجة الصورة", details: error.message })
         };
     }
 }
