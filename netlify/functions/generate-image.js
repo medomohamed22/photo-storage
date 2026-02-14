@@ -1,7 +1,7 @@
-// netlify/functions/generate-image.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function handler(event, context) {
+    // السماح فقط بطلبات POST
     if (event.httpMethod !== "POST") {
         return { statusCode: 405, body: "Method Not Allowed" };
     }
@@ -15,29 +15,27 @@ export async function handler(event, context) {
             return { statusCode: 500, body: JSON.stringify({ error: "API Key missing" }) };
         }
 
-        // 1. إعداد المكتبة المستقرة
+        console.log(`Using Model: gemini-2.5-flash-image for prompt: ${userPrompt}`);
+
+        // 1. إعداد الاتصال بجوجل
         const genAI = new GoogleGenerativeAI(apiKey);
 
-        // 2. اختيار الموديل (Gemini 2.0 Flash Experimental)
+        // 2. تحديد الموديل بالاسم الذي طلبته
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.0-flash-exp",
+            model: "gemini-2.5-flash-image",
             generationConfig: {
-                responseMimeType: "image/jpeg" // أمر صريح بإخراج صورة
+                responseMimeType: "image/jpeg" // إجبار الموديل على إخراج صورة
             }
         });
 
         // 3. إرسال الطلب
         const result = await model.generateContent(userPrompt);
-        const response = await result.response;
-        
-        // 4. استخراج الصورة من الرد
-        // المكتبة المستقرة تعيد البيانات بشكل مختلف قليلاً لكن يمكننا الوصول إليها
-        // عادة في Gemini 2.0 الصور تأتي في candidates[0].content.parts
-        // لكن بما أن SDK قد لا يحلل الصور تلقائياً في هذا الإصدار، سنبحث في الرد الخام
-        
+        const response = result.response;
+
+        // 4. استخراج بيانات الصورة (Base64)
+        // في هذا الإصدار، الصورة تأتي عادة في inlineData
         let base64Image = null;
         
-        // محاولة الوصول للبيانات الخام
         const candidates = response.candidates;
         if (candidates && candidates[0].content && candidates[0].content.parts) {
             for (const part of candidates[0].content.parts) {
@@ -49,20 +47,27 @@ export async function handler(event, context) {
         }
 
         if (!base64Image) {
-            console.log("Full Response:", JSON.stringify(response));
-            return { statusCode: 500, body: JSON.stringify({ error: "لم يقم النموذج بتوليد صورة (قد يكون الموديل مشغولاً أو الوصف غير مسموح)." }) };
+            console.error("No image found in response:", JSON.stringify(response));
+            return { 
+                statusCode: 500, 
+                body: JSON.stringify({ error: "النموذج لم يرسل صورة. تأكد من أن حسابك يدعم هذا الموديل." }) 
+            };
         }
 
+        // 5. إرجاع الصورة للموقع
         return {
             statusCode: 200,
             body: JSON.stringify({ image: base64Image })
         };
 
     } catch (error) {
-        console.error("Gemini Error:", error);
+        console.error("Gemini API Error:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: error.message || "حدث خطأ في الخادم" })
+            body: JSON.stringify({ 
+                error: error.message || "حدث خطأ أثناء الاتصال بجوجل",
+                details: error.toString()
+            })
         };
     }
 }
