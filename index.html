@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Native Image Gen</title>
+    <title>Gemini 2.5 Image Gen</title>
     <style>
+        :root { --primary: #00d2ff; --bg: #1a1a2e; }
         body {
-            background: #111;
+            background: var(--bg);
             color: #fff;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,21 +17,30 @@
             margin: 0;
         }
         .container {
-            text-align: center;
             width: 90%;
             max-width: 500px;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
+        h1 { margin-bottom: 20px; background: linear-gradient(to right, #00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         textarea {
             width: 100%;
             padding: 15px;
             border-radius: 10px;
-            background: #222;
-            color: #fff;
-            border: 1px solid #444;
-            margin-bottom: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            color: white;
+            margin-bottom: 20px;
+            resize: none;
+            box-sizing: border-box;
         }
+        textarea:focus { outline: 1px solid var(--primary); }
         button {
-            background: #4285f4;
+            background: linear-gradient(to right, #00d2ff, #3a7bd5);
             color: white;
             padding: 12px 30px;
             border: none;
@@ -38,23 +48,24 @@
             cursor: pointer;
             font-weight: bold;
             width: 100%;
+            font-size: 1.1rem;
+            transition: 0.3s;
         }
-        img {
-            max-width: 100%;
-            border-radius: 15px;
-            margin-top: 20px;
-            display: none;
-            box-shadow: 0 0 20px rgba(66, 133, 244, 0.5);
-        }
-        .error { color: #ff5252; margin-top: 10px; display: none; }
+        button:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(0, 210, 255, 0.4); }
+        button:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; }
+        img { max-width: 100%; border-radius: 15px; margin-top: 20px; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        .error { color: #ff5252; margin-top: 15px; display: none; background: rgba(255,0,0,0.1); padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Gemini 2.0 Flash Image ⚡</h1>
+        <h1>Gemini 2.5 Flash Image 📸</h1>
+        <p style="color:#aaa; font-size: 0.9rem;">أدخل الوصف لاستخدام موديل جوجل الجديد</p>
+        
         <textarea id="prompt" placeholder="وصف الصورة..."></textarea>
-        <button id="btn" onclick="generate()">توليد الصورة 🎨</button>
+        <button id="btn" onclick="generate()">توليد الصورة ✨</button>
+        
         <div id="error" class="error"></div>
         <img id="result" src="">
     </div>
@@ -66,9 +77,9 @@
             const img = document.getElementById('result');
             const err = document.getElementById('error');
 
-            if(!prompt) return alert("اكتب الوصف!");
+            if(!prompt) return alert("الرجاء كتابة وصف للصورة");
 
-            btn.innerText = "جاري المعالجة...";
+            btn.innerText = "جاري الاتصال بـ Gemini 2.5...";
             btn.disabled = true;
             img.style.display = "none";
             err.style.display = "none";
@@ -82,16 +93,22 @@
 
                 const data = await response.json();
 
-                if (!response.ok) throw new Error(data.error || "فشل الاتصال");
+                if (!response.ok) {
+                    throw new Error(data.error || "فشل الاتصال بالخادم");
+                }
 
-                img.src = `data:image/jpeg;base64,${data.image}`;
-                img.style.display = "block";
+                if (data.image) {
+                    img.src = `data:image/jpeg;base64,${data.image}`;
+                    img.style.display = "block";
+                } else {
+                    throw new Error("لم يتم استلام صورة من الموديل");
+                }
 
             } catch (error) {
                 err.innerText = "خطأ: " + error.message;
                 err.style.display = "block";
             } finally {
-                btn.innerText = "توليد الصورة 🎨";
+                btn.innerText = "توليد الصورة ✨";
                 btn.disabled = false;
             }
         }
