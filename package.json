@@ -1,21 +1,8 @@
-
 {
-  "name": "donate-way-pi",
-  "version": "1.1.0",
-  "description": "تطبيق تبرعات شبكة باي مع خاصية السحب ع",
-  "main": "index.html",
+  "name": "gemini-image-gen",
+  "version": "1.0.0",
+  "type": "module",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.7",
-    "stellar-sdk": "^13.1.0"
-  },
-  "scripts": {
-    "test": "echo \"no tests\""
-  },
-  "keywords": [
-    "pi-network",
-    "stellar",
-    "donations",
-    "testnet"
-  ],
-  "license": "ISC"
+    "@google/genai": "^0.1.0"
+  }
 }
