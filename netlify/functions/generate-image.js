@@ -1,4 +1,5 @@
 
+
 // netlify/functions/generate-image.js
 
 export async function handler(event, context) {
