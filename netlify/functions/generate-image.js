@@ -1,13 +1,15 @@
 // netlify/functions/generate-image.js
+// هذا الكود يستخدم نموذج Flux القوي والمجاني كبديل لـ Google Imagen
+// لضمان عمل الموقع فوراً دون مشاكل الصلاحيات
+
+const fetch = require('node-fetch'); // Netlify يوفر هذا تلقائياً في البيئة
 
 exports.handler = async function(event, context) {
-    // 1. السماح فقط بطلبات POST
     if (event.httpMethod !== "POST") {
         return { statusCode: 405, body: "Method Not Allowed" };
     }
 
     try {
-        // 2. استلام النص (Prompt) من الفرونت إند
         const body = JSON.parse(event.body);
         const userPrompt = body.prompt;
 
@@ -15,60 +17,38 @@ exports.handler = async function(event, context) {
             return { statusCode: 400, body: JSON.stringify({ error: "الرجاء إدخال وصف للصورة" }) };
         }
 
-        // 3. جلب مفتاح API من إعدادات Netlify (البيئة)
-        const API_KEY = process.env.GEMINI_API_KEY; 
+        console.log("Generating image for:", userPrompt);
 
-        if (!API_KEY) {
-            return { statusCode: 500, body: JSON.stringify({ error: "API Key غير موجود في السيرفر" }) };
+        // استخدام Pollinations API (موديل Flux)
+        // نقوم بإنشاء رقم عشوائي (Seed) لضمان اختلاف الصورة في كل مرة
+        const seed = Math.floor(Math.random() * 1000000);
+        const encodedPrompt = encodeURIComponent(userPrompt);
+        
+        // رابط توليد الصورة
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
+
+        // نقوم بجلب الصورة وتحويلها لـ Base64 لكي تتوافق مع كود الفرونت إند السابق
+        const imageResponse = await fetch(imageUrl);
+        
+        if (!imageResponse.ok) {
+             throw new Error("فشل في جلب الصورة من المصدر");
         }
 
-        // 4. إرسال الطلب إلى Google Imagen 3 API
-        // ملاحظة: هذا الرابط لـ Imagen عبر Gemini API
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${API_KEY}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                instances: [
-                    { prompt: userPrompt }
-                ],
-                parameters: {
-                    sampleCount: 1, // عدد الصور
-                    aspectRatio: "1:1" // الأبعاد
-                }
-            })
-        });
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Image = buffer.toString('base64');
 
-        const data = await response.json();
-
-        // 5. التحقق من الخطأ القادم من جوجل
-        if (!response.ok) {
-            console.error("Google API Error:", data);
-            return {
-                statusCode: response.status,
-                body: JSON.stringify({ error: data.error?.message || "فشل توليد الصورة من المصدر" })
-            };
-        }
-
-        // 6. إرجاع الصورة (Base64) إلى الفرونت إند
-        // Imagen يعيد الصورة عادةً داخل predictions[0].bytesBase64Encoded
-        const imageBase64 = data.predictions?.[0]?.bytesBase64Encoded; // أو data.images[0] حسب إصدار الـ API
-
-        if (!imageBase64) {
-             return { statusCode: 500, body: JSON.stringify({ error: "لم يتم استلام بيانات الصورة" }) };
-        }
-
+        // إرسال الصورة للفرونت إند
         return {
             statusCode: 200,
-            body: JSON.stringify({ image: imageBase64 })
+            body: JSON.stringify({ image: base64Image })
         };
 
     } catch (error) {
         console.error("Server Error:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "حدث خطأ داخلي في السيرفر" })
+            body: JSON.stringify({ error: "حدث خطأ أثناء توليد الصورة، حاول مرة أخرى." })
         };
     }
 };
