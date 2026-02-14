@@ -3,184 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi App Ads Integration</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <title>مولد الصور الذكي - Imagen 3</title>
     <style>
+        :root {
+            --primary-color: #6200ea;
+            --secondary-color: #b388ff;
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            text-align: center;
-            padding: 20px;
             margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            text-align: center;
+            transition: transform 0.3s ease;
         }
-        h2 { color: #6c238b; } /* لون Pi المميز */
-        
-        /* تنسيق الأزرار */
-        button {
-            background-color: #fdb927; /* لون ذهبي */
-            color: #333;
-            border: none;
-            padding: 12px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px;
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            background: -webkit-linear-gradient(#fff, #b388ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        p.subtitle {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        textarea {
             width: 100%;
-            max-width: 300px;
-            transition: transform 0.2s;
-        }
-        button:hover { transform: scale(1.02); }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        /* تنسيق منطقة البانر الإعلاني */
-        .ad-banner-area {
-            margin: 20px 0;
             padding: 15px;
-            background: linear-gradient(45deg, #6c238b, #4a148c);
-            color: white;
-            border-radius: 10px;
-            cursor: pointer;
-            display: none; /* مخفي افتراضياً حتى يتم تسجيل الدخول */
-            border: 2px dashed #fdb927;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+            font-size: 1rem;
+            resize: none;
+            height: 120px;
+            box-sizing: border-box;
+            font-family: inherit;
+            transition: all 0.3s ease;
         }
-        .ad-banner-area h3 { margin: 0; font-size: 18px; }
-        .ad-banner-area p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
 
-        #userInfo { margin-top: 15px; font-weight: bold; color: #333; }
-        #statusMessage { margin-top: 10px; color: green; font-size: 14px; }
-        .error { color: red; }
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 15px rgba(98, 0, 234, 0.3);
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(98, 0, 234, 0.4);
+            font-weight: bold;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(98, 0, 234, 0.6);
+            filter: brightness(1.1);
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            color: #888;
+        }
+
+        .result-area {
+            margin-top: 30px;
+            min-height: 50px; /* مساحة صغيرة في البداية */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .result-area img {
+            max-width: 100%;
+            border-radius: 20px;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Loading Spinner */
+        .loader {
+            display: none;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--secondary-color);
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-msg {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            color: #ff5252;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>تطبيق Pi التجريبي</h2>
-    
-    <div id="loginSection">
-        <p>يجب تسجيل الدخول للوصول للميزات</p>
-        <button onclick="login()">تسجيل الدخول باستخدام Pi</button>
+    <div class="container">
+        <h1>✨ Imagen 3 AI</h1>
+        <p class="subtitle">حوّل خيالك إلى صور واقعية باستخدام ذكاء جوجل</p>
+        
+        <div class="input-group">
+            <textarea id="promptInput" placeholder="اكتب وصف الصورة هنا... (مثال: سيارة طائرة فوق الأهرامات وقت الغروب)"></textarea>
+        </div>
+
+        <button id="generateBtn" onclick="generateImage()">توليد الصورة 🎨</button>
+        
+        <div id="errorMsg" class="error-msg"></div>
+
+        <div class="result-area">
+            <div class="loader" id="loader"></div>
+            <img id="generatedImage" src="" alt="الصورة المولدة بالذكاء الاصطناعي">
+        </div>
     </div>
-    <div id="userInfo"></div>
 
-    <hr>
-
-    <div id="myBannerAd" class="ad-banner-area" onclick="showInterstitialAd()">
-        <h3>📢 إعلان مميز</h3>
-        <p>اضغط هنا لدعم الموقع ومشاهدة العرض</p>
-    </div>
-
-    <hr>
-
-    <h3>🎁 اربح مكافأة</h3>
-    <p>شاهد فيديو قصير للحصول على نقاط</p>
-    <button id="rewardAdBtn" onclick="showRewardedAd()" disabled>شاهد فيديو (Reward Ad)</button>
-    
-    <div id="statusMessage"></div>
-</div>
-
-<script>
-    // 1. تهيئة الـ SDK للوضع الحقيقي
-    Pi.init({ version: "2.0", sandbox: false });
-
-    // تعريف المتغيرات
-    let currentUser = null;
-
-    // 2. دالة تسجيل الدخول
-    async function login() {
-        try {
-            const scopes = ['username', 'payments'];
-            // onIncompletePayment ضرورية لعمل الدالة حتى لو كانت فارغة
-            const authResult = await Pi.authenticate(scopes, onIncompletePayment);
+    <script>
+        async function generateImage() {
+            const promptInput = document.getElementById('promptInput');
+            const generateBtn = document.getElementById('generateBtn');
+            const loader = document.getElementById('loader');
+            const imgElement = document.getElementById('generatedImage');
+            const errorMsg = document.getElementById('errorMsg');
             
-            currentUser = authResult.user;
-            
-            // تحديث الواجهة
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('userInfo').innerText = "أهلاً بك: " + currentUser.username;
-            
-            // تفعيل مناطق الإعلانات
-            document.getElementById('myBannerAd').style.display = 'block';
-            document.getElementById('rewardAdBtn').disabled = false;
-            
-            logStatus("تم تسجيل الدخول بنجاح!");
+            const prompt = promptInput.value.trim();
 
-        } catch (error) {
-            console.error(error);
-            logStatus("فشل تسجيل الدخول. تأكد من فتح الرابط في Pi Browser", true);
-        }
-    }
-
-    // دالة معالجة المدفوعات المعلقة (إجبارية)
-    function onIncompletePayment(payment) {
-        console.log("Incomplete payment found:", payment);
-        // يمكنك إضافة كود إكمال الدفع هنا لاحقاً
-    }
-
-    // 3. كود الإعلان البيني (عند الضغط على البانر)
-    async function showInterstitialAd() {
-        try {
-            logStatus("جاري تحميل الإعلان...");
-            
-            // طلب الإعلان
-            const adId = await Pi.Ads.requestAd("interstitial");
-            
-            // عرض الإعلان
-            const response = await Pi.Ads.showAd(adId);
-            
-            if (response.result === "AD_CLOSED") {
-                logStatus("شكراً لدعمك! تم إغلاق الإعلان.");
-            } else {
-                logStatus("لم يتم إكمال الإعلان.");
+            // 1. التحقق من المدخلات
+            if (!prompt) {
+                showError("الرجاء كتابة وصف للصورة أولاً!");
+                return;
             }
-            
-        } catch (error) {
-            console.error(error);
-            logStatus("لا يوجد إعلان متاح حالياً.", true);
-        }
-    }
 
-    // 4. كود إعلان الفيديو بمكافأة (Rewarded Ad)
-    async function showRewardedAd() {
-        try {
-            logStatus("جاري تحضير الفيديو...");
-            
-            // طلب إعلان من نوع Rewarded
-            const adId = await Pi.Ads.requestAd("rewarded");
-            
-            // عرض الإعلان
-            const response = await Pi.Ads.showAd(adId);
-            
-            // التحقق من النتيجة: هل شاهده للنهاية؟
-            if (response.result === "AD_REWARDED") {
-                logStatus("🎉 مبروك! لقد شاهدت الإعلان وحصلت على المكافأة.");
-                // هنا ترسل طلب للسيرفر لإضافة النقاط للمستخدم
-                // sendRewardToServer(currentUser.uid);
-            } else if (response.result === "AD_CLOSED") {
-                logStatus("تم إغلاق الفيديو قبل اكتماله، لن تحصل على المكافأة.", true);
+            // 2. إعداد الواجهة للتحميل
+            generateBtn.disabled = true;
+            generateBtn.innerText = "جاري الرسم... 🖌️";
+            loader.style.display = "block";
+            imgElement.style.display = "none";
+            errorMsg.style.display = "none";
+
+            try {
+                // 3. الاتصال بـ Netlify Function (الباك إند الخاص بك)
+                // ملاحظة: هذا المسار يعمل فقط عند الرفع على Netlify
+                const response = await fetch('/.netlify/functions/generate-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                const data = await response.json();
+
+                // 4. التحقق من استجابة السيرفر
+                if (!response.ok) {
+                    throw new Error(data.error || `خطأ في الخادم: ${response.status}`);
+                }
+
+                // 5. عرض الصورة (تأتي بصيغة Base64)
+                if (data.image) {
+                    imgElement.src = `data:image/png;base64,${data.image}`;
+                    imgElement.style.display = "block";
+                } else {
+                    throw new Error("لم تصل أي بيانات للصورة من الخادم.");
+                }
+
+            } catch (error) {
+                console.error("Error details:", error);
+                showError(error.message || "حدث خطأ غير متوقع. حاول مرة أخرى.");
+            } finally {
+                // 6. إعادة الأزرار لطبيعتها
+                generateBtn.disabled = false;
+                generateBtn.innerText = "توليد صورة جديدة 🎨";
+                loader.style.display = "none";
             }
-            
-        } catch (error) {
-            console.error(error);
-            logStatus("تعذر تحميل الفيديو حالياً.", true);
         }
-    }
 
-    // دالة مساعدة لعرض الرسائل
-    function logStatus(msg, isError = false) {
-        const el = document.getElementById('statusMessage');
-        el.innerText = msg;
-        el.className = isError ? "error" : "";
-    }
-</script>
-
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.innerText = `⚠️ ${message}`;
+            errorMsg.style.display = "block";
+        }
+    </script>
 </body>
 </html>
