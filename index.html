@@ -3,263 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مولد الصور الذكي - Imagen 3</title>
+    <title>Gemini Native Image Gen</title>
     <style>
-        :root {
-            --primary-color: #6200ea;
-            --secondary-color: #b388ff;
-            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-color: #ffffff;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: var(--bg-gradient);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            color: var(--text-color);
+            background: #111;
+            color: #fff;
+            font-family: sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
         }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
         .container {
+            text-align: center;
             width: 90%;
             max-width: 500px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            text-align: center;
-            transition: transform 0.3s ease;
         }
-
-        .container:hover {
-            transform: translateY(-5px);
-        }
-
-        h1 {
-            margin-bottom: 10px;
-            font-size: 2.2rem;
-            background: -webkit-linear-gradient(#fff, #b388ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
-
-        p.subtitle {
-            color: #aaa;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
-
-        .input-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
         textarea {
             width: 100%;
             padding: 15px;
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            background: #222;
             color: #fff;
-            font-size: 1rem;
-            resize: none;
-            height: 120px;
-            box-sizing: border-box;
-            font-family: inherit;
-            transition: all 0.3s ease;
+            border: 1px solid #444;
+            margin-bottom: 10px;
         }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 15px rgba(98, 0, 234, 0.3);
-        }
-
         button {
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            background: #4285f4;
             color: white;
+            padding: 12px 30px;
             border: none;
-            padding: 14px 40px;
-            font-size: 1.1rem;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(98, 0, 234, 0.4);
             font-weight: bold;
             width: 100%;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(98, 0, 234, 0.6);
-            filter: brightness(1.1);
-        }
-
-        button:disabled {
-            background: #444;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-            color: #888;
-        }
-
-        .result-area {
-            margin-top: 30px;
-            min-height: 50px; /* مساحة صغيرة في البداية */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            transition: all 0.5s ease;
-        }
-
-        .result-area img {
+        img {
             max-width: 100%;
-            border-radius: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
             display: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            animation: fadeIn 1s ease;
+            box-shadow: 0 0 20px rgba(66, 133, 244, 0.5);
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        /* Loading Spinner */
-        .loader {
-            display: none;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-radius: 50%;
-            border-top: 4px solid var(--secondary-color);
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-msg {
-            background: rgba(255, 82, 82, 0.1);
-            border: 1px solid rgba(255, 82, 82, 0.3);
-            color: #ff5252;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 15px;
-            display: none;
-            font-size: 0.9rem;
-        }
+        .error { color: #ff5252; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>✨ Imagen 3 AI</h1>
-        <p class="subtitle">حوّل خيالك إلى صور واقعية باستخدام ذكاء جوجل</p>
-        
-        <div class="input-group">
-            <textarea id="promptInput" placeholder="اكتب وصف الصورة هنا... (مثال: سيارة طائرة فوق الأهرامات وقت الغروب)"></textarea>
-        </div>
-
-        <button id="generateBtn" onclick="generateImage()">توليد الصورة 🎨</button>
-        
-        <div id="errorMsg" class="error-msg"></div>
-
-        <div class="result-area">
-            <div class="loader" id="loader"></div>
-            <img id="generatedImage" src="" alt="الصورة المولدة بالذكاء الاصطناعي">
-        </div>
+        <h1>Gemini 2.0 Flash Image ⚡</h1>
+        <textarea id="prompt" placeholder="وصف الصورة..."></textarea>
+        <button id="btn" onclick="generate()">توليد الصورة 🎨</button>
+        <div id="error" class="error"></div>
+        <img id="result" src="">
     </div>
 
     <script>
-        async function generateImage() {
-            const promptInput = document.getElementById('promptInput');
-            const generateBtn = document.getElementById('generateBtn');
-            const loader = document.getElementById('loader');
-            const imgElement = document.getElementById('generatedImage');
-            const errorMsg = document.getElementById('errorMsg');
-            
-            const prompt = promptInput.value.trim();
+        async function generate() {
+            const prompt = document.getElementById('prompt').value;
+            const btn = document.getElementById('btn');
+            const img = document.getElementById('result');
+            const err = document.getElementById('error');
 
-            // 1. التحقق من المدخلات
-            if (!prompt) {
-                showError("الرجاء كتابة وصف للصورة أولاً!");
-                return;
-            }
+            if(!prompt) return alert("اكتب الوصف!");
 
-            // 2. إعداد الواجهة للتحميل
-            generateBtn.disabled = true;
-            generateBtn.innerText = "جاري الرسم... 🖌️";
-            loader.style.display = "block";
-            imgElement.style.display = "none";
-            errorMsg.style.display = "none";
+            btn.innerText = "جاري المعالجة...";
+            btn.disabled = true;
+            img.style.display = "none";
+            err.style.display = "none";
 
             try {
-                // 3. الاتصال بـ Netlify Function (الباك إند الخاص بك)
-                // ملاحظة: هذا المسار يعمل فقط عند الرفع على Netlify
                 const response = await fetch('/.netlify/functions/generate-image', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: prompt })
                 });
 
                 const data = await response.json();
 
-                // 4. التحقق من استجابة السيرفر
-                if (!response.ok) {
-                    throw new Error(data.error || `خطأ في الخادم: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(data.error || "فشل الاتصال");
 
-                // 5. عرض الصورة (تأتي بصيغة Base64)
-                if (data.image) {
-                    imgElement.src = `data:image/png;base64,${data.image}`;
-                    imgElement.style.display = "block";
-                } else {
-                    throw new Error("لم تصل أي بيانات للصورة من الخادم.");
-                }
+                img.src = `data:image/jpeg;base64,${data.image}`;
+                img.style.display = "block";
 
             } catch (error) {
-                console.error("Error details:", error);
-                showError(error.message || "حدث خطأ غير متوقع. حاول مرة أخرى.");
+                err.innerText = "خطأ: " + error.message;
+                err.style.display = "block";
             } finally {
-                // 6. إعادة الأزرار لطبيعتها
-                generateBtn.disabled = false;
-                generateBtn.innerText = "توليد صورة جديدة 🎨";
-                loader.style.display = "none";
+                btn.innerText = "توليد الصورة 🎨";
+                btn.disabled = false;
             }
-        }
-
-        function showError(message) {
-            const errorMsg = document.getElementById('errorMsg');
-            errorMsg.innerText = `⚠️ ${message}`;
-            errorMsg.style.display = "block";
         }
     </script>
 </body>
