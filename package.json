@@ -1,8 +1,5 @@
 {
-  "name": "gemini-image-gen",
+  "name": "flux-backend-app",
   "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@google/generative-ai": "^0.21.0"
-  }
+  "type": "module"
 }
