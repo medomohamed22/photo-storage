@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
 <title>Nano Banana Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* --- Design System --- */
 :root {
@@ -524,9 +525,15 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
 <script>
     /* =========================================
+       SUPABASE INIT
+       ========================================= */
+    const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
+    const supabaseKey = 'Sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW'; // The provided key
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    /* =========================================
        API & Config
        ========================================= */
-    // Note: API Key removed from frontend. It is now in the backend environment.
     let currentLang = localStorage.getItem('nanoLang') || 'ar'; 
     let currentModel = 'imagen-4'; 
 
@@ -599,6 +606,52 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         updateTriggerUI();
         loadChatHistory();
     };
+
+    /* --- Supabase Storage Logic --- */
+    async function saveToSupabase(blob, prompt) {
+        try {
+            const fileName = `nano_${Date.now()}.jpg`;
+            
+            // 1. Upload to Supabase Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('nano_images')
+                .upload(fileName, blob, { contentType: 'image/jpeg' });
+            
+            if (uploadError) {
+                console.error("Supabase Upload Error:", uploadError);
+                // Return Blob URL as fallback if upload fails
+                return URL.createObjectURL(blob);
+            }
+
+            // 2. Get Public URL
+            const { data: publicUrlData } = supabase.storage
+                .from('nano_images')
+                .getPublicUrl(fileName);
+            
+            const publicUrl = publicUrlData.publicUrl;
+
+            // 3. Insert Metadata into Database
+            const { error: dbError } = await supabase
+                .from('generated_images')
+                .insert([
+                    { 
+                        prompt: prompt, 
+                        image_url: publicUrl,
+                        model: currentModel,
+                        width: currentWidth,
+                        height: currentHeight
+                    }
+                ]);
+
+            if (dbError) console.error("Database Insert Error:", dbError);
+            
+            return publicUrl;
+
+        } catch (err) {
+            console.error("Supabase Error:", err);
+            return URL.createObjectURL(blob);
+        }
+    }
 
     /* --- Logic --- */
     
@@ -907,29 +960,27 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             const seed = Math.floor(Math.random() * 1000000);
             
-            // --- NEW: CALL BACKEND FUNCTION INSTEAD OF DIRECT API ---
-            // We pass parameters to our Netlify function. The function will attach the key.
+            // --- CALL BACKEND FUNCTION ---
+            // Fetch image data from Netlify (proxying Pollinations)
             const finalUrl = `/.netlify/functions/generate?prompt=${encodeURIComponent(finalPrompt)}&model=${currentModel}&width=${currentWidth}&height=${currentHeight}&seed=${seed}`;
 
-            // FETCH Blob
             const response = await fetch(finalUrl);
             
-            // Check for Rate Limit (429) or other errors
             if (response.status === 429) {
                 throw new Error("429");
             }
             if (!response.ok) {
-                // If the backend sends an error text, we might want to log it
-                const errText = await response.text();
-                console.error("Backend Error:", errText);
                 throw new Error("Server Error");
             }
 
+            // Get Blob from response
             const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
+            
+            // --- UPLOAD TO SUPABASE & SAVE HISTORY ---
+            const finalImageUrl = await saveToSupabase(blob, finalPrompt);
 
             removeLoader(loaderId);
-            renderBotMessage(objectUrl, true);
+            renderBotMessage(finalImageUrl, true);
 
         } catch (error) {
             console.error(error);
