@@ -140,14 +140,17 @@ body {
 .d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
 /* --- Footer --- */
-.footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
-.control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; }
+.footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; position: relative; }
+
+.control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; position: relative; }
+
 .aspect-btn {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
     font-size: 12px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
 }
+
 .input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
 .input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
 .send-btn { 
@@ -162,23 +165,41 @@ body {
 
 /* --- Menus --- */
 .model-menu, .aspect-menu-dropdown {
-    background: rgba(15, 15, 18, 0.98); backdrop-filter: blur(20px);
+    background: rgba(20, 20, 24, 0.98); backdrop-filter: blur(20px);
     border: 1px solid var(--border); border-radius: 16px;
-    display: none; flex-direction: column; gap: 5px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    display: none; flex-direction: column; gap: 5px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
 }
-.model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
-.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; width: 180px; margin-bottom: 8px; padding: 6px; }
+
+.model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+
+/* Aspect Menu Fixed Positioning */
+.aspect-menu-dropdown { 
+    position: absolute; 
+    bottom: 100%; /* تظهر فوق الزر */
+    right: 12px; left: auto;
+    width: 200px; 
+    margin-bottom: 12px; 
+    padding: 8px; 
+    z-index: 200;
+}
 
 .menu-option {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;
     border: 1px solid transparent; transition: 0.2s;
 }
+.menu-option:hover { background: rgba(255,255,255,0.08); }
 .menu-option.active { border-color: var(--accent); background: rgba(209, 250, 49, 0.05); }
 
-/* --- Gallery Styling --- */
-.gallery-modal { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; }
-.gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #111; }
+/* --- Gallery & Save Modal --- */
+.modal-overlay { 
+    position: fixed; inset: 0; background: #000; z-index: 500; 
+    display: none; flex-direction: column; 
+}
+.modal-header { 
+    padding: 15px; border-bottom: 1px solid var(--border); 
+    display: flex; justify-content: space-between; align-items: center; background: #111; 
+}
 .gallery-grid { 
     flex: 1; overflow-y: auto; padding: 12px; 
     display: grid; grid-template-columns: repeat(2, 1fr); 
@@ -187,7 +208,7 @@ body {
 .gallery-item { 
     position: relative; border-radius: 12px; overflow: hidden; 
     border: 1px solid var(--border); background: #111;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: column; 
 }
 .gallery-item img {
     width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
@@ -203,6 +224,19 @@ body {
 }
 .g-del { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .g-down { background: var(--accent); color: black; }
+
+/* Save Help Modal */
+.save-help-content {
+    flex: 1; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; padding: 20px;
+}
+.save-help-img {
+    max-width: 100%; max-height: 60vh; border-radius: 12px; 
+    border: 2px solid var(--accent); margin-bottom: 20px;
+}
+.save-help-text {
+    color: white; text-align: center; margin-bottom: 20px; font-size: 16px;
+}
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -255,8 +289,10 @@ body {
 
     <div class="footer-container">
         <div class="control-bar">
-            <div class="aspect-menu-dropdown" id="aspectMenu"></div>
-            <button class="aspect-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu()">
+            <div class="aspect-menu-dropdown" id="aspectMenu">
+                </div>
+            
+            <button class="aspect-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span id="currentAspectIcon"></span>
                     <span id="currentAspectLabel">1:1</span>
@@ -274,12 +310,26 @@ body {
         </div>
     </div>
 
-    <div id="galleryModal" class="gallery-modal">
-        <div class="gallery-header">
+    <div id="galleryModal" class="modal-overlay">
+        <div class="modal-header">
             <span style="font-weight:700; color:white;" id="txtGalleryTitle">معرض صوري</span>
             <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
         </div>
         <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <div id="saveHelpModal" class="modal-overlay">
+        <div class="modal-header">
+            <span style="font-weight:700; color:white;">حفظ الصورة</span>
+            <button onclick="document.getElementById('saveHelpModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+        </div>
+        <div class="save-help-content">
+            <img id="saveHelpImg" class="save-help-img" src="">
+            <div class="save-help-text" id="txtSaveHelp">
+                اضغط مطولاً على الصورة أعلاه<br>ثم اختر "حفظ الصورة"
+            </div>
+            <button class="g-btn g-down" onclick="document.getElementById('saveHelpModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">تم / Done</button>
+        </div>
     </div>
 
 <script>
@@ -312,7 +362,8 @@ body {
             confirmDel: "هل أنت متأكد من الحذف؟",
             wait: "انتظر",
             sec: "ث",
-            noImage: "مفيش صورة للتحميل"
+            noImage: "مفيش صورة للتحميل",
+            saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'"
         },
         en: {
             gallery: "My Gallery",
@@ -327,7 +378,8 @@ body {
             confirmDel: "Are you sure you want to delete?",
             wait: "Wait",
             sec: "s",
-            noImage: "No image to download"
+            noImage: "No image to download",
+            saveHelp: "Long Press the image above<br>then select 'Save Image'"
         }
     };
 
@@ -366,6 +418,7 @@ body {
         document.getElementById('emptyMsg').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
+        document.getElementById('txtSaveHelp').innerHTML = t.saveHelp;
     }
 
     // --- Auth ---
@@ -386,7 +439,7 @@ body {
     }
     function onIncompletePayment(payment) {}
 
-    // --- UI Logic ---
+    // --- UI Logic (Menus) ---
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
         menu.innerHTML = '';
@@ -421,6 +474,7 @@ body {
         if(isHidden) document.getElementById('aspectMenu').style.display = 'none';
     }
 
+    // --- Aspect Menu Logic (Fixed) ---
     function renderAspectMenu() {
         const menu = document.getElementById('aspectMenu');
         menu.innerHTML = '';
@@ -430,7 +484,7 @@ body {
             div.onclick = () => selectRatio(r);
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:#aaa">${r.icon}</svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:white;">${r.icon}</svg>
                     <span style="font-size:13px; font-weight:600; color:white;">${r.label}</span>
                 </div>
             `;
@@ -443,8 +497,8 @@ body {
         currentHeight = r.h;
         currentRatioId = r.id;
         updateAspectUI();
-        toggleAspectMenu();
-        renderAspectMenu();
+        document.getElementById('aspectMenu').style.display = 'none'; // Close immediately
+        renderAspectMenu(); // Update active state
     }
 
     function updateAspectUI() {
@@ -453,7 +507,8 @@ body {
         document.getElementById('currentAspectIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none">${r.icon}</svg>`;
     }
 
-    function toggleAspectMenu() {
+    function toggleAspectMenu(e) {
+        if(e) e.stopPropagation();
         const menu = document.getElementById('aspectMenu');
         const isHidden = menu.style.display === 'none' || menu.style.display === '';
         menu.style.display = isHidden ? 'flex' : 'none';
@@ -581,49 +636,54 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- UPDATED Download Function (The requested modification) ---
+    // --- ULTRA ROBUST DOWNLOAD (Pi Browser Solution) ---
     async function forceDownload(url, btn) {
-        // 1. Check URL
-        if (!url) {
-            alert(TRANSLATIONS[currentLang].noImage); 
-            return;
-        }
+        if (!url) { alert(TRANSLATIONS[currentLang].noImage); return; }
 
         const originalText = btn.innerText;
         btn.innerText = "..."; 
-
         const filename = `AI_Image_${Date.now()}.png`; 
 
         try {
-            // 2. Fetch Strategy (Best for Pi Browser/Mobile WebViews)
+            // Attempt 1: Standard Fetch/Blob (Works on Desktop/Some Mobiles)
             const response = await fetch(url);
-            if (!response.ok) throw new Error("Network response was not ok");
-
+            if (!response.ok) throw new Error("Net error");
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
-
+            
+            // Try to auto-click anchor
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = blobUrl;
             a.download = filename;
-
             document.body.appendChild(a);
             a.click();
-
-            // Cleanup
+            
             setTimeout(() => {
                 window.URL.revokeObjectURL(blobUrl);
                 document.body.removeChild(a);
                 btn.innerText = originalText;
-            }, 100);
+            }, 500);
 
         } catch (e) {
-            console.error("Download failed, trying fallback", e);
-            // 3. Ultimate Fallback
-            window.open(url, '_blank');
-            alert("فشل التحميل التلقائي. اضغط مطولاً على الصورة لحفظها.");
+            console.log("Auto-download failed. Trying Strategy 2...");
+            
+            // Strategy 2: Window Open (Sometimes works on Android WebViews)
+            const newWin = window.open(url, '_blank');
+            
+            if(!newWin || newWin.closed || typeof newWin.closed=='undefined') {
+                // Strategy 3: The "Long Press" Modal (Guaranteed Fallback)
+                showSaveHelpModal(url);
+            }
             btn.innerText = originalText;
         }
+    }
+
+    function showSaveHelpModal(url) {
+        const modal = document.getElementById('saveHelpModal');
+        const img = document.getElementById('saveHelpImg');
+        img.src = url;
+        modal.style.display = 'flex';
     }
 
     // --- Gallery ---
