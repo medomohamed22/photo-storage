@@ -81,11 +81,15 @@ body {
     padding: 4px 8px; border-radius: 12px; transition: 0.2s;
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
-
-/* Header Left Actions (Tokens & Lang) */
+.user-info-display {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; color: var(--pi-gold);
+    background: rgba(97, 31, 105, 0.2); padding: 2px 10px; border-radius: 12px;
+    border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 4px;
+}
+.header-actions { display: flex; gap: 8px; }
 .header-left { display: flex; gap: 8px; align-items: center; }
 
-/* Token Button Style */
 .token-btn {
     background: rgba(251, 191, 36, 0.1); 
     border: 1px solid rgba(251, 191, 36, 0.3);
@@ -109,38 +113,61 @@ body {
 .message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
 .message.user { align-self: flex-end; } 
 .message.bot { align-self: flex-start; }
+
 .msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
 .message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
 .message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
 
+/* No Token Alert */
+.no-token-card {
+    background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 20px; padding: 20px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.no-token-text { color: #fca5a5; font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+.buy-now-btn {
+    background: var(--pi-gold); color: black; border: none;
+    padding: 8px 24px; border-radius: 20px; font-weight: 700; font-size: 12px;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+
 /* Animation */
 .loading-box {
-    width: 280px; height: 280px; border-radius: 20px; position: relative; overflow: hidden;
-    background: #000; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    width: 280px; height: 280px;
+    border-radius: 20px;
+    position: relative; overflow: hidden;
+    background: #000; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
 }
 .blur-wave {
     position: absolute; inset: -50%;
     background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 100deg, transparent 180deg, #a855f7 260deg, transparent 360deg);
-    filter: blur(40px); opacity: 0.5; animation: rotateWave 4s linear infinite;
+    filter: blur(40px); opacity: 0.5;
+    animation: rotateWave 4s linear infinite;
 }
 .loading-text {
     position: relative; z-index: 2; font-weight: 700; font-size: 13px; color: white;
     background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
-    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); animation: pulse 1.5s ease-in-out infinite;
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
+    animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-.msg-image { width: 100%; height: auto; display: block; opacity: 0; transition: opacity 1.5s ease; }
+/* Image Style */
+.msg-image { 
+    width: 100%; height: auto; display: block; 
+    opacity: 0; transition: opacity 1.5s ease; 
+}
 .msg-image.loaded { opacity: 1; }
+
 .download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
 .d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
-/* --- Footer (Controls moved here) --- */
+/* --- Footer --- */
 .footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; position: relative; }
 .control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; position: relative; }
 
-/* Footer Buttons */
 .footer-btn {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
@@ -148,36 +175,38 @@ body {
     display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
     transition: 0.2s;
 }
-.footer-btn:active { background: #222; }
-
 .input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
 .input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
 .send-btn { 
-    width: 48px; height: 48px; border-radius: 50%; background: var(--accent); 
-    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+    width: 48px; height: 48px; border-radius: 50%; 
+    background: var(--accent); border: none; cursor: pointer; 
+    display: flex; align-items: center; justify-content: center; 
     transition: 0.3s; font-weight: 700; font-size: 12px;
 }
 .send-btn:disabled { background: #333; cursor: not-allowed; }
 .countdown-text { color: var(--accent); font-size: 10px; text-align: center; line-height: 1; }
 
-/* --- Menus & Modals --- */
+/* --- Menus --- */
 .model-menu, .aspect-menu-dropdown {
     background: rgba(20, 20, 24, 0.98); backdrop-filter: blur(20px);
     border: 1px solid var(--border); border-radius: 16px;
     display: none; flex-direction: column; gap: 5px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
 .model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
-.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; left: auto; width: 200px; margin-bottom: 12px; padding: 8px; z-index: 200; }
+.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; width: 200px; margin-bottom: 8px; padding: 8px; z-index: 200; }
 
 .menu-option {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;
     border: 1px solid transparent; transition: 0.2s;
 }
-.menu-option:hover { background: rgba(255,255,255,0.08); }
 .menu-option.active { border-color: var(--accent); background: rgba(209, 250, 49, 0.05); }
+.cost-badge {
+    background: rgba(255,255,255,0.1); color: var(--pi-gold);
+    font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;
+}
 
-/* Common Modal */
+/* --- Modals --- */
 .modal-overlay { 
     position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 500; 
     display: none; flex-direction: column; justify-content: center; align-items: center;
@@ -192,7 +221,7 @@ body {
     display: flex; justify-content: space-between; align-items: center; background: #18181b; 
 }
 
-/* Buy Token Modal */
+/* Buy Grid */
 .buy-grid { padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .buy-card {
     background: rgba(255,255,255,0.03); border: 1px solid var(--border);
@@ -213,7 +242,7 @@ body {
 .gallery-item { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: #111; display: flex; flex-direction: column; }
 .gallery-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
 .gallery-actions { display: flex; gap: 8px; padding: 8px; background: #18181b; border-top: 1px solid #222; }
-.g-btn { flex: 1; border: none; padding: 8px 0; font-size: 11px; cursor: pointer; color: white; border-radius: 6px; font-weight: 700; }
+.g-btn { flex: 1; border: none; padding: 8px 0; font-size: 11px; cursor: pointer; color: white; border-radius: 6px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .g-del { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .g-down { background: var(--accent); color: black; }
 
@@ -245,7 +274,6 @@ body {
             <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana</div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
-
         <div class="header-left">
             <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
             <button class="token-btn" onclick="openBuyModal()">
@@ -269,7 +297,6 @@ body {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
                 <span id="txtGallery">معرضي</span>
             </button>
-
             <div class="aspect-menu-dropdown" id="aspectMenu"></div>
             <button class="footer-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -305,8 +332,7 @@ body {
                 <span style="font-weight:700; color:white;" id="txtBuyTitle">شراء توكين</span>
                 <button onclick="document.getElementById('buyModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
             </div>
-            <div class="buy-grid" id="buyGrid">
-                </div>
+            <div class="buy-grid" id="buyGrid"></div>
         </div>
     </div>
 
@@ -325,12 +351,12 @@ body {
     </div>
 
 <script>
-    // --- Config & Data ---
+    // --- Config ---
     const MODELS = [
-        { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative & Balanced' },
-        { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Coherence' },
-        { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast & Detailed' },
-        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Ultra Fidelity' }
+        { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative', cost: 1 },
+        { id: 'gptimage', name: 'Chat GPT Image', desc: 'Coherent', cost: 3 },
+        { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2 },
+        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 2 }
     ];
 
     const RATIOS = [
@@ -340,56 +366,29 @@ body {
         { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
     ];
 
-    const PACKAGES = [
-        { pi: 1, tokens: 10 },
-        { pi: 2, tokens: 20 },
-        { pi: 3, tokens: 30 }
-    ];
+    const PACKAGES = [ { pi: 1, tokens: 10 }, { pi: 2, tokens: 20 }, { pi: 3, tokens: 30 } ];
 
     const TRANSLATIONS = {
         ar: {
-            gallery: "معرضي",
-            welcome: "أهلاً بك في AI Imagen <br> اختر الموديل واكتب ما تتخيله",
-            placeholder: "تخيل أي شيء...",
-            generating: "جاري الإنشاء...",
-            download: "تحميل",
-            delete: "حذف",
-            error: "خطأ",
-            galleryTitle: "معرض صوري",
-            buyTitle: "شراء توكين",
-            noImages: "لا توجد صور محفوظة.",
-            confirmDel: "هل أنت متأكد من الحذف؟",
-            wait: "انتظر",
-            sec: "ث",
-            noImage: "مفيش صورة للتحميل",
-            saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'",
-            buy: "شراء",
-            tokens: "توكين",
-            pi: "Pi"
+            gallery: "معرضي", welcome: "أهلاً بك في AI Imagen <br> اختر الموديل واكتب ما تتخيله",
+            placeholder: "تخيل أي شيء...", generating: "جاري الإنشاء...", download: "تحميل",
+            delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
+            noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
+            sec: "ث", noImage: "مفيش صورة للتحميل", saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'",
+            buy: "شراء", tokens: "توكين", pi: "Pi", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
+            cost: "توكين"
         },
         en: {
-            gallery: "Gallery",
-            welcome: "Welcome to AI Imagen <br> Select a model and imagine.",
-            placeholder: "Imagine anything...",
-            generating: "Generating...",
-            download: "Download",
-            delete: "Delete",
-            error: "Error",
-            galleryTitle: "My Gallery",
-            buyTitle: "Buy Tokens",
-            noImages: "No saved images.",
-            confirmDel: "Are you sure?",
-            wait: "Wait",
-            sec: "s",
-            noImage: "No image to download",
-            saveHelp: "Long Press the image above<br>then select 'Save Image'",
-            buy: "Buy",
-            tokens: "Tokens",
-            pi: "Pi"
+            gallery: "Gallery", welcome: "Welcome to AI Imagen <br> Select a model and imagine.",
+            placeholder: "Imagine anything...", generating: "Generating...", download: "Download",
+            delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
+            noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
+            sec: "s", noImage: "No image to download", saveHelp: "Long Press the image above<br>then select 'Save Image'",
+            buy: "Buy", tokens: "Tokens", pi: "Pi", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
+            cost: "Tokens"
         }
     };
 
-    // --- State ---
     let currentLang = 'ar';
     let currentModel = MODELS[0].id;
     let currentWidth = 1024;
@@ -398,20 +397,15 @@ body {
     let piUser = null;
     let cooldownEndTime = 0;
 
-    // --- Init ---
     const Pi = window.Pi;
     document.addEventListener('DOMContentLoaded', () => {
-        try {
-            Pi.init({ version: "2.0", sandbox: false }); 
-        } catch (e) { console.error("Pi Init Error:", e); }
-        
+        try { Pi.init({ version: "2.0", sandbox: false }); } catch (e) { console.error("Pi Init Error:", e); }
         renderModelMenu();
         renderAspectMenu();
         updateAspectUI();
         applyLanguage('ar'); 
     });
 
-    // --- Language ---
     function toggleLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
         document.getElementById('langBtn').textContent = currentLang === 'ar' ? 'EN' : 'AR';
@@ -426,31 +420,22 @@ body {
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
         document.getElementById('txtBuyTitle').textContent = t.buyTitle;
         document.getElementById('txtSaveHelp').innerHTML = t.saveHelp;
-        renderBuyGrid(); // Re-render buy grid for language update
+        renderModelMenu(); // Update costs text
+        renderBuyGrid();
     }
 
-    // --- Auth & Balance ---
     async function authenticatePi() {
         try {
-            const scopes = ['username', 'payments']; // Need payments scope
+            const scopes = ['username', 'payments'];
             const auth = await Pi.authenticate(scopes, onIncompletePayment);
             if(auth.user) {
                 piUser = auth.user;
                 document.getElementById('landingPage').style.display = 'none';
-                
-                // Fetch Balance
                 fetchBalance();
             }
-        } catch (err) {
-            console.error(err);
-            alert("Auth Failed. Please use Pi Browser.");
-        }
+        } catch (err) { console.error(err); alert("Auth Failed"); }
     }
-
-    function onIncompletePayment(payment) {
-        // Handle failed/incomplete payments here if needed
-        console.log("Incomplete Payment", payment);
-    }
+    function onIncompletePayment(payment) { console.log("Incomplete Payment", payment); }
 
     async function fetchBalance() {
         if (!piUser) return;
@@ -458,22 +443,23 @@ body {
             const res = await fetch(`/.netlify/functions/get-balance?uid=${piUser.uid}`);
             const data = await res.json();
             document.getElementById('tokenBalance').textContent = data.balance || 0;
-        } catch (e) {
-            console.error("Balance Error", e);
-        }
+        } catch (e) { console.error("Balance Error", e); }
     }
 
-    // --- UI Logic ---
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
         menu.innerHTML = '';
+        const t = TRANSLATIONS[currentLang];
         MODELS.forEach(m => {
             const div = document.createElement('div');
             div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
             div.onclick = () => selectModel(m);
             div.innerHTML = `
                 <div>
-                    <div style="font-weight:700; font-size:14px; color:white;">${m.name}</div>
+                    <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center; gap:8px;">
+                        ${m.name}
+                        <span class="cost-badge">${m.cost} ${t.cost}</span>
+                    </div>
                     <div style="font-size:11px; color:#888;">${m.desc}</div>
                 </div>
                 <svg width="20" height="20" viewBox="0 0 24 24" style="fill:var(--accent); opacity:${m.id === currentModel?1:0}"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
@@ -538,17 +524,12 @@ body {
         if(isHidden) document.getElementById('modelMenu').style.display = 'none';
     }
 
-    // --- Payment Logic ---
-    function openBuyModal() {
-        renderBuyGrid();
-        document.getElementById('buyModal').style.display = 'flex';
-    }
+    function openBuyModal() { renderBuyGrid(); document.getElementById('buyModal').style.display = 'flex'; }
 
     function renderBuyGrid() {
         const grid = document.getElementById('buyGrid');
         grid.innerHTML = '';
         const t = TRANSLATIONS[currentLang];
-        
         PACKAGES.forEach(pkg => {
             const div = document.createElement('div');
             div.className = 'buy-card';
@@ -566,66 +547,46 @@ body {
 
     async function buyTokens(pkg) {
         if (!piUser) { alert("Login first"); return; }
-        
         try {
             const paymentData = {
                 amount: pkg.pi,
                 memo: `${pkg.tokens} Tokens - AI Imagen`,
                 metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
             };
-
             await Pi.createPayment(paymentData, {
                 onReadyForServerApproval: async (paymentId) => {
-                    const res = await fetch('/.netlify/functions/approve', {
-                        method: 'POST', body: JSON.stringify({ paymentId })
-                    });
+                    const res = await fetch('/.netlify/functions/approve', { method: 'POST', body: JSON.stringify({ paymentId }) });
                     if (!res.ok) throw new Error("Approval Failed");
                 },
                 onReadyForServerCompletion: async (paymentId, txid) => {
                     const res = await fetch('/.netlify/functions/complete', {
-                        method: 'POST',
-                        body: JSON.stringify({ 
-                            paymentId, txid, 
-                            pi_uid: piUser.uid, 
-                            tokenAmount: pkg.tokens 
-                        })
+                        method: 'POST', body: JSON.stringify({ paymentId, txid, pi_uid: piUser.uid, tokenAmount: pkg.tokens })
                     });
                     if (!res.ok) throw new Error("Completion Failed");
-                    
                     const data = await res.json();
-                    // Update UI with new balance
                     document.getElementById('tokenBalance').textContent = data.newBalance;
                     document.getElementById('buyModal').style.display = 'none';
-                    alert(`Successfully bought ${pkg.tokens} Tokens!`);
+                    alert(`+${pkg.tokens} Tokens!`);
                 },
-                onCancel: (paymentId) => { console.log("Cancelled", paymentId); },
-                onError: (error, payment) => { console.error("Payment Error", error); }
+                onCancel: (paymentId) => { console.log("Cancelled"); },
+                onError: (error) => { console.error("Error", error); }
             });
-        } catch (e) {
-            console.error(e);
-            alert("Payment Failed");
-        }
+        } catch (e) { console.error(e); alert("Payment Failed"); }
     }
 
-    // --- Generation & Cooldown ---
     function updateCooldownUI() {
         const now = Date.now();
         const btn = document.getElementById('sendBtn');
         const icon = document.getElementById('sendIcon');
         const countEl = document.getElementById('countdownEl');
         const t = TRANSLATIONS[currentLang];
-
         if (now < cooldownEndTime) {
             const remaining = Math.ceil((cooldownEndTime - now) / 1000);
-            btn.disabled = true;
-            icon.style.display = 'none';
-            countEl.style.display = 'block';
+            btn.disabled = true; icon.style.display = 'none'; countEl.style.display = 'block';
             countEl.innerText = `${t.wait}\n${remaining}${t.sec}`;
             requestAnimationFrame(updateCooldownUI);
         } else {
-            btn.disabled = false;
-            icon.style.display = 'block';
-            countEl.style.display = 'none';
+            btn.disabled = false; icon.style.display = 'block'; countEl.style.display = 'none';
         }
     }
 
@@ -636,16 +597,13 @@ body {
 
     async function sendPrompt() {
         if (Date.now() < cooldownEndTime) return;
-
         const input = document.getElementById('promptInput');
         const text = input.value.trim();
         const t = TRANSLATIONS[currentLang];
-        
         if (!text || !piUser) return;
 
         addMessage(text, 'user');
         input.value = '';
-        
         const loadingId = renderLoader(t.generating);
         triggerCooldown(5); 
 
@@ -654,45 +612,39 @@ body {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    prompt: text,
-                    username: piUser.username,
-                    uid: piUser.uid,
-                    model: currentModel,
-                    width: currentWidth,
-                    height: currentHeight
+                    prompt: text, username: piUser.username, pi_uid: piUser.uid,
+                    model: currentModel, width: currentWidth, height: currentHeight
                 })
             });
 
-            if (!response.ok) {
-                triggerCooldown(20); 
-                throw new Error('Server Error');
+            // Handle Insufficient Tokens (403)
+            if (response.status === 403) {
+                document.getElementById(loadingId).remove();
+                addNoTokenCard(); // Render beautiful Error
+                return;
             }
+
+            if (!response.ok) { triggerCooldown(20); throw new Error('Server Error'); }
 
             const data = await response.json();
             document.getElementById(loadingId).remove();
             
-            if(data.imageUrl) {
-                addBotImage(data.imageUrl);
-            } else {
-                addMessage(t.error, 'bot');
-            }
+            // Update Balance
+            if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
+
+            if(data.imageUrl) addBotImage(data.imageUrl);
+            else addMessage(t.error, 'bot');
 
         } catch (error) {
             document.getElementById(loadingId).innerHTML = `<div style="color:red; padding:10px;">${t.error}</div>`;
         }
     }
 
-    // --- Visuals ---
     function renderLoader(text) {
         const div = document.createElement('div');
         div.className = 'message bot';
         div.id = 'loading-' + Date.now();
-        div.innerHTML = `
-            <div class="loading-box">
-                <div class="blur-wave"></div>
-                <div class="loading-text">${text}</div>
-            </div>
-        `;
+        div.innerHTML = `<div class="loading-box"><div class="blur-wave"></div><div class="loading-text">${text}</div></div>`;
         document.getElementById('chatContainer').appendChild(div);
         scrollToBottom();
         return div.id;
@@ -704,6 +656,25 @@ body {
         div.innerHTML = `<div class="msg-bubble">${content}</div>`;
         document.getElementById('chatContainer').appendChild(div);
         document.getElementById('emptyMsg').style.display = 'none';
+        scrollToBottom();
+    }
+
+    function addNoTokenCard() {
+        const t = TRANSLATIONS[currentLang];
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.innerHTML = `
+            <div class="msg-bubble">
+                <div class="no-token-card">
+                    <div class="no-token-text">${t.noTokens}</div>
+                    <button class="buy-now-btn" onclick="openBuyModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="black"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+                        ${t.buyNow}
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('chatContainer').appendChild(div);
         scrollToBottom();
     }
 
@@ -728,35 +699,24 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- Robust Download ---
     async function forceDownload(url, btn) {
         if (!url) { alert(TRANSLATIONS[currentLang].noImage); return; }
-
         const originalText = btn.innerText;
         btn.innerText = "..."; 
         const filename = `AI_Image_${Date.now()}.png`; 
-
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error("Net error");
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = blobUrl;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
-            
-            setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-                document.body.removeChild(a);
-                btn.innerText = originalText;
-            }, 500);
-
+            setTimeout(() => { window.URL.revokeObjectURL(blobUrl); document.body.removeChild(a); btn.innerText = originalText; }, 500);
         } catch (e) {
-            console.log("Auto-download failed. Trying Fallback...");
             showSaveHelpModal(url);
             btn.innerText = originalText;
         }
@@ -769,26 +729,18 @@ body {
         modal.style.display = 'flex';
     }
 
-    // --- Gallery ---
     async function openGallery() {
         const t = TRANSLATIONS[currentLang];
         if(!piUser) { alert("Login Required"); return; }
-        
         const modal = document.getElementById('galleryModal');
         const grid = document.getElementById('galleryGrid');
         modal.style.display = 'flex';
         grid.innerHTML = '<div style="color:white; text-align:center; grid-column: span 2;">Loading...</div>';
-
         try {
             const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
             const images = await res.json();
             grid.innerHTML = '';
-            
-            if(images.length === 0) {
-                grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`;
-                return;
-            }
-
+            if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
@@ -819,7 +771,6 @@ body {
         } catch(e) { console.error(e); }
     }
 
-    // Close on click outside
     document.addEventListener('click', (e) => {
         if(!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
             document.getElementById('modelMenu').style.display = 'none';
@@ -827,6 +778,9 @@ body {
         }
         if(!e.target.closest('#aspectMenu') && !e.target.closest('#aspectTriggerBtn')) {
             document.getElementById('aspectMenu').style.display = 'none';
+        }
+        if(e.target.classList.contains('modal-overlay')) {
+            e.target.style.display = 'none';
         }
     });
 </script>
