@@ -14,6 +14,7 @@
     --user-msg-bg: #27272a;
     --bot-msg-bg: #18181b; 
     --accent: #d1fa31; /* Nano Banana Green */
+    --purple: #a855f7; /* New Purple Accent */
     --warning: #f59e0b; /* Amber for rate limit */
     --text-main: #ffffff;
     --text-sub: #a1a1aa;
@@ -34,7 +35,7 @@ body {
     overflow: hidden;
 }
 
-/* --- Landing Page --- */
+/* --- Landing Page (تم التعديل هنا) --- */
 .landing-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: #000;
@@ -49,9 +50,18 @@ body {
     max-width: 500px;
     animation: fadeUp 0.8s ease;
 }
+/* تصميم لوجو Ai الجديد */
 .landing-logo {
-    font-size: 60px; margin-bottom: 20px;
-    text-shadow: 0 0 30px rgba(209, 250, 49, 0.4);
+    font-size: 80px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    /* تدرج لوني أبيض إلى أرجواني */
+    background: linear-gradient(135deg, #ffffff 20%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* ظل متوهج أرجواني */
+    filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.5));
+    letter-spacing: -3px;
 }
 .landing-title {
     font-size: 28px; font-weight: 800; margin-bottom: 10px;
@@ -350,7 +360,7 @@ body {
         transparent 0deg, 
         var(--accent) 60deg, 
         transparent 120deg, 
-        #a855f7 180deg, 
+        var(--purple) 180deg, 
         transparent 240deg, 
         var(--accent) 300deg, 
         transparent 360deg
@@ -559,8 +569,8 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     <div id="landingPage" class="landing-overlay">
         <div class="landing-content">
-            <div class="landing-logo">🍌</div>
-            <div class="landing-title">Nano Banana AI</div>
+            <div class="landing-logo">Ai</div>
+            <div class="landing-title">AI Imagen</div>
             <div class="landing-desc">
                 مرحباً بك في الجيل الجديد من توليد الصور.<br>
                 استمتع بنماذج ذكاء اصطناعي متعددة، سرعة فائقة،<br>
@@ -568,8 +578,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             </div>
             <div class="feature-tags">
                 <span class="tag">Flux Pro</span>
-                <span class="tag">Imagen 4</span>
-                <span class="tag">Unlimited</span>
+                <span class="tag">Nano Banana Pro</span>
                 <span class="tag">High Speed</span>
             </div>
             <button class="start-btn" onclick="hideLanding()">بدء الاستخدام</button>
@@ -578,7 +587,8 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     <div id="galleryModal" class="gallery-modal">
         <div class="gallery-header">
-            <div class="gallery-title">معرضي (My Gallery)</div>
+            <div class="gallery-title" id="txtGalleryTitle">معرضي</div>
+
             <button class="close-gallery" onclick="closeGallery()">✕</button>
         </div>
         <div class="gallery-grid" id="galleryGrid">
@@ -607,7 +617,9 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     <div class="chat-container" id="chatContainer">
         <div class="empty-state" id="emptyState">
             <div class="empty-logo">✨</div>
-            <p id="txtWelcome">أهلاً بك! أنا Nano Banana AI.<br>اكتب أي وصف وسأقوم بتحويله لصورة.</p>
+            <p id="txtWelcome">أهلاً بك! أنا 
+            
+            AI Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.</p>
         </div>
     </div>
 
@@ -625,7 +637,8 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             <button class="control-btn gallery-btn" onclick="openGallery()">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
-                <span>معرضي</span>
+               <span id="txtGallery">معرضي</span>
+
             </button>
         </div>
 
@@ -707,7 +720,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     const translations = {
         ar: {
-            online: "متصل", clear: "مسح الكل", welcome: "أهلاً بك! أنا Nano Banana AI.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
+            online: "متصل", clear: "مسح الكل", welcome: "أهلاً بك! أنا Ai Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
             placeholder: "تخيل أي شيء...", generating: "إنشاء صورة...", download: "تحميل HD", downloading: "جاري التحميل...",
             error: "حدث خطأ غير متوقع", confirmClear: "تحذير: سيتم حذف جميع الصور والبيانات الخاصة بك نهائياً من السيرفر. هل أنت متأكد؟", langLabel: "EN",
             translating: "جاري ترجمة الوصف...", retry: "إعادة المحاولة",
@@ -717,7 +730,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             gallery: "معرضي", noImages: "لا توجد صور محفوظة.", delete: "حذف"
         },
         en: {
-            online: "Online", clear: "Clear All", welcome: "Welcome! I am Nano Banana AI.<br>Type any description to generate an image.",
+            online: "Online", clear: "Clear All", welcome: "Welcome! I am  AI Imagen.<br>Type any description to generate an image.",
             placeholder: "Imagine anything...", generating: "Creating Image...", download: "Download HD", downloading: "Downloading...",
             error: "Unexpected error", confirmClear: "Warning: All your images and data will be permanently deleted from the server. Are you sure?", langLabel: "عربي",
             translating: "Translating prompt...", retry: "Retry",
@@ -999,10 +1012,14 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     function applyLanguage(lang) {
         const t = translations[lang];
         document.getElementById('txtOnline').innerText = t.online;
+        
         document.getElementById('clearBtn').innerText = t.clear;
         document.getElementById('txtWelcome').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
         document.getElementById('langBtn').innerText = t.langLabel;
+        document.getElementById('txtGallery').innerText = t.gallery; // لتغيير اسم الزر
+        document.getElementById('txtGalleryTitle').innerText = t.gallery; // لتغيير عنوان النافذة
+    
         document.querySelectorAll('.btn-download-hd span').forEach(span => { span.innerText = t.download; });
         document.querySelectorAll('.g-download').forEach(btn => { if(btn.lastChild) btn.lastChild.textContent = t.download; });
         renderAspectMenu();
