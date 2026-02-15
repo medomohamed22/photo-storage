@@ -1,5 +1,8 @@
 {
-  "name": "flux-backend-app",
+  "name": "nano-banana-project",
   "version": "1.0.0",
-  "type": "module"
+  "description": "Backend for Nano Banana",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
 }
