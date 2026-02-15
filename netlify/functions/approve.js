@@ -19,6 +19,7 @@ exports.handler = async (event) => {
         'Authorization': `Key ${PI_SECRET_KEY}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({}) // Pi API requires explicit empty body sometimes
     });
 
     if (response.ok) {
