@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
 <title>Nano Banana Chat</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
 <style>
 /* --- Design System --- */
 :root {
@@ -20,6 +22,7 @@
     --text-sub: #a1a1aa;
     --border: #27272a;
     --error: #ef4444;
+    --pi-color: #fdb927; /* Pi Network Gold */
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -35,7 +38,7 @@ body {
     overflow: hidden;
 }
 
-/* --- Landing Page (تم التعديل هنا) --- */
+/* --- Landing Page --- */
 .landing-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: #000;
@@ -50,41 +53,30 @@ body {
     max-width: 500px;
     animation: fadeUp 0.8s ease;
 }
-/* تصميم لوجو Ai الجديد */
 .landing-logo {
-    font-size: 80px;
-    font-weight: 900;
-    margin-bottom: 10px;
-    /* تدرج لوني أبيض إلى أرجواني */
+    font-size: 80px; font-weight: 900; margin-bottom: 10px;
     background: linear-gradient(135deg, #ffffff 20%, var(--purple) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    /* ظل متوهج أرجواني */
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.5));
     letter-spacing: -3px;
 }
-.landing-title {
-    font-size: 28px; font-weight: 800; margin-bottom: 10px;
-    color: var(--text-main);
-}
-.landing-desc {
-    color: var(--text-sub); line-height: 1.6; margin-bottom: 30px; font-size: 15px;
-}
-.feature-tags {
-    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px;
-}
+.landing-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
+.landing-desc { color: var(--text-sub); line-height: 1.6; margin-bottom: 30px; font-size: 15px; }
+.feature-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
 .tag {
     background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px;
     border: 1px solid rgba(255,255,255,0.1);
 }
-.start-btn {
-    background: var(--accent); color: black;
+.pi-login-btn {
+    background: var(--pi-color); color: #333;
     border: none; padding: 14px 40px; border-radius: 30px;
     font-weight: 800; font-size: 16px; cursor: pointer;
-    box-shadow: 0 0 20px rgba(209, 250, 49, 0.3);
+    box-shadow: 0 0 20px rgba(253, 185, 39, 0.3);
     transition: transform 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
 }
-.start-btn:active { transform: scale(0.95); }
+.pi-login-btn:active { transform: scale(0.95); }
+.pi-icon { width: 24px; height: 24px; fill: #333; }
 
 /* --- Header --- */
 .header {
@@ -118,67 +110,42 @@ body {
 }
 
 .logo-circle {
-    width: 34px;
-    height: 34px;
-    background: #1c241d;
-    border: 1px solid #2d382e;
-    color: var(--accent);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 16px;
+    width: 34px; height: 34px;
+    background: #1c241d; border: 1px solid #2d382e;
+    color: var(--accent); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px;
     box-shadow: 0 0 15px rgba(209, 250, 49, 0.1);
 }
 
 .header h1 {
-    font-size: 15px;
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    max-width: 150px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 15px; margin: 0; font-weight: 700;
+    letter-spacing: 0.5px; max-width: 150px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .status-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    box-shadow: 0 0 8px var(--accent);
-    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent); border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent); display: inline-block;
 }
 
 .header-actions { display: flex; gap: 8px; }
 
 .lang-btn, .clear-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    font-size: 11px;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-    transition: 0.2s;
-    min-width: 40px;
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text-main); font-size: 11px;
+    cursor: pointer; padding: 6px 10px; border-radius: 20px;
+    font-weight: 600; transition: 0.2s; min-width: 40px;
 }
 .lang-btn:active, .clear-btn:active { transform: scale(0.95); }
 
 /* --- Model Menu --- */
 .model-menu-overlay {
-    position: absolute;
-    top: 60px; left: 0; right: 0;
-    background: rgba(9, 9, 11, 0.98);
-    backdrop-filter: blur(20px);
-    z-index: 90;
-    padding: 12px;
-    display: none;
-    flex-direction: column;
-    gap: 8px;
+    position: absolute; top: 60px; left: 0; right: 0;
+    background: rgba(9, 9, 11, 0.98); backdrop-filter: blur(20px);
+    z-index: 90; padding: 12px; display: none;
+    flex-direction: column; gap: 8px;
     border-bottom: 1px solid var(--border);
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     animation: curtainDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -190,18 +157,13 @@ body {
 
 .model-option {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    color: var(--text-main);
-    cursor: pointer;
-    transition: 0.2s;
+    padding: 14px 16px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 14px;
+    color: var(--text-main); cursor: pointer; transition: 0.2s;
 }
 .model-option:active { transform: scale(0.98); }
 .model-option.active {
-    border-color: var(--accent);
-    background: #1c241d;
+    border-color: var(--accent); background: #1c241d;
     box-shadow: 0 0 0 1px var(--accent);
 }
 .model-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
@@ -211,14 +173,9 @@ body {
 
 /* --- Chat Area --- */
 .chat-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    scroll-behavior: smooth;
-    padding-bottom: 20px; 
+    flex: 1; overflow-y: auto; padding: 15px;
+    display: flex; flex-direction: column;
+    gap: 20px; scroll-behavior: smooth; padding-bottom: 20px; 
 }
 
 /* Messages */
@@ -232,242 +189,153 @@ body {
 .message.bot { align-self: flex-start; align-items: flex-start; }
 
 .msg-bubble {
-    padding: 10px 14px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.5;
-    position: relative;
-    word-wrap: break-word;
+    padding: 10px 14px; border-radius: 18px; font-size: 14px;
+    line-height: 1.5; position: relative; word-wrap: break-word;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
 .message.user .msg-bubble {
-    background: var(--user-msg-bg);
-    color: #fff;
+    background: var(--user-msg-bg); color: #fff;
     border-bottom-left-radius: 4px; 
 }
 .message.user .msg-bubble { border-bottom-left-radius: 4px; border-bottom-right-radius: 18px; }
 
 .message.bot .msg-bubble {
-    background: transparent;
-    padding: 0;
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    width: 100%; max-width: 320px; 
+    background: transparent; padding: 0;
+    border-radius: 20px; overflow: hidden;
+    border: 1px solid var(--border); width: 100%; max-width: 320px; 
 }
 
 /* Error / Rate Limit Card Style */
 .error-card {
-    padding: 20px;
-    text-align: center;
+    padding: 20px; text-align: center;
     background: rgba(39, 39, 42, 0.5);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    min-width: 250px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px; min-width: 250px;
 }
-.error-icon {
-    width: 40px; height: 40px;
-    margin-bottom: 5px;
-    opacity: 0.8;
-}
+.error-icon { width: 40px; height: 40px; margin-bottom: 5px; opacity: 0.8; }
 .error-title { font-weight: 700; font-size: 14px; color: #fff; }
 .error-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
 .retry-btn {
-    margin-top: 10px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: 0.2s;
+    margin-top: 10px; background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1); color: white;
+    padding: 8px 16px; border-radius: 12px; font-size: 12px;
+    cursor: pointer; transition: 0.2s;
     display: flex; align-items: center; gap: 6px;
 }
 .retry-btn:hover { background: rgba(255,255,255,0.15); }
 .retry-btn svg { width: 14px; height: 14px; fill: white; }
 
-/* Styles for Rate Limit (429) specifically */
 .error-card.rate-limit .error-icon { fill: var(--warning); }
 .error-card.rate-limit .error-title { color: var(--warning); }
-
-/* Styles for Generic Error */
 .error-card.generic .error-icon { fill: var(--error); }
 .error-card.generic .error-title { color: var(--error); }
 
-
 /* Image Styles */
 .image-wrapper {
-    position: relative;
-    width: 100%;
-    min-height: 250px;
-    background: #111;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative; width: 100%; min-height: 250px;
+    background: #111; display: flex; align-items: center; justify-content: center;
 }
-
-.msg-image {
-    display: block; width: 100%; height: auto;
-    opacity: 0; transition: opacity 0.5s ease;
-}
+.msg-image { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.5s ease; }
 .msg-image.loaded { opacity: 1; }
 
 /* --- Download Button --- */
 .download-btn-container {
-    padding: 10px;
-    background: rgba(24, 24, 27, 0.9);
-    backdrop-filter: blur(5px);
-    display: flex;
-    justify-content: center;
+    padding: 10px; background: rgba(24, 24, 27, 0.9);
+    backdrop-filter: blur(5px); display: flex; justify-content: center;
     border-top: 1px solid rgba(255,255,255,0.05);
 }
-
 .btn-download-hd {
     display: flex; align-items: center; gap: 8px;
-    background: var(--accent);
-    color: black;
-    text-decoration: none;
-    padding: 10px 0;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 13px;
-    width: 100%;
-    justify-content: center;
-    cursor: pointer;
-    border: none;
+    background: var(--accent); color: black;
+    text-decoration: none; padding: 10px 0; border-radius: 10px;
+    font-weight: 700; font-size: 13px; width: 100%;
+    justify-content: center; cursor: pointer; border: none;
 }
 .btn-download-hd:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-download-hd svg { width: 16px; height: 16px; fill: black; }
 
 /* --- Blur Wave Animation (LOADER) --- */
 .blur-wave-container {
-    width: 280px; height: 280px;
-    border-radius: 20px;
-    background: #000;
-    position: relative;
-    overflow: hidden;
+    width: 280px; height: 280px; border-radius: 20px;
+    background: #000; position: relative; overflow: hidden;
     border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
 }
 .blur-wave-bg {
     position: absolute; inset: -50%;
-    background: conic-gradient(
-        from 0deg, 
-        transparent 0deg, 
-        var(--accent) 60deg, 
-        transparent 120deg, 
-        var(--purple) 180deg, 
-        transparent 240deg, 
-        var(--accent) 300deg, 
-        transparent 360deg
-    );
-    filter: blur(40px); opacity: 0.4;
-    animation: rotateWave 3s linear infinite;
+    background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 60deg, transparent 120deg, var(--purple) 180deg, transparent 240deg, var(--accent) 300deg, transparent 360deg);
+    filter: blur(40px); opacity: 0.4; animation: rotateWave 3s linear infinite;
 }
-@keyframes rotateWave { 
-    0% { transform: rotate(0deg); } 
-    100% { transform: rotate(360deg); } 
-}
+@keyframes rotateWave { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .blur-wave-text {
-    position: relative; z-index: 2;
-    font-weight: 700; font-size: 14px;
-    color: var(--text-main);
-    background: rgba(0,0,0,0.6);
-    padding: 10px 20px;
-    border-radius: 30px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.15);
+    position: relative; z-index: 2; font-weight: 700; font-size: 14px;
+    color: var(--text-main); background: rgba(0,0,0,0.6);
+    padding: 10px 20px; border-radius: 30px;
+    backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
     animation: pulseText 1.5s infinite ease-in-out;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-@keyframes pulseText { 
-    0%, 100% { opacity: 0.8; transform: scale(1); } 
-    50% { opacity: 1; transform: scale(1.05); } 
-}
+@keyframes pulseText { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
 /* --- Footer / Input Area --- */
 .footer-container {
-    background: #09090b; 
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
+    background: #09090b; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
-    flex-shrink: 0; z-index: 100;
-    position: relative;
+    flex-shrink: 0; z-index: 100; position: relative;
 }
 
-/* Control Bar (Aspect & Gallery) */
+/* Control Bar (Aspect & Gallery & User) */
 .control-bar {
     padding: 8px 12px 0 12px;
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px;
-    position: relative;
+    display: flex; justify-content: flex-start; gap: 10px;
+    position: relative; overflow-x: auto;
 }
 
 .control-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 6px 12px;
-    color: var(--text-sub);
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 6px 12px;
+    color: var(--text-sub); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s ease;
     display: flex; align-items: center; gap: 8px;
-    min-width: 90px;
-    justify-content: space-between;
+    min-width: 90px; justify-content: space-between;
 }
 .control-btn:active { transform: scale(0.98); }
-.control-btn.active-state { border-color: var(--accent); color: var(--text-main); }
 .control-btn svg.icon { width: 14px; height: 14px; fill: currentColor; }
 .control-btn svg.arrow { width: 12px; height: 12px; fill: var(--text-sub); transition: transform 0.2s; }
 .control-btn.open svg.arrow { transform: rotate(180deg); }
 
-/* Custom for Gallery Button */
-.gallery-btn {
-    justify-content: center; gap: 6px; min-width: auto;
-}
+/* Gallery Button */
+.gallery-btn { justify-content: center; gap: 6px; min-width: auto; }
 .gallery-btn:hover { background: rgba(255,255,255,0.05); }
 
+/* Pi User Badge */
+.pi-user-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(253, 185, 39, 0.1); 
+    border: 1px solid var(--pi-color);
+    border-radius: 12px; padding: 6px 10px;
+    color: var(--pi-color); font-size: 11px; font-weight: 700;
+    white-space: nowrap;
+}
+.pi-user-badge svg { width: 12px; height: 12px; fill: var(--pi-color); }
+
 .aspect-menu-dropdown {
-    position: absolute;
-    bottom: 100%;
-    right: 12px; left: auto;
-    width: 180px; 
-    margin-bottom: 8px;
-    background: rgba(24, 24, 27, 0.95);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 6px;
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-    z-index: 200;
+    position: absolute; bottom: 100%; right: 12px; left: auto;
+    width: 180px; margin-bottom: 8px;
+    background: rgba(24, 24, 27, 0.95); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 6px; display: none; flex-direction: column; gap: 4px;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5); z-index: 200;
     animation: fadeUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Adjust dropdown position for RTL */
-html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .aspect-option {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.2s;
-    color: var(--text-sub);
+    padding: 10px 12px; border-radius: 10px;
+    cursor: pointer; transition: 0.2s; color: var(--text-sub);
 }
 .aspect-option:hover { background: rgba(255,255,255,0.05); }
 .aspect-option.selected { background: #1c241d; color: var(--accent); border: 1px solid rgba(209, 250, 49, 0.2); }
@@ -477,28 +345,17 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 .aspect-ratio-text { font-size: 10px; opacity: 0.7; }
 
 /* Input Row */
-.input-row {
-    padding: 8px 12px;
-    display: flex; gap: 8px; align-items: flex-end;
-}
-
+.input-row { padding: 8px 12px; display: flex; gap: 8px; align-items: flex-end; }
 .input-box {
-    flex: 1;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 12px 16px;
-    color: white; font-size: 14px;
-    max-height: 100px; overflow-y: auto; resize: none;
-    outline: none; line-height: 1.4;
-    transition: border-color 0.2s;
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 12px 16px; color: white; font-size: 14px;
+    max-height: 100px; overflow-y: auto; resize: none; outline: none;
+    line-height: 1.4; transition: border-color 0.2s;
 }
 .input-box:focus { border-color: var(--accent); }
 .send-btn {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: black; border: none;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent); color: black; border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
 }
@@ -512,21 +369,16 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     align-items: center; justify-content: center; height: 100%;
 }
 .empty-logo {
-    width: 60px; height: 60px;
-    background: var(--card);
-    border-radius: 50%;
+    width: 60px; height: 60px; background: var(--card); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 15px;
-    color: var(--accent); font-size: 26px;
-    border: 1px solid var(--border);
-    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    margin-bottom: 15px; color: var(--accent); font-size: 26px;
+    border: 1px solid var(--border); box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
 
 /* --- Gallery Modal --- */
 .gallery-modal {
     position: fixed; inset: 0; background: #000;
-    z-index: 500; display: none;
-    flex-direction: column;
+    z-index: 500; display: none; flex-direction: column;
     animation: fadeUp 0.3s ease;
 }
 .gallery-header {
@@ -546,9 +398,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     display: flex; flex-direction: column;
 }
 .gallery-img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; }
-.gallery-actions {
-    display: flex; gap: 5px; padding: 8px; background: #1c1c1e;
-}
+.gallery-actions { display: flex; gap: 5px; padding: 8px; background: #1c1c1e; }
 .g-btn {
     flex: 1; border: none; border-radius: 6px; padding: 6px;
     font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px;
@@ -573,22 +423,24 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             <div class="landing-title">AI Imagen</div>
             <div class="landing-desc">
                 مرحباً بك في الجيل الجديد من توليد الصور.<br>
-                استمتع بنماذج ذكاء اصطناعي متعددة، سرعة فائقة،<br>
-                وجودة خيالية، كل ذلك في مكان واحد.
+                سجل الدخول باستخدام محفظة Pi لحفظ صورك وإدارتها.
             </div>
             <div class="feature-tags">
                 <span class="tag">Flux Pro</span>
                 <span class="tag">Nano Banana Pro</span>
                 <span class="tag">High Speed</span>
             </div>
-            <button class="start-btn" onclick="hideLanding()">بدء الاستخدام</button>
+            
+            <button class="pi-login-btn" onclick="loginWithPi()">
+                <svg class="pi-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                تسجيل دخول Pi
+            </button>
         </div>
     </div>
 
     <div id="galleryModal" class="gallery-modal">
         <div class="gallery-header">
             <div class="gallery-title" id="txtGalleryTitle">معرضي</div>
-
             <button class="close-gallery" onclick="closeGallery()">✕</button>
         </div>
         <div class="gallery-grid" id="galleryGrid">
@@ -617,9 +469,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     <div class="chat-container" id="chatContainer">
         <div class="empty-state" id="emptyState">
             <div class="empty-logo">✨</div>
-            <p id="txtWelcome">أهلاً بك! أنا 
-            
-            AI Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.</p>
+            <p id="txtWelcome">أهلاً بك! أنا AI Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.</p>
         </div>
     </div>
 
@@ -637,9 +487,13 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             <button class="control-btn gallery-btn" onclick="openGallery()">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
-               <span id="txtGallery">معرضي</span>
-
+                <span id="txtGallery">معرضي</span>
             </button>
+
+            <div id="piUserBadge" class="pi-user-badge" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span id="piUsernameDisplay">User</span>
+            </div>
         </div>
 
         <div class="input-row">
@@ -652,7 +506,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
 <script>
     /* =========================================
-       SUPABASE INIT
+       SUPABASE CONFIG
        ========================================= */
     const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM'; 
@@ -665,21 +519,77 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     }
 
     /* =========================================
-       USER ID LOGIC (AUTO-GENERATE)
+       PI NETWORK AUTH LOGIC
        ========================================= */
-    function getUserId() {
-        let uid = localStorage.getItem('nano_user_id');
-        if (!uid) {
-            // Generate UUID-like string
-            uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('nano_user_id', uid);
+    let currentUser = null; // Stores Pi User Data
+
+    async function loginWithPi() {
+        try {
+            // 1. Initialize Pi SDK
+            const Pi = window.Pi;
+            Pi.init({ version: "2.0", sandbox: true }); // Change sandbox: false for production
+
+            // 2. Define scopes (username is needed, payments needed for wallet context in future)
+            const scopes = ['username', 'payments'];
+
+            // 3. Callback for incomplete payments (required by SDK)
+            function onIncompletePaymentFound(payment) {
+                console.log("Incomplete payment found", payment);
+                // Handle incomplete payments here if you add paid features later
+            };
+
+            // 4. Authenticate
+            const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
+            
+            // 5. Success
+            currentUser = authResult.user;
+            console.log("Logged in as:", currentUser.username, "UID:", currentUser.uid);
+
+            // 6. Save/Update User in Supabase
+            await registerPiUser(currentUser);
+
+            // 7. Update UI
+            updateUIForLogin();
+
+        } catch (err) {
+            console.error("Pi Login Error:", err);
+            alert("فشل تسجيل الدخول عبر Pi Network. يرجى المحاولة من داخل متصفح Pi.");
         }
-        return uid;
     }
-    const currentUserId = getUserId();
+
+    async function registerPiUser(user) {
+        if (!supabaseClient) return;
+        
+        // Upsert user into 'pi_users' table
+        const { error } = await supabaseClient
+            .from('pi_users')
+            .upsert({ 
+                uid: user.uid, 
+                username: user.username,
+                // Wallet address isn't directly available on auth, only on payment request
+            }, { onConflict: 'uid' });
+
+        if (error) console.error("DB Register Error:", error);
+    }
+
+    function updateUIForLogin() {
+        const landingPage = document.getElementById('landingPage');
+        const badge = document.getElementById('piUserBadge');
+        const nameDisplay = document.getElementById('piUsernameDisplay');
+
+        // Hide Landing
+        landingPage.style.opacity = '0';
+        setTimeout(() => { landingPage.style.display = 'none'; }, 500);
+
+        // Show User Badge
+        if (currentUser) {
+            nameDisplay.innerText = currentUser.username;
+            badge.style.display = 'flex';
+        }
+    }
 
     /* =========================================
-       Config & UI Refs
+       APP LOGIC
        ========================================= */
     let currentLang = localStorage.getItem('nanoLang') || 'ar'; 
     let currentModel = 'imagen-4'; 
@@ -687,6 +597,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     let currentHeight = 1024;
     let currentRatioId = 'square';
 
+    // Ratios & Models Arrays (Same as before)
     const RATIOS = [
         { id: 'square', label: '1:1', ratioText: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
         { id: 'portrait', label: '9:16', ratioText: '9:16', w: 768, h: 1344, icon: '<rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
@@ -714,13 +625,12 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     const aspectTriggerBtn = document.getElementById('aspectTriggerBtn');
     const currentAspectLabel = document.getElementById('currentAspectLabel');
     const currentAspectIcon = document.getElementById('currentAspectIcon');
-    const landingPage = document.getElementById('landingPage');
     const galleryModal = document.getElementById('galleryModal');
     const galleryGrid = document.getElementById('galleryGrid');
 
     const translations = {
         ar: {
-            online: "متصل", clear: "مسح الكل", welcome: "أهلاً بك! أنا Ai Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
+            online: "متصل", clear: "مسح الكل", welcome: "أهلاً بك! أنا AI Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
             placeholder: "تخيل أي شيء...", generating: "إنشاء صورة...", download: "تحميل HD", downloading: "جاري التحميل...",
             error: "حدث خطأ غير متوقع", confirmClear: "تحذير: سيتم حذف جميع الصور والبيانات الخاصة بك نهائياً من السيرفر. هل أنت متأكد؟", langLabel: "EN",
             translating: "جاري ترجمة الوصف...", retry: "إعادة المحاولة",
@@ -730,7 +640,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             gallery: "معرضي", noImages: "لا توجد صور محفوظة.", delete: "حذف"
         },
         en: {
-            online: "Online", clear: "Clear All", welcome: "Welcome! I am  AI Imagen.<br>Type any description to generate an image.",
+            online: "Online", clear: "Clear All", welcome: "Welcome! I am AI Imagen.<br>Type any description to generate an image.",
             placeholder: "Imagine anything...", generating: "Creating Image...", download: "Download HD", downloading: "Downloading...",
             error: "Unexpected error", confirmClear: "Warning: All your images and data will be permanently deleted from the server. Are you sure?", langLabel: "عربي",
             translating: "Translating prompt...", retry: "Retry",
@@ -749,29 +659,16 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         renderAspectMenu(); 
         updateTriggerUI();
         loadChatHistory();
-        
-        // Show landing page if not visited before (or always, per request)
-        if(sessionStorage.getItem('nano_landing_seen')) {
-            landingPage.style.display = 'none';
-        }
+        // Note: Landing page logic is handled by login button now
     };
 
-    /* --- Landing Page Logic --- */
-    function hideLanding() {
-        landingPage.style.opacity = '0';
-        setTimeout(() => {
-            landingPage.style.display = 'none';
-            sessionStorage.setItem('nano_landing_seen', 'true');
-        }, 500);
-    }
-
-    /* --- Supabase Storage Logic (Save) --- */
+    /* --- Supabase Storage Logic (Modified for Pi User) --- */
     async function saveToSupabase(blob, prompt) {
-        if (!supabaseClient) return URL.createObjectURL(blob); 
+        if (!supabaseClient || !currentUser) return URL.createObjectURL(blob); 
 
         try {
-            // Filename includes User ID to avoid collisions and allow easier deletion logic if needed
-            const fileName = `${currentUserId}_${Date.now()}.jpg`;
+            // Filename includes Pi UID
+            const fileName = `${currentUser.uid}_${Date.now()}.jpg`;
             
             const { data: uploadData, error: uploadError } = await supabaseClient.storage
                 .from('nano_images')
@@ -788,7 +685,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             
             const publicUrl = publicUrlData.publicUrl;
 
-            // Insert Metadata WITH user_id
+            // Insert Metadata using Pi UID
             const { error: dbError } = await supabaseClient
                 .from('generated_images')
                 .insert([
@@ -798,7 +695,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
                         model: currentModel,
                         width: currentWidth,
                         height: currentHeight,
-                        user_id: currentUserId // Storing User ID
+                        user_id: currentUser.uid // USING PI UID
                     }
                 ]);
 
@@ -812,16 +709,18 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         }
     }
 
-    /* --- Gallery Logic --- */
+    /* --- Gallery Logic (Modified for Pi User) --- */
     async function openGallery() {
         if (!supabaseClient) return;
+        if (!currentUser) { alert("يجب تسجيل الدخول أولاً لعرض المعرض."); return; }
+
         galleryModal.style.display = 'flex';
         galleryGrid.innerHTML = '<div style="color:#888; text-align:center; grid-column:span 2;">جاري التحميل...</div>';
 
         const { data, error } = await supabaseClient
             .from('generated_images')
             .select('*')
-            .eq('user_id', currentUserId) // Only fetch this user's images
+            .eq('user_id', currentUser.uid) // Filter by Pi UID
             .order('created_at', { ascending: false });
 
         galleryGrid.innerHTML = '';
@@ -859,18 +758,16 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         const parent = btnElement.closest('.gallery-item');
         parent.style.opacity = '0.5';
 
-        // 1. Delete from Storage (Extract filename from URL)
         const fileName = url.split('/').pop();
         if (fileName) {
             await supabaseClient.storage.from('nano_images').remove([fileName]);
         }
 
-        // 2. Delete from DB
         const { error } = await supabaseClient
             .from('generated_images')
             .delete()
             .eq('id', id)
-            .eq('user_id', currentUserId); // Double check ownership
+            .eq('user_id', currentUser.uid);
 
         if (!error) {
             parent.remove();
@@ -880,26 +777,10 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         }
     }
 
-    async function downloadImage(url) {
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `nano-${Date.now()}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } catch (e) {
-            alert('Download Failed');
-        }
-    }
-
-    /* --- Clear All Logic --- */
+    /* --- Clear All Logic (Modified for Pi User) --- */
     async function clearAllData() {
+        if (!currentUser) return;
         if(confirm(getTrans('confirmClear'))) {
-            // 1. Clear Local Chat
             localStorage.removeItem('nanoBananaChat');
             chatContainer.innerHTML = '';
             chatContainer.appendChild(emptyState);
@@ -907,30 +788,26 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             if (!supabaseClient) return;
 
-            // 2. Fetch all user files to delete from Storage first
             const { data: files } = await supabaseClient
                 .from('generated_images')
                 .select('image_url')
-                .eq('user_id', currentUserId);
+                .eq('user_id', currentUser.uid);
 
             if (files && files.length > 0) {
                 const filenames = files.map(f => f.image_url.split('/').pop());
                 await supabaseClient.storage.from('nano_images').remove(filenames);
             }
 
-            // 3. Delete all rows from DB
             await supabaseClient
                 .from('generated_images')
                 .delete()
-                .eq('user_id', currentUserId);
+                .eq('user_id', currentUser.uid);
             
             alert('تم مسح جميع البيانات بنجاح.');
         }
     }
 
-    /* --- Core Logic --- */
-    
-    // Toggle Aspect Menu
+    /* --- Standard UI Logic --- */
     function toggleAspectMenu() {
         const isHidden = aspectMenu.style.display === 'none' || aspectMenu.style.display === '';
         aspectMenu.style.display = isHidden ? 'flex' : 'none';
@@ -1012,14 +889,12 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     function applyLanguage(lang) {
         const t = translations[lang];
         document.getElementById('txtOnline').innerText = t.online;
-        
         document.getElementById('clearBtn').innerText = t.clear;
         document.getElementById('txtWelcome').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
         document.getElementById('langBtn').innerText = t.langLabel;
-        document.getElementById('txtGallery').innerText = t.gallery; // لتغيير اسم الزر
-        document.getElementById('txtGalleryTitle').innerText = t.gallery; // لتغيير عنوان النافذة
-    
+        document.getElementById('txtGallery').innerText = t.gallery;
+        document.getElementById('txtGalleryTitle').innerText = t.gallery;
         document.querySelectorAll('.btn-download-hd span').forEach(span => { span.innerText = t.download; });
         document.querySelectorAll('.g-download').forEach(btn => { if(btn.lastChild) btn.lastChild.textContent = t.download; });
         renderAspectMenu();
@@ -1037,51 +912,20 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         } catch { return text; }
     }
 
-    function loadChatHistory() {
-        const history = JSON.parse(localStorage.getItem('nanoBananaChat')) || [];
-        if (history.length > 0) {
-            emptyState.style.display = 'none';
-            history.forEach(msg => {
-                if(msg.type === 'user') renderUserMessage(msg.content);
-                else renderBotMessage(msg.content, false); 
-            });
-            scrollToBottom();
+    async function downloadImage(url) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `nano-${Date.now()}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (e) {
+            alert('Download Failed');
         }
-    }
-
-    function saveToHistory(type, content) {
-        const history = JSON.parse(localStorage.getItem('nanoBananaChat')) || [];
-        history.push({ type, content, timestamp: Date.now() });
-        localStorage.setItem('nanoBananaChat', JSON.stringify(history));
-    }
-
-    function renderUserMessage(text) {
-        const div = document.createElement('div');
-        div.className = 'message user';
-        div.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div>`;
-        chatContainer.appendChild(div);
-        scrollToBottom();
-    }
-
-    function renderBotMessage(imageUrl, save = true) {
-        const div = document.createElement('div');
-        div.className = 'message bot';
-        div.innerHTML = `
-            <div class="msg-bubble">
-                <div class="image-wrapper">
-                    <img src="${imageUrl}" class="msg-image" alt="Art" onload="this.classList.add('loaded')">
-                </div>
-                <div class="download-btn-container">
-                    <button onclick="downloadImage('${imageUrl}')" class="btn-download-hd">
-                        <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-                        <span>${getTrans('download')}</span>
-                    </button>
-                </div>
-            </div>
-        `;
-        chatContainer.appendChild(div);
-        scrollToBottom();
-        if (save) saveToHistory('bot', imageUrl);
     }
 
     function renderLoader(statusTextKey = 'generating') {
@@ -1174,7 +1018,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             const seed = Math.floor(Math.random() * 1000000);
             
-            // Call Redirecting Backend Function
+            // Backend Function Call
             const finalUrl = `/.netlify/functions/generate?prompt=${encodeURIComponent(finalPrompt)}&model=${currentModel}&width=${currentWidth}&height=${currentHeight}&seed=${seed}`;
 
             const response = await fetch(finalUrl);
@@ -1184,7 +1028,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             const blob = await response.blob();
             
-            // Upload to Supabase & Save History (Linked to Current User ID)
+            // Upload to Supabase
             const finalImageUrl = await saveToSupabase(blob, finalPrompt);
 
             removeLoader(loaderId);
