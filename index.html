@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
 <title>Nano Banana Chat</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ✅ Supabase UMD (مهم عشان window.supabase تشتغل) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
 <style>
@@ -23,6 +24,7 @@
   --text-sub: #a1a1aa;
   --border: #27272a;
   --error: #ef4444;
+  --ok: #10b981;
   --pi-color: #fdb927;
 }
 
@@ -50,10 +52,7 @@ body {
   text-align: center;
   transition: opacity 0.5s ease;
 }
-.landing-content {
-  max-width: 500px;
-  animation: fadeUp 0.8s ease;
-}
+.landing-content { max-width: 500px; animation: fadeUp 0.8s ease; }
 .landing-logo {
   font-size: 80px; font-weight: 900; margin-bottom: 10px;
   background: linear-gradient(135deg, #ffffff 20%, var(--purple) 100%);
@@ -64,10 +63,7 @@ body {
 .landing-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
 .landing-desc { color: var(--text-sub); line-height: 1.6; margin-bottom: 30px; font-size: 15px; }
 .feature-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
-.tag {
-  background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-}
+.tag { background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); }
 .pi-login-btn {
   background: var(--pi-color); color: #333;
   border: none; padding: 14px 40px; border-radius: 30px;
@@ -93,20 +89,9 @@ body {
   flex-shrink: 0;
   position: relative;
 }
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 12px;
-  transition: background 0.2s;
-}
+.header-title { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px; border-radius: 12px; transition: background 0.2s; }
 .header-title:active { background: rgba(255,255,255,0.05); }
-.header-chevron {
-  width: 20px; height: 20px; fill: var(--text-sub);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.header-chevron { width: 20px; height: 20px; fill: var(--text-sub); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .logo-circle {
   width: 34px; height: 34px;
   background: #1c241d; border: 1px solid #2d382e;
@@ -115,16 +100,8 @@ body {
   font-weight: 800; font-size: 16px;
   box-shadow: 0 0 15px rgba(209, 250, 49, 0.1);
 }
-.header h1 {
-  font-size: 15px; margin: 0; font-weight: 700;
-  letter-spacing: 0.5px; max-width: 150px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.status-dot {
-  width: 6px; height: 6px;
-  background: var(--accent); border-radius: 50%;
-  box-shadow: 0 0 8px var(--accent); display: inline-block;
-}
+.header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: 0.5px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); display: inline-block; }
 .header-actions { display: flex; gap: 8px; }
 .lang-btn, .clear-btn {
   background: var(--card); border: 1px solid var(--border);
@@ -144,10 +121,7 @@ body {
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   animation: curtainDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes curtainDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes curtainDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 .model-option {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px; background: var(--card);
@@ -155,10 +129,7 @@ body {
   color: var(--text-main); cursor: pointer; transition: 0.2s;
 }
 .model-option:active { transform: scale(0.98); }
-.model-option.active {
-  border-color: var(--accent); background: #1c241d;
-  box-shadow: 0 0 0 1px var(--accent);
-}
+.model-option.active { border-color: var(--accent); background: #1c241d; box-shadow: 0 0 0 1px var(--accent); }
 .model-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
 .model-desc { font-size: 11px; color: var(--text-sub); }
 .check-icon { width: 20px; height: 20px; fill: var(--accent); opacity: 0; transition: 0.2s; }
@@ -170,67 +141,20 @@ body {
   display: flex; flex-direction: column;
   gap: 20px; scroll-behavior: smooth; padding-bottom: 20px;
 }
-
-/* Messages */
-.message {
-  display: flex; flex-direction: column; max-width: 90%;
-  animation: slideUp 0.3s ease;
-}
+.message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 .message.user { align-self: flex-end; align-items: flex-end; }
 .message.bot { align-self: flex-start; align-items: flex-start; }
-
-.msg-bubble {
-  padding: 10px 14px; border-radius: 18px; font-size: 14px;
-  line-height: 1.5; position: relative; word-wrap: break-word;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-.message.user .msg-bubble {
-  background: var(--user-msg-bg); color: #fff;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 18px;
-}
-
-.message.bot .msg-bubble {
-  background: transparent; padding: 0;
-  border-radius: 20px; overflow: hidden;
-  border: 1px solid var(--border); width: 100%; max-width: 320px;
-}
-
-/* Error / Rate Limit Card Style */
-.error-card {
-  padding: 20px; text-align: center;
-  background: rgba(39, 39, 42, 0.5);
-  display: flex; flex-direction: column; align-items: center;
-  gap: 10px; min-width: 250px;
-}
-.error-icon { width: 40px; height: 40px; margin-bottom: 5px; opacity: 0.8; }
-.error-title { font-weight: 700; font-size: 14px; color: #fff; }
-.error-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
-.retry-btn {
-  margin-top: 10px; background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.1); color: white;
-  padding: 8px 16px; border-radius: 12px; font-size: 12px;
-  cursor: pointer; transition: 0.2s;
-  display: flex; align-items: center; gap: 6px;
-}
-.retry-btn:hover { background: rgba(255,255,255,0.15); }
-.retry-btn svg { width: 14px; height: 14px; fill: white; }
-.error-card.rate-limit .error-icon { fill: var(--warning); }
-.error-card.rate-limit .error-title { color: var(--warning); }
-.error-card.generic .error-icon { fill: var(--error); }
-.error-card.generic .error-title { color: var(--error); }
+.msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; position: relative; word-wrap: break-word; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+.message.user .msg-bubble { background: var(--user-msg-bg); color: #fff; border-bottom-left-radius: 4px; border-bottom-right-radius: 18px; }
+.message.bot .msg-bubble { background: transparent; padding: 0; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); width: 100%; max-width: 340px; }
 
 /* Image Styles */
-.image-wrapper {
-  position: relative; width: 100%; min-height: 250px;
-  background: #111; display: flex; align-items: center; justify-content: center;
-}
+.image-wrapper { position: relative; width: 100%; min-height: 250px; background: #111; display: flex; align-items: center; justify-content: center; }
 .msg-image { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.5s ease; }
 .msg-image.loaded { opacity: 1; }
 
-/* --- Download Button --- */
+/* Download Button */
 .download-btn-container {
   padding: 10px; background: rgba(24, 24, 27, 0.9);
   backdrop-filter: blur(5px); display: flex; justify-content: center;
@@ -246,7 +170,7 @@ body {
 .btn-download-hd:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-download-hd svg { width: 16px; height: 16px; fill: black; }
 
-/* --- Blur Wave Animation (LOADER) --- */
+/* Loader */
 .blur-wave-container {
   width: 280px; height: 280px; border-radius: 20px;
   background: #000; position: relative; overflow: hidden;
@@ -269,21 +193,9 @@ body {
 }
 @keyframes pulseText { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-/* --- Footer / Input Area --- */
-.footer-container {
-  background: #09090b; border-top: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  flex-shrink: 0; z-index: 100; position: relative;
-}
-
-/* Control Bar */
-.control-bar {
-  padding: 8px 12px 0 12px;
-  display: flex; justify-content: flex-start; gap: 10px;
-  position: relative; overflow-x: auto;
-}
-
+/* Footer */
+.footer-container { background: #09090b; border-top: 1px solid var(--border); display: flex; flex-direction: column; padding-bottom: max(12px, env(safe-area-inset-bottom)); flex-shrink: 0; z-index: 100; position: relative; }
+.control-bar { padding: 8px 12px 0 12px; display: flex; justify-content: flex-start; gap: 10px; position: relative; overflow-x: auto; }
 .control-btn {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 12px; padding: 6px 12px;
@@ -296,8 +208,6 @@ body {
 .control-btn svg.icon { width: 14px; height: 14px; fill: currentColor; }
 .control-btn svg.arrow { width: 12px; height: 12px; fill: var(--text-sub); transition: transform 0.2s; }
 .control-btn.open svg.arrow { transform: rotate(180deg); }
-
-/* Gallery Button */
 .gallery-btn { justify-content: center; gap: 6px; min-width: auto; }
 
 /* Pi User Badge */
@@ -311,13 +221,22 @@ body {
 }
 .pi-user-badge svg { width: 12px; height: 12px; fill: var(--pi-color); }
 
+/* ✅ Aspect dropdown (يشتغل فعلياً) */
 .aspect-menu-dropdown {
-  position: absolute; bottom: 100%; right: 12px; left: auto;
-  width: 180px; margin-bottom: 8px;
-  background: rgba(24, 24, 27, 0.95); backdrop-filter: blur(12px);
-  border: 1px solid var(--border); border-radius: 16px;
-  padding: 6px; display: none; flex-direction: column; gap: 4px;
-  box-shadow: 0 -5px 20px rgba(0,0,0,0.5); z-index: 200;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 12px;
+  width: 200px;
+  background: rgba(24, 24, 27, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+  z-index: 200;
   animation: fadeUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -334,7 +253,7 @@ body {
 .aspect-label { font-size: 12px; font-weight: 700; }
 .aspect-ratio-text { font-size: 10px; opacity: 0.7; }
 
-/* Input Row */
+/* Input */
 .input-row { padding: 8px 12px; display: flex; gap: 8px; align-items: flex-end; }
 .input-box {
   flex: 1; background: var(--card); border: 1px solid var(--border);
@@ -351,50 +270,85 @@ body {
 }
 .send-btn svg { width: 18px; height: 18px; fill: black; margin-right: 2px; }
 
-/* --- Empty State --- */
-.empty-state {
-  text-align: center; margin-top: auto; margin-bottom: auto;
-  color: var(--text-sub); padding: 20px;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; height: 100%;
-}
-.empty-logo {
-  width: 60px; height: 60px; background: var(--card); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 15px; color: var(--accent); font-size: 26px;
-  border: 1px solid var(--border); box-shadow: 0 0 20px rgba(0,0,0,0.3);
-}
+/* Empty State */
+.empty-state { text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-sub); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+.empty-logo { width: 60px; height: 60px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--accent); font-size: 26px; border: 1px solid var(--border); box-shadow: 0 0 20px rgba(0,0,0,0.3); }
 
-/* --- Gallery Modal --- */
-.gallery-modal {
-  position: fixed; inset: 0; background: #000;
-  z-index: 500; display: none; flex-direction: column;
-  animation: fadeUp 0.3s ease;
-}
-.gallery-header {
-  padding: 15px; border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
-  background: rgba(9, 9, 11, 0.95); backdrop-filter: blur(10px);
-}
+/* Gallery Modal */
+.gallery-modal { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; animation: fadeUp 0.3s ease; }
+.gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(9, 9, 11, 0.95); backdrop-filter: blur(10px); }
 .gallery-title { font-size: 16px; font-weight: 700; color: #fff; }
 .close-gallery { background: none; border: none; color: var(--text-sub); font-size: 20px; cursor: pointer; }
-.gallery-grid {
-  flex: 1; overflow-y: auto; padding: 15px;
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-}
-.gallery-item {
-  background: var(--card); border-radius: 12px; overflow: hidden;
-  position: relative; border: 1px solid var(--border);
-  display: flex; flex-direction: column;
-}
+.gallery-grid { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.gallery-item { background: var(--card); border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--border); display: flex; flex-direction: column; }
 .gallery-img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; }
 .gallery-actions { display: flex; gap: 5px; padding: 8px; background: #1c1c1e; }
-.g-btn {
-  flex: 1; border: none; border-radius: 6px; padding: 6px;
-  font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px;
-}
+.g-btn { flex: 1; border: none; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px; }
 .g-download { background: var(--accent); color: black; font-weight: 600; }
 .g-delete { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+/* ✅ Debug Error Card */
+.error-card {
+  padding: 18px; text-align: center;
+  background: rgba(39, 39, 42, 0.5);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; min-width: 250px;
+}
+.error-icon { width: 40px; height: 40px; margin-bottom: 2px; opacity: 0.9; }
+.error-title { font-weight: 800; font-size: 14px; color: #fff; }
+.error-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
+.retry-btn {
+  margin-top: 6px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1); color: white;
+  padding: 8px 14px; border-radius: 12px; font-size: 12px;
+  cursor: pointer; transition: 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.retry-btn:hover { background: rgba(255,255,255,0.15); }
+.retry-btn svg { width: 14px; height: 14px; fill: white; }
+
+.debug-toggle {
+  margin-top: 6px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  padding: 7px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.debug-box {
+  width: 100%;
+  margin-top: 8px;
+  text-align: left;
+  direction: ltr;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 10px;
+  border-radius: 12px;
+  display: none;
+  overflow: auto;
+  max-height: 180px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  color: rgba(255,255,255,0.9);
+}
+.debug-actions { display:flex; gap:8px; margin-top:8px; }
+.copy-btn {
+  flex:1;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor:pointer;
+  font-size: 12px;
+}
+
+.error-card.rate-limit .error-icon { fill: var(--warning); }
+.error-card.rate-limit .error-title { color: var(--warning); }
+.error-card.generic .error-icon { fill: var(--error); }
+.error-card.generic .error-title { color: var(--error); }
 
 @media (max-width: 400px) {
   .header h1 { font-size: 14px; }
@@ -423,6 +377,7 @@ body {
       <span class="tag">High Speed</span>
     </div>
 
+    <!-- ✅ بدون Backticks -->
     <button class="pi-login-btn" onclick="loginWithPi()">
       <svg class="pi-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
       تسجيل دخول Pi
@@ -469,10 +424,12 @@ body {
 
 <!-- Footer -->
 <div class="footer-container">
+  <div class="control-bar" id="controlBar">
 
-  <div class="control-bar">
+    <!-- ✅ ده الـ dropdown الحقيقي -->
     <div class="aspect-menu-dropdown" id="aspectMenu"></div>
 
+    <!-- ✅ زر الأبعاد بدون Backticks -->
     <button class="control-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu()">
       <div style="display:flex; align-items:center; gap:8px;">
         <span id="currentAspectIcon"></span>
@@ -505,13 +462,17 @@ body {
    SUPABASE CONFIG
 ========================================= */
 const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM'; // نفس مفتاحك، سيبه أو استبدله لو تغير
+const supabaseKey = 'ضع_مفتاحك_anon_هنا_كما_هو'; // <-- سيب مفتاحك الحالي مكان ده
 
 let supabaseClient = null;
-if (window.supabase?.createClient) {
-  supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-} else {
-  console.error("Supabase library not loaded");
+try {
+  if (window.supabase?.createClient) {
+    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+  } else {
+    console.error("Supabase UMD not loaded");
+  }
+} catch (e) {
+  console.error("Supabase init error", e);
 }
 
 /* =========================================
@@ -526,9 +487,7 @@ async function loginWithPi() {
       alert("Pi SDK غير متاح. افتح الموقع من داخل Pi Browser.");
       return;
     }
-
     if (!piInited) {
-      // مطلوب منك: sandbox false
       window.Pi.init({ version: "2.0", sandbox: false });
       piInited = true;
     }
@@ -543,11 +502,8 @@ async function loginWithPi() {
     if (!authResult?.user?.uid) throw new Error("Invalid Pi auth result");
 
     currentUser = authResult.user;
-    console.log("Logged in as:", currentUser.username, currentUser.uid);
-
     await registerPiUser(currentUser);
     updateUIForLogin();
-
   } catch (err) {
     console.error("Pi Login Error:", err);
     alert("فشل تسجيل الدخول عبر Pi Network. تأكد أنك داخل Pi Browser وأن الدومين مسجل في تطبيقك.");
@@ -556,17 +512,14 @@ async function loginWithPi() {
 
 async function registerPiUser(user) {
   if (!supabaseClient) return;
+  try {
+    const { error } = await supabaseClient
+      .from('pi_users')
+      .upsert({ uid: user.uid, username: user.username }, { onConflict: 'uid' });
 
-  const { error } = await supabaseClient
-    .from('pi_users')
-    .upsert({
-      uid: user.uid,
-      username: user.username
-    }, { onConflict: 'uid' });
-
-  if (error) {
-    console.error("DB Register Error:", error);
-    alert("فشل الاتصال بقاعدة البيانات. قد لا يتم حفظ الصور.");
+    if (error) console.error("DB Register Error:", error);
+  } catch (e) {
+    console.error("registerPiUser exception:", e);
   }
 }
 
@@ -641,7 +594,9 @@ const translations = {
     gallery: "معرضي",
     noImages: "لا توجد صور محفوظة.",
     delete: "حذف",
-    loadingGallery: "جاري التحميل..."
+    loadingGallery: "جاري التحميل...",
+    debugDetails: "تفاصيل الخطأ",
+    copyDebug: "نسخ التفاصيل"
   },
   en: {
     online: "Online",
@@ -662,7 +617,9 @@ const translations = {
     gallery: "My Gallery",
     noImages: "No images saved.",
     delete: "Delete",
-    loadingGallery: "Loading..."
+    loadingGallery: "Loading...",
+    debugDetails: "Error details",
+    copyDebug: "Copy details"
   }
 };
 
@@ -695,6 +652,32 @@ function scrollToBottom() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+function safeJsonStringify(obj) {
+  try { return JSON.stringify(obj, null, 2); }
+  catch { return String(obj); }
+}
+
+function isProbablyBase64(s) {
+  if (!s || typeof s !== 'string') return false;
+  const t = s.trim();
+  if (t.length < 200) return false;
+  // base64 غالباً حروف/أرقام/+ /=
+  return /^[A-Za-z0-9+/=\s]+$/.test(t);
+}
+
+async function fetchWithTimeout(url, opts = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: controller.signal });
+    clearTimeout(id);
+    return res;
+  } catch (e) {
+    clearTimeout(id);
+    throw e;
+  }
+}
+
 /* =========================================
    Translation (best-effort)
 ========================================= */
@@ -717,7 +700,7 @@ function loadChatHistory() {
     emptyState.style.display = 'none';
     history.forEach(msg => {
       if (msg.type === 'user') renderUserMessage(msg.content);
-      else renderBotMessage(msg.content, false);
+      else if (msg.type === 'bot_img') renderBotMessage(msg.content, false);
     });
     scrollToBottom();
   }
@@ -758,7 +741,7 @@ function renderBotMessage(imageUrl, save = true) {
   `;
   chatContainer.appendChild(div);
   scrollToBottom();
-  if (save) saveToHistory('bot', imageUrl);
+  if (save) saveToHistory('bot_img', imageUrl);
 }
 
 function renderLoader(statusTextKey = 'generating') {
@@ -800,7 +783,7 @@ async function forceDownload(url, btn) {
 
   try {
     const response = await fetch(url, { mode: 'cors' });
-    if (!response.ok) throw new Error("Net");
+    if (!response.ok) throw new Error("download_failed");
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -820,43 +803,106 @@ async function forceDownload(url, btn) {
 }
 
 function downloadImage(url) {
-  // create a fake button container to reuse forceDownload safely
   const btn = document.createElement('button');
   btn.innerHTML = `<span>${getTrans('download')}</span>`;
   forceDownload(url, btn);
 }
 
 /* =========================================
-   Error Card + Retry
+   DEBUG ERROR SYSTEM
 ========================================= */
-function renderErrorCard(type, prompt) {
+function stageTitle(stage){
+  const map = {
+    auth: "مشكلة تسجيل الدخول (Pi)",
+    translate: "مشكلة ترجمة الوصف",
+    backend: "مشكلة في السيرفر (Netlify Function)",
+    model: "مشكلة من مزود التوليد/الموديل",
+    decode: "مشكلة تحويل الصورة (Base64)",
+    supabase_storage: "مشكلة رفع الصورة (Supabase Storage)",
+    supabase_db: "مشكلة حفظ البيانات (Supabase DB)",
+    unknown: "خطأ غير معروف"
+  };
+  return map[stage] || map.unknown;
+}
+
+function userHint(stage, status){
+  if (stage === "auth") return "افتح الموقع من داخل Pi Browser وتأكد إن الدومين متسجل في Pi Developer Portal.";
+  if (stage === "backend") return "تأكد إن Netlify Function شغالة وإن الـEndpoint بيرد. لو فيه Rate limit جرّب بعد شوية.";
+  if (stage === "model") return "الموديل نفسه ممكن يكون عليه ضغط أو API محدود.";
+  if (stage === "decode") return "السيرفر غالباً رجّع نص خطأ بدل Base64. شوف التفاصيل.";
+  if (stage === "supabase_storage") return "اتأكد من Bucket permissions وCORS و إن الـanon key صحيح.";
+  if (status === 429) return getTrans('rateLimitDesc');
+  return getTrans('error');
+}
+
+function renderDebugErrorCard(errInfo, originalPrompt) {
   const div = document.createElement('div');
   div.className = 'message bot';
-  let icon, titleKey, descKey, styleClass;
 
-  if (type === 429) {
-    styleClass = 'rate-limit'; titleKey = 'rateLimitTitle'; descKey = 'rateLimitDesc';
-    icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
-  } else {
-    styleClass = 'generic'; titleKey = 'genericError'; descKey = 'error';
-    icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
-  }
+  const status = errInfo?.status;
+  const is429 = status === 429;
+
+  const icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+
+  const title = is429 ? getTrans('rateLimitTitle') : stageTitle(errInfo.stage || 'unknown');
+  const desc  = is429 ? getTrans('rateLimitDesc') : userHint(errInfo.stage || 'unknown', status);
+
+  const debugText = safeJsonStringify({
+    time: new Date().toISOString(),
+    stage: errInfo.stage,
+    status: errInfo.status,
+    message: errInfo.message,
+    details: errInfo.details,
+    request: errInfo.request,
+  });
+
+  const debugId = 'dbg-' + Date.now();
 
   div.innerHTML = `
     <div class="msg-bubble">
-      <div class="error-card ${styleClass}">
+      <div class="error-card ${is429 ? 'rate-limit' : 'generic'}">
         ${icon}
-        <div class="error-title">${getTrans(titleKey)}</div>
-        <div class="error-desc">${getTrans(descKey)}</div>
-        <button class="retry-btn" onclick='retryLastMessage(${JSON.stringify(prompt)})'>
+        <div class="error-title">${escapeHtml(title)}</div>
+        <div class="error-desc">${escapeHtml(desc)}</div>
+
+        <button class="retry-btn" onclick='retryLastMessage(${JSON.stringify(originalPrompt)})'>
           <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
           <span>${getTrans('retry')}</span>
         </button>
+
+        <button class="debug-toggle" onclick="toggleDebugBox('${debugId}')">${getTrans('debugDetails')}</button>
+        <div class="debug-box" id="${debugId}">${escapeHtml(debugText)}</div>
+        <div class="debug-actions">
+          <button class="copy-btn" onclick="copyDebug('${debugId}')">${getTrans('copyDebug')}</button>
+        </div>
       </div>
     </div>
   `;
   chatContainer.appendChild(div);
   scrollToBottom();
+}
+
+function toggleDebugBox(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+}
+
+async function copyDebug(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.innerText;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  alert("تم النسخ ✅");
 }
 
 function retryLastMessage(prompt) {
@@ -872,24 +918,21 @@ function extractStoragePath(publicUrl){
   const marker = '/nano_images/';
   const i = publicUrl.indexOf(marker);
   if (i === -1) return null;
-  return publicUrl.substring(i + marker.length); // includes folder/filename
+  return publicUrl.substring(i + marker.length);
 }
 
 /* =========================================
    Save to Supabase (PI users only)
 ========================================= */
 async function saveToSupabase(blob, prompt) {
-  // If supabase not available, return local blob URL
   if (!supabaseClient) return URL.createObjectURL(blob);
 
-  // enforce login
   if (!currentUser?.uid) {
     alert("يرجى تسجيل الدخول لحفظ الصور.");
     return URL.createObjectURL(blob);
   }
 
   try {
-    // IMPORTANT: use folder per user (so delete works correctly)
     const filePath = `${currentUser.uid}/${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabaseClient.storage
@@ -897,8 +940,7 @@ async function saveToSupabase(blob, prompt) {
       .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
 
     if (uploadError) {
-      console.error("Supabase Upload Error:", uploadError);
-      return URL.createObjectURL(blob);
+      throw { stage: "supabase_storage", message: "Upload failed", details: uploadError };
     }
 
     const { data: publicUrlData } = supabaseClient.storage
@@ -906,7 +948,9 @@ async function saveToSupabase(blob, prompt) {
       .getPublicUrl(filePath);
 
     const publicUrl = publicUrlData?.publicUrl;
-    if (!publicUrl) return URL.createObjectURL(blob);
+    if (!publicUrl) {
+      throw { stage: "supabase_storage", message: "No public URL returned", details: publicUrlData };
+    }
 
     const { error: dbError } = await supabaseClient
       .from('generated_images')
@@ -919,11 +963,15 @@ async function saveToSupabase(blob, prompt) {
         user_id: currentUser.uid
       }]);
 
-    if (dbError) console.error("Database Insert Error:", dbError);
+    if (dbError) {
+      // نخلي الصورة تظهر حتى لو DB وقع
+      console.error("Database Insert Error:", dbError);
+    }
 
     return publicUrl;
   } catch (err) {
-    console.error("Supabase Error:", err);
+    console.error("saveToSupabase error:", err);
+    // رجّع رابط محلي عشان المستخدم ما يخسرش الصورة
     return URL.createObjectURL(blob);
   }
 }
@@ -932,15 +980,8 @@ async function saveToSupabase(blob, prompt) {
    Gallery
 ========================================= */
 async function openGallery() {
-  if (!supabaseClient) {
-    alert("Supabase غير متاح.");
-    return;
-  }
-
-  if (!currentUser?.uid) {
-    alert("يجب تسجيل الدخول باستخدام Pi لفتح المعرض.");
-    return;
-  }
+  if (!supabaseClient) { alert("Supabase غير متاح."); return; }
+  if (!currentUser?.uid) { alert("يجب تسجيل الدخول باستخدام Pi لفتح المعرض."); return; }
 
   galleryModal.style.display = 'flex';
   galleryGrid.innerHTML = `<div style="color:#888; text-align:center; grid-column:span 2;">${getTrans('loadingGallery')}</div>`;
@@ -978,9 +1019,7 @@ async function openGallery() {
   });
 }
 
-function closeGallery() {
-  galleryModal.style.display = 'none';
-}
+function closeGallery() { galleryModal.style.display = 'none'; }
 
 async function deleteImage(id, url, btnElement) {
   if (!confirm('حذف هذه الصورة؟')) return;
@@ -991,9 +1030,7 @@ async function deleteImage(id, url, btnElement) {
 
   try {
     const path = extractStoragePath(url);
-    if (path) {
-      await supabaseClient.storage.from('nano_images').remove([path]);
-    }
+    if (path) await supabaseClient.storage.from('nano_images').remove([path]);
 
     const { error } = await supabaseClient
       .from('generated_images')
@@ -1018,14 +1055,9 @@ async function deleteImage(id, url, btnElement) {
    Clear All (server + local)
 ========================================= */
 async function clearAllData() {
-  if (!currentUser?.uid) {
-    alert("سجّل دخول الأول.");
-    return;
-  }
-
+  if (!currentUser?.uid) { alert("سجّل دخول الأول."); return; }
   if (!confirm(getTrans('confirmClear'))) return;
 
-  // local history
   localStorage.removeItem('nanoBananaChat');
   chatContainer.innerHTML = '';
   chatContainer.appendChild(emptyState);
@@ -1033,7 +1065,6 @@ async function clearAllData() {
 
   if (!supabaseClient) return;
 
-  // delete from storage + db
   const { data: files, error: selErr } = await supabaseClient
     .from('generated_images')
     .select('image_url')
@@ -1063,10 +1094,12 @@ function toggleAspectMenu() {
 }
 
 document.addEventListener('click', function(event) {
+  // close aspect menu
   if (!aspectMenu.contains(event.target) && !aspectTriggerBtn.contains(event.target)) {
     aspectMenu.style.display = 'none';
     aspectTriggerBtn.classList.remove('open');
   }
+  // close model menu
   const headerTitle = document.querySelector('.header-title');
   if (headerTitle && !modelMenu.contains(event.target) && !headerTitle.contains(event.target)) {
     modelMenu.style.display = 'none';
@@ -1081,7 +1114,13 @@ function renderAspectMenu() {
     const isSelected = r.id === currentRatioId;
     div.className = `aspect-option ${isSelected ? 'selected' : ''}`;
     div.onclick = () => selectRatio(r);
-    div.innerHTML = `${r.icon}<div class="aspect-info"><span class="aspect-label">${r.label}</span><span class="aspect-ratio-text">${r.ratioText}</span></div>`;
+    div.innerHTML = `
+      <svg viewBox="0 0 24 24">${r.icon}</svg>
+      <div class="aspect-info">
+        <span class="aspect-label">${r.label}</span>
+        <span class="aspect-ratio-text">${r.ratioText} • ${r.w}×${r.h}</span>
+      </div>
+    `;
     aspectMenu.appendChild(div);
   });
 }
@@ -1090,9 +1129,12 @@ function selectRatio(r) {
   currentWidth = r.w;
   currentHeight = r.h;
   currentRatioId = r.id;
+
+  localStorage.setItem('nanoRatio', currentRatioId);
   updateTriggerUI();
   renderAspectMenu();
-  toggleAspectMenu();
+  aspectMenu.style.display = 'none';
+  aspectTriggerBtn.classList.remove('open');
 }
 
 function updateTriggerUI() {
@@ -1123,7 +1165,8 @@ function toggleModelMenu() {
 function selectModel(id, name) {
   currentModel = id;
   headerModelName.textContent = name;
-  toggleModelMenu();
+  modelMenu.style.display = 'none';
+  chevron.style.transform = 'rotate(0deg)';
   renderModelMenu();
 }
 
@@ -1144,6 +1187,66 @@ function applyLanguage(lang) {
   document.getElementById('txtGalleryTitle').innerText = t.gallery;
   renderAspectMenu();
   updateTriggerUI();
+}
+
+/* =========================================
+   Backend Call (Compatible with latest)
+   - Try POST JSON first
+   - Fallback to GET query
+   - Supports JSON response or base64 text
+========================================= */
+async function requestGenerateImage(payload) {
+  const endpoint = new URL('/.netlify/functions/generate', window.location.origin).toString();
+
+  // 1) POST JSON
+  try {
+    const res = await fetchWithTimeout(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }, 30000);
+
+    // لو السيرفر بيرفض POST
+    if (res.status === 404 || res.status === 405) throw { __fallback: true, res };
+
+    return res;
+  } catch (e) {
+    // fallback only if 404/405 or explicit marker
+    if (e?.__fallback) {
+      // 2) GET fallback
+      const u = new URL('/.netlify/functions/generate', window.location.origin);
+      Object.entries(payload).forEach(([k, v]) => u.searchParams.set(k, String(v)));
+      return await fetchWithTimeout(u.toString(), {}, 30000);
+    }
+    throw e;
+  }
+}
+
+async function parseImageResponse(response) {
+  const ct = (response.headers.get('content-type') || '').toLowerCase();
+
+  // JSON
+  if (ct.includes('application/json')) {
+    const j = await response.json().catch(() => ({}));
+    // متوقع: {base64, contentType} أو {image, mime} أو {error}
+    if (j?.error || j?.success === false) {
+      throw { stage: "backend", status: response.status, message: j?.error || j?.message || "Backend returned error", details: j };
+    }
+    const base64 = j.base64 || j.image || j.data;
+    const contentType = j.contentType || j.mime || 'image/jpeg';
+    if (!isProbablyBase64(base64)) {
+      throw { stage: "decode", status: response.status, message: "Invalid base64 in JSON response", details: j };
+    }
+    return { base64, contentType };
+  }
+
+  // Text base64
+  const text = await response.text();
+  if (!isProbablyBase64(text)) {
+    // غالباً ده نص خطأ من الفنكشن
+    throw { stage: "backend", status: response.status, message: "Non-base64 response", details: text?.slice?.(0, 600) || text };
+  }
+  return { base64: text.trim(), contentType: ct.includes('image/') ? ct : 'image/jpeg' };
 }
 
 /* =========================================
@@ -1174,6 +1277,14 @@ async function sendMessage(manualPrompt = null) {
 
   const loaderId = renderLoader('generating');
 
+  // Debug context
+  const reqMeta = {
+    model: currentModel,
+    width: currentWidth,
+    height: currentHeight,
+    ratio: currentRatioId
+  };
+
   try {
     let finalPrompt = text;
 
@@ -1185,33 +1296,58 @@ async function sendMessage(manualPrompt = null) {
 
     const seed = Math.floor(Math.random() * 1000000);
 
-    // build url safely
-    const u = new URL('/.netlify/functions/generate', window.location.origin);
-    u.searchParams.set('prompt', finalPrompt);
-    u.searchParams.set('model', currentModel);
-    u.searchParams.set('width', String(currentWidth));
-    u.searchParams.set('height', String(currentHeight));
-    u.searchParams.set('seed', String(seed));
+    // payload compatible with new backend
+    const payload = {
+      prompt: finalPrompt,
+      model: currentModel,
+      width: currentWidth,
+      height: currentHeight,
+      seed,
+      uid: currentUser.uid,
+      username: currentUser.username || ''
+    };
 
-    const response = await fetch(u.toString());
+    const response = await requestGenerateImage(payload);
 
-    if (response.status === 429) throw new Error("429");
-    if (!response.ok) throw new Error("Server Error");
+    if (response.status === 429) {
+      throw { stage: "backend", status: 429, message: "Rate limit", request: payload };
+    }
+    if (!response.ok) {
+      const peek = await response.text().catch(() => "");
+      throw { stage: "backend", status: response.status, message: "Backend not ok", details: peek?.slice?.(0, 600), request: payload };
+    }
 
-    const base64 = await response.text();
-const contentType = response.headers.get('content-type') || 'image/jpeg';
-const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-const blob = new Blob([bytes], { type: contentType });
+    const { base64, contentType } = await parseImageResponse(response);
+
+    // base64 -> blob
+    let bytes;
+    try {
+      bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    } catch (e) {
+      throw { stage: "decode", status: response.status, message: "atob failed (base64 invalid)", details: String(e), request: payload };
+    }
+    const blob = new Blob([bytes], { type: contentType || 'image/jpeg' });
+
+    // save
     const finalImageUrl = await saveToSupabase(blob, finalPrompt);
 
     removeLoader(loaderId);
     renderBotMessage(finalImageUrl, true);
 
   } catch (error) {
-    console.error(error);
+    console.error("GEN ERROR:", error);
     removeLoader(loaderId);
-    if (error.message === "429") renderErrorCard(429, text);
-    else renderErrorCard(500, text);
+
+    // normalize error
+    const errInfo = {
+      stage: error?.stage || (error?.name === 'AbortError' ? 'backend' : 'unknown'),
+      status: error?.status || (error?.message === '429' ? 429 : undefined),
+      message: error?.message || (error?.name === 'AbortError' ? 'Request timeout' : 'Unknown error'),
+      details: error?.details || error,
+      request: error?.request || reqMeta
+    };
+
+    renderDebugErrorCard(errInfo, text);
   } finally {
     isGenerating = false;
     sendBtn.disabled = false;
@@ -1233,6 +1369,19 @@ promptInput.addEventListener('keydown', function(e) {
     sendMessage();
   }
 });
+
+/* =========================================
+   Init ratio from storage
+========================================= */
+(function initRatio(){
+  const saved = localStorage.getItem('nanoRatio');
+  if (saved && RATIOS.some(r => r.id === saved)) {
+    currentRatioId = saved;
+    const r = RATIOS.find(x => x.id === saved);
+    currentWidth = r.w;
+    currentHeight = r.h;
+  }
+})();
 </script>
 
 </body>
