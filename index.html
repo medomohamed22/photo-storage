@@ -81,13 +81,16 @@ body {
     padding: 4px 8px; border-radius: 12px; transition: 0.2s;
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
-.user-info-display {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 11px; font-weight: 600; color: var(--pi-gold);
-    background: rgba(97, 31, 105, 0.2); padding: 2px 10px; border-radius: 12px;
-    border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 4px;
+
+/* Header Cost Badge (New) */
+.header-cost-badge {
+    background: var(--pi-gold); color: #000;
+    font-size: 11px; font-weight: 800;
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 5px; /* مسافة صغيرة عن الاسم */
 }
-.header-actions { display: flex; gap: 8px; }
+
 .header-left { display: flex; gap: 8px; align-items: center; }
 
 .token-btn {
@@ -154,8 +157,13 @@ body {
 @keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-.msg-image { width: 100%; height: auto; display: block; opacity: 0; transition: opacity 1.5s ease; }
+/* Image Style */
+.msg-image { 
+    width: 100%; height: auto; display: block; 
+    opacity: 0; transition: opacity 1.5s ease; 
+}
 .msg-image.loaded { opacity: 1; }
+
 .download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
 .d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
@@ -188,16 +196,7 @@ body {
     display: none; flex-direction: column; gap: 5px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
 .model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
-/* Aspect Menu Position Fix */
-.aspect-menu-dropdown { 
-    position: absolute; 
-    bottom: 100%; 
-    right: 12px; left: auto; /* RTL Fix */
-    width: 200px; 
-    margin-bottom: 12px; 
-    padding: 8px; 
-    z-index: 200;
-}
+.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; width: 200px; margin-bottom: 8px; padding: 8px; z-index: 200; }
 
 .menu-option {
     display: flex; justify-content: space-between; align-items: center;
@@ -205,7 +204,7 @@ body {
     border: 1px solid transparent; transition: 0.2s;
 }
 .menu-option.active { border-color: var(--accent); background: rgba(209, 250, 49, 0.05); }
-.cost-badge {
+.cost-badge-menu {
     background: rgba(255,255,255,0.1); color: var(--pi-gold);
     font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;
 }
@@ -238,48 +237,33 @@ body {
 .buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
 .buy-icon { width: 24px; height: 24px; fill: var(--accent); }
 
-/* --- Gallery Fixes --- */
+/* --- Gallery Styling (Fixed) --- */
 .gallery-grid { 
-    flex: 1; 
-    overflow-y: auto; /* Enable Scrolling */
-    padding: 12px; 
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 12px; 
-    align-content: start;
-    padding-bottom: 50px; /* Space for scrolling */
+    flex: 1; overflow-y: auto; padding: 12px; 
+    display: grid; grid-template-columns: repeat(2, 1fr); 
+    gap: 12px; align-content: start;
 }
 .gallery-item { 
-    position: relative; 
-    border-radius: 12px; 
-    overflow: hidden; 
-    border: 1px solid var(--border); 
-    background: #111; 
-    display: flex; 
-    flex-direction: column; /* Ensure vertical stacking */
-    height: auto; /* Allow height to grow */
+    position: relative; border-radius: 12px; overflow: hidden; 
+    border: 1px solid var(--border); background: #18181b;
+    display: flex; flex-direction: column; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-.gallery-item img { 
-    width: 100%; 
-    aspect-ratio: 1/1; 
-    object-fit: cover; 
-    display: block; 
-    flex-shrink: 0; /* Prevent image from shrinking */
+.gallery-item img {
+    width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
 }
 .gallery-actions { 
-    display: flex; 
-    gap: 8px; 
-    padding: 8px; 
-    background: #18181b; 
-    border-top: 1px solid #222; 
-    margin-top: auto; /* Push to bottom */
+    display: flex; gap: 5px; padding: 8px; background: #111; border-top: 1px solid #222;
 }
 .g-btn { 
-    flex: 1; border: none; padding: 8px 0; font-size: 11px; cursor: pointer; 
-    color: white; border-radius: 6px; font-weight: 700; display: flex; align-items: center; justify-content: center; 
+    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
+    cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
 .g-del { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.g-del:active { background: rgba(239, 68, 68, 0.3); }
 .g-down { background: var(--accent); color: black; }
+.g-down:active { opacity: 0.8; }
 
 /* Save Help */
 .save-help-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -306,8 +290,10 @@ body {
 
     <div class="header">
         <div class="header-title-area" onclick="toggleModelMenu()">
-            <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana</div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+            <div style="font-weight:700; font-size:16px; display:flex; align-items:center;" id="headerModelName">
+                Nano Banana
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s; margin-inline-start:5px;"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
         <div class="header-left">
             <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
@@ -332,7 +318,7 @@ body {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
                 <span id="txtGallery">معرضي</span>
             </button>
-
+            
             <div class="aspect-menu-dropdown" id="aspectMenu"></div>
             <button class="footer-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -439,6 +425,7 @@ body {
         renderModelMenu();
         renderAspectMenu();
         updateAspectUI();
+        updateHeaderModelUI();
         applyLanguage('ar'); 
     });
 
@@ -483,6 +470,13 @@ body {
     }
 
     // --- Menus Logic ---
+    function updateHeaderModelUI() {
+        const m = MODELS.find(x => x.id === currentModel);
+        // Put the cost inside the small yellow badge
+        const badge = `<span class="header-cost-badge">${m.cost}</span>`;
+        document.getElementById('headerModelName').innerHTML = `${m.name} ${badge}`;
+    }
+
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
         menu.innerHTML = '';
@@ -495,7 +489,7 @@ body {
                 <div>
                     <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center; gap:8px;">
                         ${m.name}
-                        <span class="cost-badge">${m.cost} ${t.cost}</span>
+                        <span class="cost-badge-menu">${m.cost} ${t.cost}</span>
                     </div>
                     <div style="font-size:11px; color:#888;">${m.desc}</div>
                 </div>
@@ -507,7 +501,7 @@ body {
 
     function selectModel(m) {
         currentModel = m.id;
-        document.getElementById('headerModelName').textContent = m.name;
+        updateHeaderModelUI();
         toggleModelMenu();
         renderModelMenu();
     }
@@ -521,7 +515,7 @@ body {
         if(isHidden) document.getElementById('aspectMenu').style.display = 'none';
     }
 
-    // --- Aspect Logic (Corrected) ---
+    // --- Aspect Logic ---
     function renderAspectMenu() {
         const menu = document.getElementById('aspectMenu');
         menu.innerHTML = '';
@@ -613,7 +607,7 @@ body {
         } catch (e) { console.error(e); alert("Payment Failed"); }
     }
 
-    // --- Core Logic ---
+    // --- Core Generation ---
     function updateCooldownUI() {
         const now = Date.now();
         const btn = document.getElementById('sendBtn');
@@ -768,6 +762,7 @@ body {
         modal.style.display = 'flex';
     }
 
+    // --- Gallery Logic (Fixed with Permanent Buttons) ---
     async function openGallery() {
         const t = TRANSLATIONS[currentLang];
         if(!piUser) { alert("Login Required"); return; }
@@ -780,6 +775,8 @@ body {
             const images = await res.json();
             grid.innerHTML = '';
             if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
+            
+            // Loop images and force render buttons for EACH
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
@@ -810,6 +807,7 @@ body {
         } catch(e) { console.error(e); }
     }
 
+    // Close logic
     document.addEventListener('click', (e) => {
         if(!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
             document.getElementById('modelMenu').style.display = 'none';
@@ -817,9 +815,6 @@ body {
         }
         if(!e.target.closest('#aspectMenu') && !e.target.closest('#aspectTriggerBtn')) {
             document.getElementById('aspectMenu').style.display = 'none';
-        }
-        if(e.target.classList.contains('modal-overlay')) {
-            e.target.style.display = 'none';
         }
     });
 </script>
