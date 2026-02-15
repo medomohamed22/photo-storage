@@ -81,107 +81,93 @@ body {
     padding: 4px 8px; border-radius: 12px; transition: 0.2s;
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
-.user-info-display {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 11px; font-weight: 600; color: var(--pi-gold);
-    background: rgba(97, 31, 105, 0.2); padding: 2px 10px; border-radius: 12px;
-    border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 4px;
+
+/* Header Left Actions (Tokens & Lang) */
+.header-left { display: flex; gap: 8px; align-items: center; }
+
+/* Token Button Style */
+.token-btn {
+    background: rgba(251, 191, 36, 0.1); 
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: var(--pi-gold);
+    padding: 0 12px; height: 34px; border-radius: 18px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: 0.2s;
 }
-.header-actions { display: flex; gap: 8px; }
-.icon-btn {
+.token-btn:active { transform: scale(0.95); }
+.token-icon { width: 14px; height: 14px; fill: currentColor; }
+
+.lang-btn {
     background: var(--card); border: 1px solid var(--border);
-    color: var(--text-main); padding: 0 14px; height: 34px; border-radius: 18px;
-    font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;
-    font-weight: 600; transition: 0.2s;
+    color: var(--text-main); padding: 0 12px; height: 34px; border-radius: 18px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
 }
-.icon-btn:active { transform: scale(0.95); }
 
 /* --- Chat & Content --- */
 .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
 .message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
 .message.user { align-self: flex-end; } 
 .message.bot { align-self: flex-start; }
-
 .msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
 .message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
 .message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
 
 /* Animation */
 .loading-box {
-    width: 280px; height: 280px;
-    border-radius: 20px;
-    position: relative; overflow: hidden;
-    background: #000; border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
+    width: 280px; height: 280px; border-radius: 20px; position: relative; overflow: hidden;
+    background: #000; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
 }
 .blur-wave {
     position: absolute; inset: -50%;
     background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 100deg, transparent 180deg, #a855f7 260deg, transparent 360deg);
-    filter: blur(40px); opacity: 0.5;
-    animation: rotateWave 4s linear infinite;
+    filter: blur(40px); opacity: 0.5; animation: rotateWave 4s linear infinite;
 }
 .loading-text {
     position: relative; z-index: 2; font-weight: 700; font-size: 13px; color: white;
     background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
-    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
-    animation: pulse 1.5s ease-in-out infinite;
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-/* Image Style */
-.msg-image { 
-    width: 100%; height: auto; display: block; 
-    opacity: 0; transition: opacity 1.5s ease; 
-}
+.msg-image { width: 100%; height: auto; display: block; opacity: 0; transition: opacity 1.5s ease; }
 .msg-image.loaded { opacity: 1; }
-
 .download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
 .d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
-/* --- Footer --- */
+/* --- Footer (Controls moved here) --- */
 .footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; position: relative; }
-
 .control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; position: relative; }
 
-.aspect-btn {
+/* Footer Buttons */
+.footer-btn {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
     font-size: 12px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
+    transition: 0.2s;
 }
+.footer-btn:active { background: #222; }
 
 .input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
 .input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
 .send-btn { 
-    width: 48px; height: 48px; border-radius: 50%; 
-    background: var(--accent); border: none; cursor: pointer; 
-    display: flex; align-items: center; justify-content: center; 
-    transition: 0.3s;
-    font-weight: 700; font-size: 12px;
+    width: 48px; height: 48px; border-radius: 50%; background: var(--accent); 
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+    transition: 0.3s; font-weight: 700; font-size: 12px;
 }
 .send-btn:disabled { background: #333; cursor: not-allowed; }
 .countdown-text { color: var(--accent); font-size: 10px; text-align: center; line-height: 1; }
 
-/* --- Menus --- */
+/* --- Menus & Modals --- */
 .model-menu, .aspect-menu-dropdown {
     background: rgba(20, 20, 24, 0.98); backdrop-filter: blur(20px);
     border: 1px solid var(--border); border-radius: 16px;
-    display: none; flex-direction: column; gap: 5px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+    display: none; flex-direction: column; gap: 5px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
-
-.model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-
-/* Aspect Menu Fixed Positioning */
-.aspect-menu-dropdown { 
-    position: absolute; 
-    bottom: 100%; /* تظهر فوق الزر */
-    right: 12px; left: auto;
-    width: 200px; 
-    margin-bottom: 12px; 
-    padding: 8px; 
-    z-index: 200;
-}
+.model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
+.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; left: auto; width: 200px; margin-bottom: 12px; padding: 8px; z-index: 200; }
 
 .menu-option {
     display: flex; justify-content: space-between; align-items: center;
@@ -191,52 +177,50 @@ body {
 .menu-option:hover { background: rgba(255,255,255,0.08); }
 .menu-option.active { border-color: var(--accent); background: rgba(209, 250, 49, 0.05); }
 
-/* --- Gallery & Save Modal --- */
+/* Common Modal */
 .modal-overlay { 
-    position: fixed; inset: 0; background: #000; z-index: 500; 
-    display: none; flex-direction: column; 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 500; 
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+}
+.modal-window {
+    width: 90%; max-width: 400px; max-height: 80vh; background: #111;
+    border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column;
 }
 .modal-header { 
     padding: 15px; border-bottom: 1px solid var(--border); 
-    display: flex; justify-content: space-between; align-items: center; background: #111; 
+    display: flex; justify-content: space-between; align-items: center; background: #18181b; 
 }
+
+/* Buy Token Modal */
+.buy-grid { padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.buy-card {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: 0.2s;
+}
+.buy-card:active { border-color: var(--pi-gold); background: rgba(251, 191, 36, 0.05); }
+.buy-info { display: flex; flex-direction: column; gap: 4px; }
+.buy-amount { color: var(--text-main); font-weight: 700; font-size: 16px; }
+.buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
+.buy-icon { width: 24px; height: 24px; fill: var(--accent); }
+
+/* Gallery */
 .gallery-grid { 
     flex: 1; overflow-y: auto; padding: 12px; 
-    display: grid; grid-template-columns: repeat(2, 1fr); 
-    gap: 12px; align-content: start;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-content: start;
 }
-.gallery-item { 
-    position: relative; border-radius: 12px; overflow: hidden; 
-    border: 1px solid var(--border); background: #111;
-    display: flex; flex-direction: column; 
-}
-.gallery-item img {
-    width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
-}
-.gallery-actions { 
-    display: flex; gap: 8px; padding: 8px; background: #18181b; 
-    border-top: 1px solid #222;
-}
-.g-btn { 
-    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
-    cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
-    display: flex; align-items: center; justify-content: center;
-}
+.gallery-item { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: #111; display: flex; flex-direction: column; }
+.gallery-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+.gallery-actions { display: flex; gap: 8px; padding: 8px; background: #18181b; border-top: 1px solid #222; }
+.g-btn { flex: 1; border: none; padding: 8px 0; font-size: 11px; cursor: pointer; color: white; border-radius: 6px; font-weight: 700; }
 .g-del { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .g-down { background: var(--accent); color: black; }
 
-/* Save Help Modal */
-.save-help-content {
-    flex: 1; display: flex; flex-direction: column; 
-    align-items: center; justify-content: center; padding: 20px;
-}
-.save-help-img {
-    max-width: 100%; max-height: 60vh; border-radius: 12px; 
-    border: 2px solid var(--accent); margin-bottom: 20px;
-}
-.save-help-text {
-    color: white; text-align: center; margin-bottom: 20px; font-size: 16px;
-}
+/* Save Help */
+.save-help-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+.save-help-img { max-width: 100%; max-height: 50vh; border-radius: 12px; border: 2px solid var(--accent); margin-bottom: 20px; }
+.save-help-text { color: white; text-align: center; margin-bottom: 20px; font-size: 16px; }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -246,14 +230,10 @@ body {
     <div id="landingPage" class="landing-overlay">
         <div class="landing-logo-text">AI Imagen</div>
         <div class="landing-desc" id="txtLandingDesc">توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي</div>
-        
         <div class="model-tags">
-            <div class="tag">Nano Banana</div>
-            <div class="tag">GPT Image</div>
-            <div class="tag">Klein 4B</div>
-            <div class="tag">Klein 9B</div>
+            <div class="tag">Nano Banana</div><div class="tag">GPT Image</div>
+            <div class="tag">Klein 4B</div><div class="tag">Klein 9B</div>
         </div>
-
         <button class="pi-login-btn" onclick="authenticatePi()">
             <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
             <span id="txtLogin">Pi Login</span>
@@ -261,20 +241,16 @@ body {
     </div>
 
     <div class="header">
-        <div style="display:flex; flex-direction:column;">
-            <div class="header-title-area" onclick="toggleModelMenu()">
-                <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana</div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-            </div>
-            <div id="piUserInfo" class="user-info-display" style="display:none;">
-                <span>@<span id="txtUsername">...</span></span>
-            </div>
+        <div class="header-title-area" onclick="toggleModelMenu()">
+            <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana</div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
-        <div class="header-actions">
-            <button class="icon-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
-            <button class="icon-btn" onclick="openGallery()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
-                <span id="txtGallery">معرضي</span>
+
+        <div class="header-left">
+            <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
+            <button class="token-btn" onclick="openBuyModal()">
+                <svg class="token-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.38 0 2.53-.83 2.53-1.94 0-.85-.38-1.55-2.03-1.95l-1.04-.25c-2.31-.55-3.62-1.89-3.62-3.63 0-1.86 1.34-3.2 3.14-3.56V4h2.67v1.9c1.68.39 2.92 1.43 3.08 3.13h-2.01c-.13-.88-.95-1.57-2.19-1.57-1.32 0-2.19.85-2.19 1.83 0 .74.43 1.35 2.17 1.77l.82.2c2.51.6 3.84 1.95 3.84 3.73 0 1.96-1.5 3.33-3.22 3.66z"/></svg>
+                <span id="tokenBalance">0</span>
             </button>
         </div>
     </div>
@@ -289,10 +265,13 @@ body {
 
     <div class="footer-container">
         <div class="control-bar">
-            <div class="aspect-menu-dropdown" id="aspectMenu">
-                </div>
-            
-            <button class="aspect-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
+            <button class="footer-btn" onclick="openGallery()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
+                <span id="txtGallery">معرضي</span>
+            </button>
+
+            <div class="aspect-menu-dropdown" id="aspectMenu"></div>
+            <button class="footer-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span id="currentAspectIcon"></span>
                     <span id="currentAspectLabel">1:1</span>
@@ -311,29 +290,42 @@ body {
     </div>
 
     <div id="galleryModal" class="modal-overlay">
-        <div class="modal-header">
-            <span style="font-weight:700; color:white;" id="txtGalleryTitle">معرض صوري</span>
-            <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+        <div class="modal-window" style="height:80%;">
+            <div class="modal-header">
+                <span style="font-weight:700; color:white;" id="txtGalleryTitle">معرض صوري</span>
+                <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+            </div>
+            <div class="gallery-grid" id="galleryGrid"></div>
         </div>
-        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <div id="buyModal" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span style="font-weight:700; color:white;" id="txtBuyTitle">شراء توكين</span>
+                <button onclick="document.getElementById('buyModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+            </div>
+            <div class="buy-grid" id="buyGrid">
+                </div>
+        </div>
     </div>
 
     <div id="saveHelpModal" class="modal-overlay">
-        <div class="modal-header">
-            <span style="font-weight:700; color:white;">حفظ الصورة</span>
-            <button onclick="document.getElementById('saveHelpModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
-        </div>
-        <div class="save-help-content">
-            <img id="saveHelpImg" class="save-help-img" src="">
-            <div class="save-help-text" id="txtSaveHelp">
-                اضغط مطولاً على الصورة أعلاه<br>ثم اختر "حفظ الصورة"
+        <div class="modal-window">
+            <div class="modal-header">
+                <span style="font-weight:700; color:white;">حفظ الصورة</span>
+                <button onclick="document.getElementById('saveHelpModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
             </div>
-            <button class="g-btn g-down" onclick="document.getElementById('saveHelpModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">تم / Done</button>
+            <div class="save-help-content">
+                <img id="saveHelpImg" class="save-help-img" src="">
+                <div class="save-help-text" id="txtSaveHelp"></div>
+                <button class="g-btn g-down" onclick="document.getElementById('saveHelpModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">تم / Done</button>
+            </div>
         </div>
     </div>
 
 <script>
-    // --- Config ---
+    // --- Config & Data ---
     const MODELS = [
         { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative & Balanced' },
         { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Coherence' },
@@ -348,6 +340,12 @@ body {
         { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
     ];
 
+    const PACKAGES = [
+        { pi: 1, tokens: 10 },
+        { pi: 2, tokens: 20 },
+        { pi: 3, tokens: 30 }
+    ];
+
     const TRANSLATIONS = {
         ar: {
             gallery: "معرضي",
@@ -358,15 +356,19 @@ body {
             delete: "حذف",
             error: "خطأ",
             galleryTitle: "معرض صوري",
+            buyTitle: "شراء توكين",
             noImages: "لا توجد صور محفوظة.",
             confirmDel: "هل أنت متأكد من الحذف؟",
             wait: "انتظر",
             sec: "ث",
             noImage: "مفيش صورة للتحميل",
-            saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'"
+            saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'",
+            buy: "شراء",
+            tokens: "توكين",
+            pi: "Pi"
         },
         en: {
-            gallery: "My Gallery",
+            gallery: "Gallery",
             welcome: "Welcome to AI Imagen <br> Select a model and imagine.",
             placeholder: "Imagine anything...",
             generating: "Generating...",
@@ -374,12 +376,16 @@ body {
             delete: "Delete",
             error: "Error",
             galleryTitle: "My Gallery",
+            buyTitle: "Buy Tokens",
             noImages: "No saved images.",
-            confirmDel: "Are you sure you want to delete?",
+            confirmDel: "Are you sure?",
             wait: "Wait",
             sec: "s",
             noImage: "No image to download",
-            saveHelp: "Long Press the image above<br>then select 'Save Image'"
+            saveHelp: "Long Press the image above<br>then select 'Save Image'",
+            buy: "Buy",
+            tokens: "Tokens",
+            pi: "Pi"
         }
     };
 
@@ -418,28 +424,46 @@ body {
         document.getElementById('emptyMsg').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
+        document.getElementById('txtBuyTitle').textContent = t.buyTitle;
         document.getElementById('txtSaveHelp').innerHTML = t.saveHelp;
+        renderBuyGrid(); // Re-render buy grid for language update
     }
 
-    // --- Auth ---
+    // --- Auth & Balance ---
     async function authenticatePi() {
         try {
-            const scopes = ['username'];
+            const scopes = ['username', 'payments']; // Need payments scope
             const auth = await Pi.authenticate(scopes, onIncompletePayment);
             if(auth.user) {
                 piUser = auth.user;
                 document.getElementById('landingPage').style.display = 'none';
-                document.getElementById('piUserInfo').style.display = 'flex';
-                document.getElementById('txtUsername').textContent = piUser.username;
+                
+                // Fetch Balance
+                fetchBalance();
             }
         } catch (err) {
             console.error(err);
             alert("Auth Failed. Please use Pi Browser.");
         }
     }
-    function onIncompletePayment(payment) {}
 
-    // --- UI Logic (Menus) ---
+    function onIncompletePayment(payment) {
+        // Handle failed/incomplete payments here if needed
+        console.log("Incomplete Payment", payment);
+    }
+
+    async function fetchBalance() {
+        if (!piUser) return;
+        try {
+            const res = await fetch(`/.netlify/functions/get-balance?uid=${piUser.uid}`);
+            const data = await res.json();
+            document.getElementById('tokenBalance').textContent = data.balance || 0;
+        } catch (e) {
+            console.error("Balance Error", e);
+        }
+    }
+
+    // --- UI Logic ---
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
         menu.innerHTML = '';
@@ -474,7 +498,6 @@ body {
         if(isHidden) document.getElementById('aspectMenu').style.display = 'none';
     }
 
-    // --- Aspect Menu Logic (Fixed) ---
     function renderAspectMenu() {
         const menu = document.getElementById('aspectMenu');
         menu.innerHTML = '';
@@ -497,8 +520,8 @@ body {
         currentHeight = r.h;
         currentRatioId = r.id;
         updateAspectUI();
-        document.getElementById('aspectMenu').style.display = 'none'; // Close immediately
-        renderAspectMenu(); // Update active state
+        document.getElementById('aspectMenu').style.display = 'none'; 
+        renderAspectMenu();
     }
 
     function updateAspectUI() {
@@ -513,6 +536,75 @@ body {
         const isHidden = menu.style.display === 'none' || menu.style.display === '';
         menu.style.display = isHidden ? 'flex' : 'none';
         if(isHidden) document.getElementById('modelMenu').style.display = 'none';
+    }
+
+    // --- Payment Logic ---
+    function openBuyModal() {
+        renderBuyGrid();
+        document.getElementById('buyModal').style.display = 'flex';
+    }
+
+    function renderBuyGrid() {
+        const grid = document.getElementById('buyGrid');
+        grid.innerHTML = '';
+        const t = TRANSLATIONS[currentLang];
+        
+        PACKAGES.forEach(pkg => {
+            const div = document.createElement('div');
+            div.className = 'buy-card';
+            div.onclick = () => buyTokens(pkg);
+            div.innerHTML = `
+                <div class="buy-info">
+                    <span class="buy-amount">${pkg.tokens} ${t.tokens}</span>
+                    <span class="buy-cost">${pkg.pi} ${t.pi}</span>
+                </div>
+                <svg class="buy-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    async function buyTokens(pkg) {
+        if (!piUser) { alert("Login first"); return; }
+        
+        try {
+            const paymentData = {
+                amount: pkg.pi,
+                memo: `${pkg.tokens} Tokens - AI Imagen`,
+                metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
+            };
+
+            await Pi.createPayment(paymentData, {
+                onReadyForServerApproval: async (paymentId) => {
+                    const res = await fetch('/.netlify/functions/approve', {
+                        method: 'POST', body: JSON.stringify({ paymentId })
+                    });
+                    if (!res.ok) throw new Error("Approval Failed");
+                },
+                onReadyForServerCompletion: async (paymentId, txid) => {
+                    const res = await fetch('/.netlify/functions/complete', {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            paymentId, txid, 
+                            pi_uid: piUser.uid, 
+                            tokenAmount: pkg.tokens 
+                        })
+                    });
+                    if (!res.ok) throw new Error("Completion Failed");
+                    
+                    const data = await res.json();
+                    // Update UI with new balance
+                    document.getElementById('tokenBalance').textContent = data.newBalance;
+                    document.getElementById('buyModal').style.display = 'none';
+                    alert(`Successfully bought ${pkg.tokens} Tokens!`);
+                },
+                onCancel: (paymentId) => { console.log("Cancelled", paymentId); },
+                onError: (error, payment) => { console.error("Payment Error", error); }
+            });
+        } catch (e) {
+            console.error(e);
+            alert("Payment Failed");
+        }
     }
 
     // --- Generation & Cooldown ---
@@ -636,7 +728,7 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- ULTRA ROBUST DOWNLOAD (Pi Browser Solution) ---
+    // --- Robust Download ---
     async function forceDownload(url, btn) {
         if (!url) { alert(TRANSLATIONS[currentLang].noImage); return; }
 
@@ -645,13 +737,11 @@ body {
         const filename = `AI_Image_${Date.now()}.png`; 
 
         try {
-            // Attempt 1: Standard Fetch/Blob (Works on Desktop/Some Mobiles)
             const response = await fetch(url);
             if (!response.ok) throw new Error("Net error");
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
             
-            // Try to auto-click anchor
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = blobUrl;
@@ -666,15 +756,8 @@ body {
             }, 500);
 
         } catch (e) {
-            console.log("Auto-download failed. Trying Strategy 2...");
-            
-            // Strategy 2: Window Open (Sometimes works on Android WebViews)
-            const newWin = window.open(url, '_blank');
-            
-            if(!newWin || newWin.closed || typeof newWin.closed=='undefined') {
-                // Strategy 3: The "Long Press" Modal (Guaranteed Fallback)
-                showSaveHelpModal(url);
-            }
+            console.log("Auto-download failed. Trying Fallback...");
+            showSaveHelpModal(url);
             btn.innerText = originalText;
         }
     }
