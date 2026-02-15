@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
@@ -11,7 +11,7 @@
     --bg: #09090b;
     --chat-bg: #000000;
     --card: #18181b;
-    --accent: #d1fa31; /* أخضر نانو */
+    --accent: #d1fa31;
     --pi-purple: #611f69;
     --pi-gold: #fbbf24;
     --text-main: #ffffff;
@@ -25,6 +25,8 @@ body {
     margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--chat-bg); color: var(--text-main);
     display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+    /* تثبيت الاتجاه ليكون مناسباً للغتين */
+    direction: rtl; 
 }
 
 /* --- Landing Page --- */
@@ -36,8 +38,17 @@ body {
     padding: 20px; text-align: center;
     transition: opacity 0.5s ease;
 }
-.landing-logo { font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(209,250,49,0.3)); }
-.landing-title { font-size: 32px; font-weight: 800; margin-bottom: 10px; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* اللوجو الجديد */
+.landing-logo-text {
+    font-size: 48px; font-weight: 900; margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--pi-purple) 0%, var(--pi-gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(97, 31, 105, 0.4));
+    letter-spacing: -1px;
+}
+
 .landing-desc { color: #888; margin-bottom: 30px; font-size: 14px; line-height: 1.6; }
 
 .model-tags { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px; }
@@ -50,15 +61,15 @@ body {
 .pi-login-btn {
     background: var(--pi-purple);
     color: var(--pi-gold);
-    border: 2px solid var(--pi-gold);
-    padding: 14px 50px; border-radius: 30px;
-    font-weight: 800; font-size: 18px; cursor: pointer;
-    box-shadow: 0 0 25px rgba(97, 31, 105, 0.6);
+    border: 1px solid var(--pi-gold);
+    padding: 12px 40px; border-radius: 30px;
+    font-weight: 800; font-size: 16px; cursor: pointer;
+    box-shadow: 0 0 25px rgba(97, 31, 105, 0.4);
     display: flex; align-items: center; gap: 10px;
     transition: transform 0.2s;
 }
 .pi-login-btn:active { transform: scale(0.95); }
-.pi-login-btn svg { width: 24px; height: 24px; fill: var(--pi-gold); }
+.pi-login-btn svg { width: 22px; height: 22px; fill: var(--pi-gold); }
 
 /* --- Header --- */
 .header {
@@ -97,7 +108,7 @@ body {
 .message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
 .message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
 
-/* Image Loading Animation (Blur Wave) */
+/* Animation */
 .loading-box {
     width: 280px; height: 280px;
     border-radius: 20px;
@@ -120,16 +131,15 @@ body {
 @keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-/* Image Fade In */
+/* Image Style */
 .msg-image { 
     width: 100%; height: auto; display: block; 
-    opacity: 0; transition: opacity 1.5s ease; /* Smooth Fade */
+    opacity: 0; transition: opacity 1.5s ease; 
 }
 .msg-image.loaded { opacity: 1; }
 
 .download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
 .d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
-.d-btn:active { transform: scale(0.98); opacity: 0.9; }
 
 /* --- Footer --- */
 .footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
@@ -142,7 +152,15 @@ body {
 }
 .input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
 .input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
-.send-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.send-btn { 
+    width: 48px; height: 48px; border-radius: 50%; 
+    background: var(--accent); border: none; cursor: pointer; 
+    display: flex; align-items: center; justify-content: center; 
+    transition: 0.3s;
+    font-weight: 700; font-size: 12px;
+}
+.send-btn:disabled { background: #333; cursor: not-allowed; }
+.countdown-text { color: var(--accent); font-size: 10px; text-align: center; line-height: 1; }
 
 /* --- Menus --- */
 .model-menu, .aspect-menu-dropdown {
@@ -158,21 +176,34 @@ body {
     padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;
     border: 1px solid transparent; transition: 0.2s;
 }
-.menu-option:active { transform: scale(0.98); }
 .menu-option.active { border-color: var(--accent); background: rgba(209, 250, 49, 0.05); }
 
-/* --- Gallery Grid --- */
+/* --- Gallery Styling (Fixed) --- */
 .gallery-modal { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; }
 .gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #111; }
 .gallery-grid { 
     flex: 1; overflow-y: auto; padding: 12px; 
-    display: grid; grid-template-columns: repeat(2, 1fr); /* 2 Columns for Mobile */
-    gap: 12px; 
+    display: grid; grid-template-columns: repeat(2, 1fr); 
+    gap: 12px; align-content: start;
 }
-.gallery-item { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: #111; }
-.gallery-actions { display: flex; gap: 5px; padding: 8px; background: #18181b; }
-.g-btn { flex: 1; border: none; padding: 8px; font-size: 11px; cursor: pointer; color: white; border-radius: 6px; font-weight: 600; }
-.g-del { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.gallery-item { 
+    position: relative; border-radius: 12px; overflow: hidden; 
+    border: 1px solid var(--border); background: #111;
+    display: flex; flex-direction: column; /* Stack image and buttons */
+}
+.gallery-item img {
+    width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
+}
+.gallery-actions { 
+    display: flex; gap: 8px; padding: 8px; background: #18181b; 
+    border-top: 1px solid #222;
+}
+.g-btn { 
+    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
+    cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
+    display: flex; align-items: center; justify-content: center;
+}
+.g-del { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .g-down { background: var(--accent); color: black; }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -181,8 +212,8 @@ body {
 <body>
 
     <div id="landingPage" class="landing-overlay">
-        <div class="landing-logo">🍌</div>
-        <div class="landing-title">AI Imagen</div>
+        <div class="landing-logo-text">AI Imagen</div>
+        
         <div class="landing-desc" id="txtLandingDesc">توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي</div>
         
         <div class="model-tags">
@@ -240,7 +271,8 @@ body {
         <div class="input-row">
             <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
             <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                <svg id="sendIcon" width="22" height="22" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                <span id="countdownEl" class="countdown-text" style="display:none;"></span>
             </button>
         </div>
     </div>
@@ -254,8 +286,7 @@ body {
     </div>
 
 <script>
-    // --- Data & Config ---
-    // User requested IDs: imagen-4, klein, klein-large, gptimage
+    // --- Config ---
     const MODELS = [
         { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative & Balanced' },
         { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Coherence' },
@@ -281,7 +312,9 @@ body {
             error: "خطأ",
             galleryTitle: "معرض صوري",
             noImages: "لا توجد صور محفوظة.",
-            confirmDel: "هل أنت متأكد من الحذف؟"
+            confirmDel: "هل أنت متأكد من الحذف؟",
+            wait: "انتظر",
+            sec: "ث"
         },
         en: {
             gallery: "My Gallery",
@@ -293,7 +326,9 @@ body {
             error: "Error",
             galleryTitle: "My Gallery",
             noImages: "No saved images.",
-            confirmDel: "Are you sure you want to delete?"
+            confirmDel: "Are you sure you want to delete?",
+            wait: "Wait",
+            sec: "s"
         }
     };
 
@@ -304,26 +339,26 @@ body {
     let currentHeight = 1024;
     let currentRatioId = 'square';
     let piUser = null;
+    let cooldownEndTime = 0;
 
     // --- Init ---
     const Pi = window.Pi;
     document.addEventListener('DOMContentLoaded', () => {
         try {
-            // Updated to false as requested for Mainnet/Live
+            // Mainnet Mode
             Pi.init({ version: "2.0", sandbox: false }); 
         } catch (e) { console.error("Pi Init Error:", e); }
         
         renderModelMenu();
         renderAspectMenu();
         updateAspectUI();
-        // Force Arabic default UI text without changing dir
-        applyLanguage('ar');
+        applyLanguage('ar'); // Default Text
     });
 
-    // --- Language Logic ---
+    // --- Language ---
     function toggleLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        // Note: We DO NOT change document.dir to keep layout fixed as requested
+        // Note: No 'dir' change to keep layout fixed
         document.getElementById('langBtn').textContent = currentLang === 'ar' ? 'EN' : 'AR';
         applyLanguage(currentLang);
     }
@@ -336,7 +371,7 @@ body {
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
     }
 
-    // --- Auth Logic ---
+    // --- Auth ---
     async function authenticatePi() {
         try {
             const scopes = ['username'];
@@ -412,7 +447,7 @@ body {
         currentRatioId = r.id;
         updateAspectUI();
         toggleAspectMenu();
-        renderAspectMenu();
+        renderAspectMenu(); // Re-render to show active state
     }
 
     function updateAspectUI() {
@@ -428,8 +463,36 @@ body {
         if(isHidden) document.getElementById('modelMenu').style.display = 'none';
     }
 
-    // --- Generation ---
+    // --- Generation & Cooldown ---
+    function updateCooldownUI() {
+        const now = Date.now();
+        const btn = document.getElementById('sendBtn');
+        const icon = document.getElementById('sendIcon');
+        const countEl = document.getElementById('countdownEl');
+        const t = TRANSLATIONS[currentLang];
+
+        if (now < cooldownEndTime) {
+            const remaining = Math.ceil((cooldownEndTime - now) / 1000);
+            btn.disabled = true;
+            icon.style.display = 'none';
+            countEl.style.display = 'block';
+            countEl.innerText = `${t.wait}\n${remaining}${t.sec}`;
+            requestAnimationFrame(updateCooldownUI);
+        } else {
+            btn.disabled = false;
+            icon.style.display = 'block';
+            countEl.style.display = 'none';
+        }
+    }
+
+    function triggerCooldown(seconds) {
+        cooldownEndTime = Date.now() + (seconds * 1000);
+        updateCooldownUI();
+    }
+
     async function sendPrompt() {
+        if (Date.now() < cooldownEndTime) return;
+
         const input = document.getElementById('promptInput');
         const text = input.value.trim();
         const t = TRANSLATIONS[currentLang];
@@ -439,8 +502,10 @@ body {
         addMessage(text, 'user');
         input.value = '';
         
-        // Render Blur Wave Loader
         const loadingId = renderLoader(t.generating);
+
+        // Small initial cooldown to prevent accidental double-tap
+        triggerCooldown(5); 
 
         try {
             const response = await fetch('/.netlify/functions/generate-and-save', {
@@ -456,7 +521,11 @@ body {
                 })
             });
 
-            if (!response.ok) throw new Error('Server Error');
+            if (!response.ok) {
+                // If Rate Limit or Error, trigger longer cooldown
+                triggerCooldown(20); 
+                throw new Error('Server Error');
+            }
 
             const data = await response.json();
             document.getElementById(loadingId).remove();
@@ -469,11 +538,10 @@ body {
 
         } catch (error) {
             document.getElementById(loadingId).innerHTML = `<div style="color:red; padding:10px;">${t.error}</div>`;
-            console.error(error);
         }
     }
 
-    // --- Visuals & Helpers ---
+    // --- Visuals ---
     function renderLoader(text) {
         const div = document.createElement('div');
         div.className = 'message bot';
@@ -506,7 +574,7 @@ body {
             <div class="msg-bubble">
                 <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
                 <div class="download-bar">
-                    <button class="d-btn" onclick="forceDownload('${url}')">${t.download}</button>
+                    <button class="d-btn" onclick="forceDownload('${url}', this)">${t.download}</button>
                 </div>
             </div>
         `;
@@ -519,20 +587,42 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    async function forceDownload(url) {
+    // --- Robust Download for Pi Browser ---
+    async function forceDownload(url, btn) {
+        const originalText = btn.innerText;
+        btn.innerText = "...";
+        
         try {
+            // 1. Fetch data as Blob
             const response = await fetch(url);
             const blob = await response.blob();
+            
+            // 2. Create Object URL
             const blobUrl = window.URL.createObjectURL(blob);
+            
+            // 3. Create Anchor
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = blobUrl;
-            a.download = `Imagen-${Date.now()}.jpg`;
+            a.download = `Imagen-${Date.now()}.jpg`; 
             document.body.appendChild(a);
+            
+            // 4. Trigger Click
             a.click();
-            setTimeout(() => { window.URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 100);
+            
+            // 5. Cleanup
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(a);
+                btn.innerText = originalText;
+            }, 100);
+
         } catch (e) {
+            console.error("Download failed, trying fallback", e);
+            // Fallback: Open in new window (user can long-press to save)
             window.open(url, '_blank');
+            alert("Please Long-Press the image to save.");
+            btn.innerText = originalText;
         }
     }
 
@@ -560,9 +650,9 @@ body {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
                 div.innerHTML = `
-                    <img src="${img.url}" style="width:100%; aspect-ratio:1; object-fit:cover;">
+                    <img src="${img.url}" loading="lazy">
                     <div class="gallery-actions">
-                        <button class="g-btn g-down" onclick="forceDownload('${img.url}')">${t.download}</button>
+                        <button class="g-btn g-down" onclick="forceDownload('${img.url}', this)">${t.download}</button>
                         <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">${t.delete}</button>
                     </div>
                 `;
