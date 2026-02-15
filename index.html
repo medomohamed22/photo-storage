@@ -34,6 +34,48 @@ body {
     overflow: hidden;
 }
 
+/* --- Landing Page --- */
+.landing-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    text-align: center;
+    transition: opacity 0.5s ease;
+}
+.landing-content {
+    max-width: 500px;
+    animation: fadeUp 0.8s ease;
+}
+.landing-logo {
+    font-size: 60px; margin-bottom: 20px;
+    text-shadow: 0 0 30px rgba(209, 250, 49, 0.4);
+}
+.landing-title {
+    font-size: 28px; font-weight: 800; margin-bottom: 10px;
+    color: var(--text-main);
+}
+.landing-desc {
+    color: var(--text-sub); line-height: 1.6; margin-bottom: 30px; font-size: 15px;
+}
+.feature-tags {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px;
+}
+.tag {
+    background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.start-btn {
+    background: var(--accent); color: black;
+    border: none; padding: 14px 40px; border-radius: 30px;
+    font-weight: 800; font-size: 16px; cursor: pointer;
+    box-shadow: 0 0 20px rgba(209, 250, 49, 0.3);
+    transition: transform 0.2s;
+}
+.start-btn:active { transform: scale(0.95); }
+
 /* --- Header --- */
 .header {
     padding: 10px 16px;
@@ -348,15 +390,16 @@ body {
     position: relative;
 }
 
-/* New Aspect Ratio Dropdown System */
-.aspect-control-wrapper {
+/* Control Bar (Aspect & Gallery) */
+.control-bar {
     padding: 8px 12px 0 12px;
     display: flex;
     justify-content: flex-start;
+    gap: 10px;
     position: relative;
 }
 
-.aspect-trigger-btn {
+.control-btn {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -367,20 +410,26 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex; align-items: center; gap: 8px;
-    min-width: 110px;
+    min-width: 90px;
     justify-content: space-between;
 }
-.aspect-trigger-btn:active { transform: scale(0.98); }
-.aspect-trigger-btn.active-state { border-color: var(--accent); color: var(--text-main); }
-.aspect-trigger-btn svg.icon { width: 14px; height: 14px; fill: currentColor; }
-.aspect-trigger-btn svg.arrow { width: 12px; height: 12px; fill: var(--text-sub); transition: transform 0.2s; }
-.aspect-trigger-btn.open svg.arrow { transform: rotate(180deg); }
+.control-btn:active { transform: scale(0.98); }
+.control-btn.active-state { border-color: var(--accent); color: var(--text-main); }
+.control-btn svg.icon { width: 14px; height: 14px; fill: currentColor; }
+.control-btn svg.arrow { width: 12px; height: 12px; fill: var(--text-sub); transition: transform 0.2s; }
+.control-btn.open svg.arrow { transform: rotate(180deg); }
+
+/* Custom for Gallery Button */
+.gallery-btn {
+    justify-content: center; gap: 6px; min-width: auto;
+}
+.gallery-btn:hover { background: rgba(255,255,255,0.05); }
 
 .aspect-menu-dropdown {
     position: absolute;
     bottom: 100%;
-    right: 12px; left: 12px; /* Full width minus padding on mobile */
-    max-width: 200px; /* Constrain width on larger screens */
+    right: 12px; left: auto;
+    width: 180px; 
     margin-bottom: 8px;
     background: rgba(24, 24, 27, 0.95);
     backdrop-filter: blur(12px);
@@ -395,7 +444,6 @@ body {
     animation: fadeUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* Adjust dropdown position for RTL */
-html[dir="rtl"] .aspect-menu-dropdown { right: 12px; left: auto; }
 html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
 @keyframes fadeUp {
@@ -464,15 +512,78 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
 
+/* --- Gallery Modal --- */
+.gallery-modal {
+    position: fixed; inset: 0; background: #000;
+    z-index: 500; display: none;
+    flex-direction: column;
+    animation: fadeUp 0.3s ease;
+}
+.gallery-header {
+    padding: 15px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(9, 9, 11, 0.95); backdrop-filter: blur(10px);
+}
+.gallery-title { font-size: 16px; font-weight: 700; color: #fff; }
+.close-gallery { background: none; border: none; color: var(--text-sub); font-size: 20px; cursor: pointer; }
+.gallery-grid {
+    flex: 1; overflow-y: auto; padding: 15px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+.gallery-item {
+    background: var(--card); border-radius: 12px; overflow: hidden;
+    position: relative; border: 1px solid var(--border);
+    display: flex; flex-direction: column;
+}
+.gallery-img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; }
+.gallery-actions {
+    display: flex; gap: 5px; padding: 8px; background: #1c1c1e;
+}
+.g-btn {
+    flex: 1; border: none; border-radius: 6px; padding: 6px;
+    font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px;
+}
+.g-download { background: var(--accent); color: black; font-weight: 600; }
+.g-delete { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
 @media (max-width: 400px) {
     .header h1 { font-size: 14px; }
     .logo-circle { width: 30px; height: 30px; font-size: 14px; }
     .msg-bubble { font-size: 13px; }
     .blur-wave-container { width: 220px; height: 220px; }
+    .gallery-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 <body>
+
+    <div id="landingPage" class="landing-overlay">
+        <div class="landing-content">
+            <div class="landing-logo">🍌</div>
+            <div class="landing-title">Nano Banana AI</div>
+            <div class="landing-desc">
+                مرحباً بك في الجيل الجديد من توليد الصور.<br>
+                استمتع بنماذج ذكاء اصطناعي متعددة، سرعة فائقة،<br>
+                وجودة خيالية، كل ذلك في مكان واحد.
+            </div>
+            <div class="feature-tags">
+                <span class="tag">Flux Pro</span>
+                <span class="tag">Imagen 4</span>
+                <span class="tag">Unlimited</span>
+                <span class="tag">High Speed</span>
+            </div>
+            <button class="start-btn" onclick="hideLanding()">بدء الاستخدام</button>
+        </div>
+    </div>
+
+    <div id="galleryModal" class="gallery-modal">
+        <div class="gallery-header">
+            <div class="gallery-title">معرضي (My Gallery)</div>
+            <button class="close-gallery" onclick="closeGallery()">✕</button>
+        </div>
+        <div class="gallery-grid" id="galleryGrid">
+            </div>
+    </div>
 
     <div class="header">
         <div class="header-title" onclick="toggleModelMenu()">
@@ -487,7 +598,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         </div>
         <div class="header-actions">
             <button class="lang-btn" id="langBtn" onclick="toggleLanguage()">EN</button>
-            <button class="clear-btn" id="clearBtn" onclick="clearChat()">مسح</button>
+            <button class="clear-btn" id="clearBtn" onclick="clearAllData()">مسح</button>
         </div>
     </div>
 
@@ -502,16 +613,19 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     <div class="footer-container">
         
-        <div class="aspect-control-wrapper">
-            <div class="aspect-menu-dropdown" id="aspectMenu">
-                </div>
-
-            <button class="aspect-trigger-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu()">
+        <div class="control-bar">
+            <div class="aspect-menu-dropdown" id="aspectMenu"></div>
+            <button class="control-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu()">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span id="currentAspectIcon"></span>
                     <span id="currentAspectLabel">1:1</span>
                 </div>
                 <svg class="arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+
+            <button class="control-btn gallery-btn" onclick="openGallery()">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
+                <span>معرضي</span>
             </button>
         </div>
 
@@ -528,14 +642,9 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
        SUPABASE INIT
        ========================================= */
     const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
-    // تنبيه: استبدل النص التالي بمفتاح ANON KEY الصحيح من Supabase
-    // Settings -> API -> anon public
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM'; 
     
-    //FIXED: Renamed variable to avoid conflict with 'supabase' library object
     let supabaseClient = null;
-
-    // Initialize only if library is loaded
     if (typeof supabase !== 'undefined') {
         supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
     } else {
@@ -543,12 +652,24 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     }
 
     /* =========================================
-       API & Config
+       USER ID LOGIC (AUTO-GENERATE)
+       ========================================= */
+    function getUserId() {
+        let uid = localStorage.getItem('nano_user_id');
+        if (!uid) {
+            // Generate UUID-like string
+            uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('nano_user_id', uid);
+        }
+        return uid;
+    }
+    const currentUserId = getUserId();
+
+    /* =========================================
+       Config & UI Refs
        ========================================= */
     let currentLang = localStorage.getItem('nanoLang') || 'ar'; 
     let currentModel = 'imagen-4'; 
-
-    // Aspect Ratio Configuration
     let currentWidth = 1024;
     let currentHeight = 1024;
     let currentRatioId = 'square';
@@ -576,35 +697,34 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     const modelMenu = document.getElementById('modelMenu');
     const headerModelName = document.getElementById('headerModelName');
     const chevron = document.getElementById('chevron');
-    
-    // New Refs
     const aspectMenu = document.getElementById('aspectMenu');
     const aspectTriggerBtn = document.getElementById('aspectTriggerBtn');
     const currentAspectLabel = document.getElementById('currentAspectLabel');
     const currentAspectIcon = document.getElementById('currentAspectIcon');
+    const landingPage = document.getElementById('landingPage');
+    const galleryModal = document.getElementById('galleryModal');
+    const galleryGrid = document.getElementById('galleryGrid');
 
     const translations = {
         ar: {
-            online: "متصل", clear: "مسح", welcome: "أهلاً بك! أنا Nano Banana AI.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
+            online: "متصل", clear: "مسح الكل", welcome: "أهلاً بك! أنا Nano Banana AI.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
             placeholder: "تخيل أي شيء...", generating: "إنشاء صورة...", download: "تحميل HD", downloading: "جاري التحميل...",
-            error: "حدث خطأ غير متوقع", confirmClear: "هل أنت متأكد من مسح كل الصور والمحادثة؟", langLabel: "EN",
+            error: "حدث خطأ غير متوقع", confirmClear: "تحذير: سيتم حذف جميع الصور والبيانات الخاصة بك نهائياً من السيرفر. هل أنت متأكد؟", langLabel: "EN",
             translating: "جاري ترجمة الوصف...", retry: "إعادة المحاولة",
             rateLimitTitle: "السيرفر مشغول حالياً",
             rateLimitDesc: "يوجد ضغط كبير على الموديل. يرجى الانتظار بضع ثوانٍ ثم المحاولة مجدداً.",
             genericError: "تعذر إنشاء الصورة",
-            // Ratios
-            square: "مربع", portrait: "طولي", landscape: "عرضي", wide: "سينمائي"
+            gallery: "معرضي", noImages: "لا توجد صور محفوظة.", delete: "حذف"
         },
         en: {
-            online: "Online", clear: "Clear", welcome: "Welcome! I am Nano Banana AI.<br>Type any description to generate an image.",
+            online: "Online", clear: "Clear All", welcome: "Welcome! I am Nano Banana AI.<br>Type any description to generate an image.",
             placeholder: "Imagine anything...", generating: "Creating Image...", download: "Download HD", downloading: "Downloading...",
-            error: "Unexpected error", confirmClear: "Are you sure you want to clear chat history?", langLabel: "عربي",
+            error: "Unexpected error", confirmClear: "Warning: All your images and data will be permanently deleted from the server. Are you sure?", langLabel: "عربي",
             translating: "Translating prompt...", retry: "Retry",
             rateLimitTitle: "Server Busy",
             rateLimitDesc: "High traffic on this model. Please wait a few seconds and try again.",
             genericError: "Failed to generate",
-            // Ratios
-            square: "Square", portrait: "Portrait", landscape: "Landscape", wide: "Wide"
+            gallery: "My Gallery", noImages: "No images saved.", delete: "Delete"
         }
     };
 
@@ -616,16 +736,30 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         renderAspectMenu(); 
         updateTriggerUI();
         loadChatHistory();
+        
+        // Show landing page if not visited before (or always, per request)
+        if(sessionStorage.getItem('nano_landing_seen')) {
+            landingPage.style.display = 'none';
+        }
     };
 
-    /* --- Supabase Storage Logic --- */
+    /* --- Landing Page Logic --- */
+    function hideLanding() {
+        landingPage.style.opacity = '0';
+        setTimeout(() => {
+            landingPage.style.display = 'none';
+            sessionStorage.setItem('nano_landing_seen', 'true');
+        }, 500);
+    }
+
+    /* --- Supabase Storage Logic (Save) --- */
     async function saveToSupabase(blob, prompt) {
         if (!supabaseClient) return URL.createObjectURL(blob); 
 
         try {
-            const fileName = `nano_${Date.now()}.jpg`;
+            // Filename includes User ID to avoid collisions and allow easier deletion logic if needed
+            const fileName = `${currentUserId}_${Date.now()}.jpg`;
             
-            // 1. Upload to Supabase Storage
             const { data: uploadData, error: uploadError } = await supabaseClient.storage
                 .from('nano_images')
                 .upload(fileName, blob, { contentType: 'image/jpeg' });
@@ -635,14 +769,13 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
                 return URL.createObjectURL(blob);
             }
 
-            // 2. Get Public URL
             const { data: publicUrlData } = supabaseClient.storage
                 .from('nano_images')
                 .getPublicUrl(fileName);
             
             const publicUrl = publicUrlData.publicUrl;
 
-            // 3. Insert Metadata into Database
+            // Insert Metadata WITH user_id
             const { error: dbError } = await supabaseClient
                 .from('generated_images')
                 .insert([
@@ -651,7 +784,8 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
                         image_url: publicUrl,
                         model: currentModel,
                         width: currentWidth,
-                        height: currentHeight
+                        height: currentHeight,
+                        user_id: currentUserId // Storing User ID
                     }
                 ]);
 
@@ -665,7 +799,123 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         }
     }
 
-    /* --- Logic --- */
+    /* --- Gallery Logic --- */
+    async function openGallery() {
+        if (!supabaseClient) return;
+        galleryModal.style.display = 'flex';
+        galleryGrid.innerHTML = '<div style="color:#888; text-align:center; grid-column:span 2;">جاري التحميل...</div>';
+
+        const { data, error } = await supabaseClient
+            .from('generated_images')
+            .select('*')
+            .eq('user_id', currentUserId) // Only fetch this user's images
+            .order('created_at', { ascending: false });
+
+        galleryGrid.innerHTML = '';
+
+        if (error || !data || data.length === 0) {
+            galleryGrid.innerHTML = `<div style="color:#888; text-align:center; grid-column:span 2;">${getTrans('noImages')}</div>`;
+            return;
+        }
+
+        data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            div.innerHTML = `
+                <img src="${item.image_url}" class="gallery-img" loading="lazy">
+                <div class="gallery-actions">
+                    <button class="g-btn g-download" onclick="downloadImage('${item.image_url}')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="black"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
+                        ${getTrans('download')}
+                    </button>
+                    <button class="g-btn g-delete" onclick="deleteImage('${item.id}', '${item.image_url}', this)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            `;
+            galleryGrid.appendChild(div);
+        });
+    }
+
+    function closeGallery() {
+        galleryModal.style.display = 'none';
+    }
+
+    async function deleteImage(id, url, btnElement) {
+        if (!confirm('حذف هذه الصورة؟')) return;
+        const parent = btnElement.closest('.gallery-item');
+        parent.style.opacity = '0.5';
+
+        // 1. Delete from Storage (Extract filename from URL)
+        const fileName = url.split('/').pop();
+        if (fileName) {
+            await supabaseClient.storage.from('nano_images').remove([fileName]);
+        }
+
+        // 2. Delete from DB
+        const { error } = await supabaseClient
+            .from('generated_images')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', currentUserId); // Double check ownership
+
+        if (!error) {
+            parent.remove();
+        } else {
+            alert('حدث خطأ أثناء الحذف');
+            parent.style.opacity = '1';
+        }
+    }
+
+    async function downloadImage(url) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `nano-${Date.now()}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (e) {
+            alert('Download Failed');
+        }
+    }
+
+    /* --- Clear All Logic --- */
+    async function clearAllData() {
+        if(confirm(getTrans('confirmClear'))) {
+            // 1. Clear Local Chat
+            localStorage.removeItem('nanoBananaChat');
+            chatContainer.innerHTML = '';
+            chatContainer.appendChild(emptyState);
+            emptyState.style.display = 'flex';
+
+            if (!supabaseClient) return;
+
+            // 2. Fetch all user files to delete from Storage first
+            const { data: files } = await supabaseClient
+                .from('generated_images')
+                .select('image_url')
+                .eq('user_id', currentUserId);
+
+            if (files && files.length > 0) {
+                const filenames = files.map(f => f.image_url.split('/').pop());
+                await supabaseClient.storage.from('nano_images').remove(filenames);
+            }
+
+            // 3. Delete all rows from DB
+            await supabaseClient
+                .from('generated_images')
+                .delete()
+                .eq('user_id', currentUserId);
+            
+            alert('تم مسح جميع البيانات بنجاح.');
+        }
+    }
+
+    /* --- Core Logic --- */
     
     // Toggle Aspect Menu
     function toggleAspectMenu() {
@@ -675,21 +925,17 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         else aspectTriggerBtn.classList.remove('open');
     }
 
-    // Close menu when clicking outside
     document.addEventListener('click', function(event) {
         if (!aspectMenu.contains(event.target) && !aspectTriggerBtn.contains(event.target)) {
             aspectMenu.style.display = 'none';
             aspectTriggerBtn.classList.remove('open');
         }
-        
-        // Also close model menu
         if (!modelMenu.contains(event.target) && !document.querySelector('.header-title').contains(event.target)) {
             modelMenu.style.display = 'none';
             chevron.style.transform = 'rotate(0deg)';
         }
     });
 
-    // Render Aspect Menu Options
     function renderAspectMenu() {
         aspectMenu.innerHTML = '';
         const t = translations[currentLang];
@@ -698,16 +944,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             const isSelected = r.id === currentRatioId;
             div.className = `aspect-option ${isSelected ? 'selected' : ''}`;
             div.onclick = () => selectRatio(r);
-            
-            const labelName = t[r.id] || r.id; 
-            
-            div.innerHTML = `
-                ${r.icon}
-                <div class="aspect-info">
-                    <span class="aspect-label">${labelName}</span>
-                    <span class="aspect-ratio-text">${r.ratioText}</span>
-                </div>
-            `;
+            div.innerHTML = `${r.icon}<div class="aspect-info"><span class="aspect-label">${t[r.id] || r.id}</span><span class="aspect-ratio-text">${r.ratioText}</span></div>`;
             aspectMenu.appendChild(div);
         });
     }
@@ -717,12 +954,11 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         currentHeight = r.h;
         currentRatioId = r.id;
         updateTriggerUI();
-        renderAspectMenu(); // Re-render to highlight selection
-        toggleAspectMenu(); // Close menu
+        renderAspectMenu();
+        toggleAspectMenu();
     }
 
     function updateTriggerUI() {
-        const t = translations[currentLang];
         const r = RATIOS.find(x => x.id === currentRatioId);
         if(r) {
             currentAspectLabel.innerText = r.ratioText; 
@@ -768,15 +1004,8 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         document.getElementById('promptInput').placeholder = t.placeholder;
         document.getElementById('langBtn').innerText = t.langLabel;
         document.querySelectorAll('.btn-download-hd span').forEach(span => { span.innerText = t.download; });
-        
-        // Update error cards if present
-        document.querySelectorAll('.rate-limit .error-title').forEach(el => el.innerText = t.rateLimitTitle);
-        document.querySelectorAll('.rate-limit .error-desc').forEach(el => el.innerText = t.rateLimitDesc);
-        document.querySelectorAll('.retry-btn span').forEach(el => el.innerText = t.retry);
-
-        // Re-render aspect menu to update labels
+        document.querySelectorAll('.g-download').forEach(btn => { if(btn.lastChild) btn.lastChild.textContent = t.download; });
         renderAspectMenu();
-        // Update trigger UI in case labels need to change, though ratio numbers stay same
         updateTriggerUI();
     }
 
@@ -809,15 +1038,6 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         localStorage.setItem('nanoBananaChat', JSON.stringify(history));
     }
 
-    function clearChat() {
-        if(confirm(getTrans('confirmClear'))) {
-            localStorage.removeItem('nanoBananaChat');
-            chatContainer.innerHTML = '';
-            chatContainer.appendChild(emptyState);
-            emptyState.style.display = 'flex'; 
-        }
-    }
-
     function renderUserMessage(text) {
         const div = document.createElement('div');
         div.className = 'message user';
@@ -835,7 +1055,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
                     <img src="${imageUrl}" class="msg-image" alt="Art" onload="this.classList.add('loaded')">
                 </div>
                 <div class="download-btn-container">
-                    <button onclick="forceDownload('${imageUrl}', this)" class="btn-download-hd">
+                    <button onclick="downloadImage('${imageUrl}')" class="btn-download-hd">
                         <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
                         <span>${getTrans('download')}</span>
                     </button>
@@ -875,49 +1095,17 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         if(loader) loader.remove();
     }
 
-    async function forceDownload(url, btn) {
-        const originalText = btn.querySelector('span').innerText;
-        btn.querySelector('span').innerText = getTrans('downloading');
-        btn.disabled = true;
-        try {
-            const response = await fetch(url);
-            if(!response.ok) throw new Error("Net");
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `nano-art-${Date.now()}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(blobUrl);
-        } catch (err) {
-            alert(getTrans('error'));
-        } finally {
-            btn.disabled = false;
-            btn.querySelector('span').innerText = originalText;
-        }
-    }
-
-    // --- RENDER ERROR CARD ---
     function renderErrorCard(type, prompt) {
         const div = document.createElement('div');
         div.className = 'message bot';
-        
         let icon, titleKey, descKey, styleClass;
-        
         if (type === 429) {
-            styleClass = 'rate-limit';
-            titleKey = 'rateLimitTitle';
-            descKey = 'rateLimitDesc';
+            styleClass = 'rate-limit'; titleKey = 'rateLimitTitle'; descKey = 'rateLimitDesc';
             icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
         } else {
-            styleClass = 'generic';
-            titleKey = 'genericError';
-            descKey = 'error';
+            styleClass = 'generic'; titleKey = 'genericError'; descKey = 'error';
             icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
         }
-
         div.innerHTML = `
             <div class="msg-bubble">
                 <div class="error-card ${styleClass}">
@@ -936,13 +1124,11 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     }
 
     function retryLastMessage(prompt) {
-        // Remove the error card first (optional, looks cleaner)
         chatContainer.lastChild.remove();
         sendMessage(prompt);
     }
 
     async function sendMessage(manualPrompt = null) {
-        // If manualPrompt is provided (retry), use it. Else read input.
         const text = manualPrompt || promptInput.value.trim();
         if (!text || isGenerating) return;
 
@@ -953,11 +1139,10 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             isGenerating = true;
             sendBtn.disabled = true;
             promptInput.blur(); 
-            // Only render user message if it's a new message, not a retry
             renderUserMessage(text);
             saveToHistory('user', text);
         } else {
-            isGenerating = true; // Set generating for retry
+            isGenerating = true; 
         }
 
         const loaderId = renderLoader('generating');
@@ -972,23 +1157,17 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
             const seed = Math.floor(Math.random() * 1000000);
             
-            // --- CALL BACKEND FUNCTION ---
-            // Fetch image data from Netlify (proxying Pollinations)
+            // Call Redirecting Backend Function
             const finalUrl = `/.netlify/functions/generate?prompt=${encodeURIComponent(finalPrompt)}&model=${currentModel}&width=${currentWidth}&height=${currentHeight}&seed=${seed}`;
 
             const response = await fetch(finalUrl);
             
-            if (response.status === 429) {
-                throw new Error("429");
-            }
-            if (!response.ok) {
-                throw new Error("Server Error");
-            }
+            if (response.status === 429) throw new Error("429");
+            if (!response.ok) throw new Error("Server Error");
 
-            // Get Blob from response
             const blob = await response.blob();
             
-            // --- UPLOAD TO SUPABASE & SAVE HISTORY ---
+            // Upload to Supabase & Save History (Linked to Current User ID)
             const finalImageUrl = await saveToSupabase(blob, finalPrompt);
 
             removeLoader(loaderId);
@@ -997,12 +1176,8 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         } catch (error) {
             console.error(error);
             removeLoader(loaderId);
-            
-            if (error.message === "429") {
-                renderErrorCard(429, text);
-            } else {
-                renderErrorCard(500, text);
-            }
+            if (error.message === "429") renderErrorCard(429, text);
+            else renderErrorCard(500, text);
         } finally {
             isGenerating = false;
             sendBtn.disabled = false;
