@@ -527,7 +527,7 @@ body {
         try {
             // 1. Initialize Pi SDK
             const Pi = window.Pi;
-            Pi.init({ version: "2.0", sandbox: true }); // Change sandbox: false for production
+            Pi.init({ version: "2.0", sandbox: false }); // Change sandbox: false for production
 
             // 2. Define scopes (username is needed, payments needed for wallet context in future)
             const scopes = ['username', 'payments'];
