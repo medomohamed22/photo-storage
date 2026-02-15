@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
-<title>Nano Banana - Pi Edition</title>
+<title>AI Imagen</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <style>
 /* --- Design System --- */
@@ -11,12 +11,12 @@
     --bg: #09090b;
     --chat-bg: #000000;
     --card: #18181b;
-    --accent: #d1fa31;
+    --accent: #d1fa31; /* أخضر نانو */
+    --pi-purple: #611f69;
     --pi-gold: #fbbf24;
     --text-main: #ffffff;
     --text-sub: #a1a1aa;
     --border: #27272a;
-    --error: #ef4444;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -36,18 +36,29 @@ body {
     padding: 20px; text-align: center;
     transition: opacity 0.5s ease;
 }
-.landing-logo { font-size: 60px; margin-bottom: 20px; text-shadow: 0 0 30px rgba(209, 250, 49, 0.4); }
-.landing-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
-.pi-login-btn {
-    background: linear-gradient(135deg, #611f69 0%, #4a1452 100%);
-    color: #fff; border: 1px solid #fbbf24;
-    padding: 14px 40px; border-radius: 30px;
-    font-weight: 700; font-size: 16px; cursor: pointer;
-    box-shadow: 0 0 20px rgba(97, 31, 105, 0.5);
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 20px;
+.landing-logo { font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(209,250,49,0.3)); }
+.landing-title { font-size: 32px; font-weight: 800; margin-bottom: 10px; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.landing-desc { color: #888; margin-bottom: 30px; font-size: 14px; line-height: 1.6; }
+
+.model-tags { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px; }
+.tag {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--text-sub);
+    cursor: default; pointer-events: none;
 }
-.pi-login-btn svg { width: 24px; height: 24px; fill: #fbbf24; }
+
+.pi-login-btn {
+    background: var(--pi-purple);
+    color: var(--pi-gold);
+    border: 2px solid var(--pi-gold);
+    padding: 14px 50px; border-radius: 30px;
+    font-weight: 800; font-size: 18px; cursor: pointer;
+    box-shadow: 0 0 25px rgba(97, 31, 105, 0.6);
+    display: flex; align-items: center; gap: 10px;
+    transition: transform 0.2s;
+}
+.pi-login-btn:active { transform: scale(0.95); }
+.pi-login-btn svg { width: 24px; height: 24px; fill: var(--pi-gold); }
 
 /* --- Header --- */
 .header {
@@ -64,91 +75,104 @@ body {
 .user-info-display {
     display: flex; align-items: center; gap: 8px;
     font-size: 11px; font-weight: 600; color: var(--pi-gold);
-    background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 12px;
-    border: 1px solid rgba(251, 191, 36, 0.2); margin-top: 4px;
+    background: rgba(97, 31, 105, 0.2); padding: 2px 10px; border-radius: 12px;
+    border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 4px;
 }
 .header-actions { display: flex; gap: 8px; }
 .icon-btn {
     background: var(--card); border: 1px solid var(--border);
-    color: var(--text-main); padding: 0 12px; height: 32px; border-radius: 16px;
-    font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px;
-    font-weight: 600;
+    color: var(--text-main); padding: 0 14px; height: 34px; border-radius: 18px;
+    font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    font-weight: 600; transition: 0.2s;
 }
-.chevron { width: 16px; height: 16px; transition: 0.3s; fill: #777; }
+.icon-btn:active { transform: scale(0.95); }
 
-/* --- Model Menu --- */
-.model-menu {
-    position: absolute; top: 60px; left: 0; right: 0;
-    background: rgba(9, 9, 11, 0.98); backdrop-filter: blur(20px);
-    z-index: 90; padding: 10px; display: none; flex-direction: column; gap: 8px;
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: slideDown 0.3s ease;
-}
-@keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
-
-.model-option {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px; background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; cursor: pointer;
-}
-.model-option.active { border-color: var(--accent); background: #1c241d; }
-.check-mark { fill: var(--accent); opacity: 0; }
-.model-option.active .check-mark { opacity: 1; }
-
-/* --- Chat Area --- */
+/* --- Chat & Content --- */
 .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
 .message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
 .message.user { align-self: flex-end; } 
 .message.bot { align-self: flex-start; }
-.msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+
+.msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
 .message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
 .message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
-.msg-image { width: 100%; height: auto; display: block; }
-.download-bar { padding: 10px; background: #111; display: flex; justify-content: center; border-top: 1px solid #222; }
-.d-btn { background: var(--accent); color: black; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; width: 100%; }
 
-/* --- Footer & Aspect Controls --- */
-.footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); position: relative; z-index: 100; }
-
-.control-bar {
-    display: flex; gap: 10px; padding: 8px 12px 0 12px;
+/* Image Loading Animation (Blur Wave) */
+.loading-box {
+    width: 280px; height: 280px;
+    border-radius: 20px;
+    position: relative; overflow: hidden;
+    background: #000; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
 }
+.blur-wave {
+    position: absolute; inset: -50%;
+    background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 100deg, transparent 180deg, #a855f7 260deg, transparent 360deg);
+    filter: blur(40px); opacity: 0.5;
+    animation: rotateWave 4s linear infinite;
+}
+.loading-text {
+    position: relative; z-index: 2; font-weight: 700; font-size: 13px; color: white;
+    background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+
+/* Image Fade In */
+.msg-image { 
+    width: 100%; height: auto; display: block; 
+    opacity: 0; transition: opacity 1.5s ease; /* Smooth Fade */
+}
+.msg-image.loaded { opacity: 1; }
+
+.download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
+.d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
+.d-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+/* --- Footer --- */
+.footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
+.control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; }
 .aspect-btn {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
-    font-size: 11px; font-weight: 600; cursor: pointer;
+    font-size: 12px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
 }
-.aspect-menu-dropdown {
-    position: absolute; bottom: 100%; right: 12px; left: auto;
-    width: 180px; margin-bottom: 8px; background: rgba(24,24,27,0.95);
-    backdrop-filter: blur(12px); border: 1px solid var(--border);
-    border-radius: 16px; padding: 6px; display: none; flex-direction: column; gap: 4px;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+.input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
+.input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
+.send-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* --- Menus --- */
+.model-menu, .aspect-menu-dropdown {
+    background: rgba(15, 15, 18, 0.98); backdrop-filter: blur(20px);
+    border: 1px solid var(--border); border-radius: 16px;
+    display: none; flex-direction: column; gap: 5px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
-/* RTL specific logic via JS or explicit CSS */
-html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
+.model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
+.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; width: 180px; margin-bottom: 8px; padding: 6px; }
 
-.aspect-option {
-    display: flex; align-items: center; gap: 10px; padding: 10px;
-    border-radius: 10px; cursor: pointer; color: var(--text-sub);
+.menu-option {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;
+    border: 1px solid transparent; transition: 0.2s;
 }
-.aspect-option:hover { background: rgba(255,255,255,0.05); }
-.aspect-option.selected { background: #1c241d; color: var(--accent); border: 1px solid rgba(209,250,49,0.2); }
+.menu-option:active { transform: scale(0.98); }
+.menu-option.active { border-color: var(--accent); background: rgba(209, 250, 49, 0.05); }
 
-.input-row { display: flex; gap: 8px; padding: 8px 12px; align-items: flex-end; }
-.input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 12px; color: white; outline: none; resize: none; max-height: 100px; }
-.send-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-/* --- Gallery Modal --- */
+/* --- Gallery Grid --- */
 .gallery-modal { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; }
 .gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #111; }
-.gallery-grid { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.gallery-item { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
-.gallery-actions { display: flex; gap: 5px; padding: 5px; background: #222; }
-.g-btn { flex: 1; border: none; padding: 8px; font-size: 10px; cursor: pointer; color: white; border-radius: 4px; }
-.g-del { background: #ef4444; }
+.gallery-grid { 
+    flex: 1; overflow-y: auto; padding: 12px; 
+    display: grid; grid-template-columns: repeat(2, 1fr); /* 2 Columns for Mobile */
+    gap: 12px; 
+}
+.gallery-item { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: #111; }
+.gallery-actions { display: flex; gap: 5px; padding: 8px; background: #18181b; }
+.g-btn { flex: 1; border: none; padding: 8px; font-size: 11px; cursor: pointer; color: white; border-radius: 6px; font-weight: 600; }
+.g-del { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 .g-down { background: var(--accent); color: black; }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -158,20 +182,27 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     <div id="landingPage" class="landing-overlay">
         <div class="landing-logo">🍌</div>
-        <div class="landing-title">Nano Banana AI</div>
-        <div style="color:#888; margin-bottom:30px;">توليد صور بالذكاء الاصطناعي مع Pi Network</div>
+        <div class="landing-title">AI Imagen</div>
+        <div class="landing-desc" id="txtLandingDesc">توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي</div>
         
+        <div class="model-tags">
+            <div class="tag">Nano Banana</div>
+            <div class="tag">GPT Image</div>
+            <div class="tag">Klein 4B</div>
+            <div class="tag">Klein 9B</div>
+        </div>
+
         <button class="pi-login-btn" onclick="authenticatePi()">
             <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
-            <span id="txtLogin">تسجيل الدخول باستخدام Pi</span>
+            <span id="txtLogin">Pi Login</span>
         </button>
     </div>
 
     <div class="header">
         <div style="display:flex; flex-direction:column;">
             <div class="header-title-area" onclick="toggleModelMenu()">
-                <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana Pro</div>
-                <svg class="chevron" id="modelChevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana</div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
             </div>
             <div id="piUserInfo" class="user-info-display" style="display:none;">
                 <span>@<span id="txtUsername">...</span></span>
@@ -180,18 +211,17 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         <div class="header-actions">
             <button class="icon-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
             <button class="icon-btn" onclick="openGallery()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
                 <span id="txtGallery">معرضي</span>
             </button>
         </div>
     </div>
 
-    <div class="model-menu" id="modelMenu">
-        </div>
+    <div class="model-menu" id="modelMenu"></div>
 
     <div class="chat-container" id="chatContainer">
         <div style="text-align:center; color:#555; margin-top:50px;" id="emptyMsg">
-            مرحباً! اكتب وصفاً للصورة التي تريد تخيلها.
+            أهلاً بك في AI Imagen <br> اختر الموديل واكتب ما تتخيله
         </div>
     </div>
 
@@ -210,7 +240,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         <div class="input-row">
             <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
             <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
         </div>
     </div>
@@ -218,18 +248,19 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     <div id="galleryModal" class="gallery-modal">
         <div class="gallery-header">
             <span style="font-weight:700; color:white;" id="txtGalleryTitle">معرض صوري</span>
-            <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:20px;">✕</button>
+            <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
         </div>
         <div class="gallery-grid" id="galleryGrid"></div>
     </div>
 
 <script>
-    // --- Configuration ---
+    // --- Data & Config ---
+    // User requested IDs: imagen-4, klein, klein-large, gptimage
     const MODELS = [
-        { id: 'flux', name: 'Flux Pro (Standard)', desc: 'Best Overall' },
-        { id: 'turbo', name: 'Flux Turbo', desc: 'Fastest' },
-        { id: 'realism', name: 'Nano Realism', desc: 'Photorealistic' },
-        { id: 'anime', name: 'Nano Anime', desc: 'Cartoon/Anime' }
+        { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative & Balanced' },
+        { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Coherence' },
+        { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast & Detailed' },
+        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Ultra Fidelity' }
     ];
 
     const RATIOS = [
@@ -241,11 +272,10 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     const TRANSLATIONS = {
         ar: {
-            login: "تسجيل الدخول باستخدام Pi",
             gallery: "معرضي",
-            welcome: "مرحباً! اكتب وصفاً للصورة التي تريد تخيلها.",
+            welcome: "أهلاً بك في AI Imagen <br> اختر الموديل واكتب ما تتخيله",
             placeholder: "تخيل أي شيء...",
-            generating: "جاري الإنشاء... (قد يستغرق 30 ثانية)",
+            generating: "جاري الإنشاء...",
             download: "تحميل",
             delete: "حذف",
             error: "خطأ",
@@ -254,11 +284,10 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             confirmDel: "هل أنت متأكد من الحذف؟"
         },
         en: {
-            login: "Login with Pi",
             gallery: "My Gallery",
-            welcome: "Welcome! Describe an image to generate.",
+            welcome: "Welcome to AI Imagen <br> Select a model and imagine.",
             placeholder: "Imagine anything...",
-            generating: "Generating... (approx 30s)",
+            generating: "Generating...",
             download: "Download",
             delete: "Delete",
             error: "Error",
@@ -280,28 +309,29 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
     const Pi = window.Pi;
     document.addEventListener('DOMContentLoaded', () => {
         try {
+            // Updated to false as requested for Mainnet/Live
             Pi.init({ version: "2.0", sandbox: false }); 
         } catch (e) { console.error("Pi Init Error:", e); }
         
         renderModelMenu();
         renderAspectMenu();
         updateAspectUI();
-        applyLanguage(currentLang);
+        // Force Arabic default UI text without changing dir
+        applyLanguage('ar');
     });
 
     // --- Language Logic ---
     function toggleLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        // Note: We DO NOT change document.dir to keep layout fixed as requested
         document.getElementById('langBtn').textContent = currentLang === 'ar' ? 'EN' : 'AR';
         applyLanguage(currentLang);
     }
 
     function applyLanguage(lang) {
         const t = TRANSLATIONS[lang];
-        document.getElementById('txtLogin').textContent = t.login;
         document.getElementById('txtGallery').textContent = t.gallery;
-        document.getElementById('emptyMsg').textContent = t.welcome;
+        document.getElementById('emptyMsg').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
     }
@@ -319,25 +349,25 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             }
         } catch (err) {
             console.error(err);
-            alert("Auth Failed / فشل المصادقة");
+            alert("Auth Failed. Please use Pi Browser.");
         }
     }
     function onIncompletePayment(payment) {}
 
-    // --- UI Logic (Models & Aspect) ---
+    // --- UI Logic ---
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
         menu.innerHTML = '';
         MODELS.forEach(m => {
             const div = document.createElement('div');
-            div.className = `model-option ${m.id === currentModel ? 'active' : ''}`;
+            div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
             div.onclick = () => selectModel(m);
             div.innerHTML = `
                 <div>
                     <div style="font-weight:700; font-size:14px; color:white;">${m.name}</div>
                     <div style="font-size:11px; color:#888;">${m.desc}</div>
                 </div>
-                <svg class="check-mark" width="20" height="20" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" style="fill:var(--accent); opacity:${m.id === currentModel?1:0}"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             `;
             menu.appendChild(div);
         });
@@ -356,7 +386,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         const isHidden = menu.style.display === 'none' || menu.style.display === '';
         menu.style.display = isHidden ? 'flex' : 'none';
         chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-        if(isHidden) document.getElementById('aspectMenu').style.display = 'none'; // Close other menu
+        if(isHidden) document.getElementById('aspectMenu').style.display = 'none';
     }
 
     function renderAspectMenu() {
@@ -364,13 +394,12 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         menu.innerHTML = '';
         RATIOS.forEach(r => {
             const div = document.createElement('div');
-            div.className = `aspect-option ${r.id === currentRatioId ? 'selected' : ''}`;
+            div.className = `menu-option ${r.id === currentRatioId ? 'active' : ''}`;
             div.onclick = () => selectRatio(r);
             div.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">${r.icon}</svg>
-                <div style="display:flex; flex-direction:column;">
-                    <span style="font-size:12px; font-weight:700; color:white;">${r.label}</span>
-                    <span style="font-size:10px; opacity:0.7;">${r.w}x${r.h}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:#aaa">${r.icon}</svg>
+                    <span style="font-size:13px; font-weight:600; color:white;">${r.label}</span>
                 </div>
             `;
             menu.appendChild(div);
@@ -396,10 +425,10 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         const menu = document.getElementById('aspectMenu');
         const isHidden = menu.style.display === 'none' || menu.style.display === '';
         menu.style.display = isHidden ? 'flex' : 'none';
-        if(isHidden) document.getElementById('modelMenu').style.display = 'none'; // Close other menu
+        if(isHidden) document.getElementById('modelMenu').style.display = 'none';
     }
 
-    // --- Generation Logic ---
+    // --- Generation ---
     async function sendPrompt() {
         const input = document.getElementById('promptInput');
         const text = input.value.trim();
@@ -407,13 +436,13 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         
         if (!text || !piUser) return;
 
-        // Visuals
         addMessage(text, 'user');
         input.value = '';
-        const loadingId = addMessage(t.generating, 'bot', true);
+        
+        // Render Blur Wave Loader
+        const loadingId = renderLoader(t.generating);
 
         try {
-            // Note: Make sure backend reads these new params!
             const response = await fetch('/.netlify/functions/generate-and-save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -439,21 +468,34 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             }
 
         } catch (error) {
-            document.getElementById(loadingId).innerHTML = `<div style="color:red">${t.error}</div>`;
+            document.getElementById(loadingId).innerHTML = `<div style="color:red; padding:10px;">${t.error}</div>`;
             console.error(error);
         }
     }
 
-    // --- Helpers ---
-    function addMessage(content, type, isLoading = false) {
+    // --- Visuals & Helpers ---
+    function renderLoader(text) {
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.id = 'loading-' + Date.now();
+        div.innerHTML = `
+            <div class="loading-box">
+                <div class="blur-wave"></div>
+                <div class="loading-text">${text}</div>
+            </div>
+        `;
+        document.getElementById('chatContainer').appendChild(div);
+        scrollToBottom();
+        return div.id;
+    }
+
+    function addMessage(content, type) {
         const div = document.createElement('div');
         div.className = `message ${type}`;
-        if(isLoading) div.id = 'msg-' + Date.now();
         div.innerHTML = `<div class="msg-bubble">${content}</div>`;
         document.getElementById('chatContainer').appendChild(div);
         document.getElementById('emptyMsg').style.display = 'none';
         scrollToBottom();
-        return div.id;
     }
 
     function addBotImage(url) {
@@ -462,7 +504,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         div.className = 'message bot';
         div.innerHTML = `
             <div class="msg-bubble">
-                <img src="${url}" class="msg-image" loading="lazy">
+                <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
                 <div class="download-bar">
                     <button class="d-btn" onclick="forceDownload('${url}')">${t.download}</button>
                 </div>
@@ -485,7 +527,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = blobUrl;
-            a.download = `Nano-${Date.now()}.jpg`;
+            a.download = `Imagen-${Date.now()}.jpg`;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => { window.URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 100);
@@ -494,15 +536,15 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         }
     }
 
-    // --- Gallery Logic ---
+    // --- Gallery ---
     async function openGallery() {
         const t = TRANSLATIONS[currentLang];
-        if(!piUser) { alert("Login required / يجب تسجيل الدخول"); return; }
+        if(!piUser) { alert("Login Required"); return; }
         
         const modal = document.getElementById('galleryModal');
         const grid = document.getElementById('galleryGrid');
         modal.style.display = 'flex';
-        grid.innerHTML = '<div style="color:white; text-align:center;">Loading...</div>';
+        grid.innerHTML = '<div style="color:white; text-align:center; grid-column: span 2;">Loading...</div>';
 
         try {
             const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
@@ -510,7 +552,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
             grid.innerHTML = '';
             
             if(images.length === 0) {
-                grid.innerHTML = `<div style="color:#777; padding:20px;">${t.noImages}</div>`;
+                grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`;
                 return;
             }
 
@@ -526,7 +568,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
                 `;
                 grid.appendChild(div);
             });
-        } catch (e) { grid.innerHTML = `<div style="color:red">${t.error}</div>`; }
+        } catch (e) { grid.innerHTML = `<div style="color:red; grid-column: span 2;">${t.error}</div>`; }
     }
 
     async function deleteImage(imageId, btn) {
@@ -544,7 +586,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
         } catch(e) { console.error(e); }
     }
 
-    // Close menus on click outside
+    // Close on click outside
     document.addEventListener('click', (e) => {
         if(!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
             document.getElementById('modelMenu').style.display = 'none';
