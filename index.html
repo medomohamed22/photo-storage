@@ -6,13 +6,13 @@
 <title>Nano Banana - Pi Edition</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <style>
-/* --- Design System (نفس التصميم السابق مع إضافات) --- */
+/* --- Design System --- */
 :root {
     --bg: #09090b;
     --chat-bg: #000000;
     --card: #18181b;
     --accent: #d1fa31;
-    --pi-gold: #fbbf24; /* لون مميز لشبكة باي */
+    --pi-gold: #fbbf24;
     --text-main: #ffffff;
     --text-sub: #a1a1aa;
     --border: #27272a;
@@ -39,7 +39,7 @@ body {
 .landing-logo { font-size: 60px; margin-bottom: 20px; text-shadow: 0 0 30px rgba(209, 250, 49, 0.4); }
 .landing-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
 .pi-login-btn {
-    background: linear-gradient(135deg, #611f69 0%, #4a1452 100%); /* Pi Color Theme */
+    background: linear-gradient(135deg, #611f69 0%, #4a1452 100%);
     color: #fff; border: 1px solid #fbbf24;
     padding: 14px 40px; border-radius: 30px;
     font-weight: 700; font-size: 16px; cursor: pointer;
@@ -56,22 +56,47 @@ body {
     display: flex; align-items: center; justify-content: space-between;
     height: 60px; flex-shrink: 0; z-index: 100;
 }
+.header-title-area {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 4px 8px; border-radius: 12px; transition: 0.2s;
+}
+.header-title-area:active { background: rgba(255,255,255,0.05); }
 .user-info-display {
     display: flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 600;
-    color: var(--pi-gold);
-    background: rgba(251, 191, 36, 0.1);
-    padding: 4px 10px; border-radius: 20px;
-    border: 1px solid rgba(251, 191, 36, 0.2);
+    font-size: 11px; font-weight: 600; color: var(--pi-gold);
+    background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 12px;
+    border: 1px solid rgba(251, 191, 36, 0.2); margin-top: 4px;
 }
 .header-actions { display: flex; gap: 8px; }
-.gallery-btn-header {
+.icon-btn {
     background: var(--card); border: 1px solid var(--border);
-    color: var(--text-main); padding: 6px 12px; border-radius: 20px;
+    color: var(--text-main); padding: 0 12px; height: 32px; border-radius: 16px;
     font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px;
+    font-weight: 600;
 }
+.chevron { width: 16px; height: 16px; transition: 0.3s; fill: #777; }
 
-/* --- Chat Area & Messages --- */
+/* --- Model Menu --- */
+.model-menu {
+    position: absolute; top: 60px; left: 0; right: 0;
+    background: rgba(9, 9, 11, 0.98); backdrop-filter: blur(20px);
+    z-index: 90; padding: 10px; display: none; flex-direction: column; gap: 8px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: slideDown 0.3s ease;
+}
+@keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
+
+.model-option {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; cursor: pointer;
+}
+.model-option.active { border-color: var(--accent); background: #1c241d; }
+.check-mark { fill: var(--accent); opacity: 0; }
+.model-option.active .check-mark { opacity: 1; }
+
+/* --- Chat Area --- */
 .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
 .message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
 .message.user { align-self: flex-end; } 
@@ -79,23 +104,45 @@ body {
 .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
 .message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
 .message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
-
-/* Images */
 .msg-image { width: 100%; height: auto; display: block; }
-.download-bar {
-    padding: 10px; background: #111; display: flex; justify-content: center;
-    border-top: 1px solid #222;
+.download-bar { padding: 10px; background: #111; display: flex; justify-content: center; border-top: 1px solid #222; }
+.d-btn { background: var(--accent); color: black; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; width: 100%; }
+
+/* --- Footer & Aspect Controls --- */
+.footer-container { background: #09090b; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); position: relative; z-index: 100; }
+
+.control-bar {
+    display: flex; gap: 10px; padding: 8px 12px 0 12px;
 }
-.d-btn {
-    background: var(--accent); color: black; border: none;
-    padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 12px;
-    cursor: pointer; width: 100%;
+.aspect-btn {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
 }
+.aspect-menu-dropdown {
+    position: absolute; bottom: 100%; right: 12px; left: auto;
+    width: 180px; margin-bottom: 8px; background: rgba(24,24,27,0.95);
+    backdrop-filter: blur(12px); border: 1px solid var(--border);
+    border-radius: 16px; padding: 6px; display: none; flex-direction: column; gap: 4px;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+}
+/* RTL specific logic via JS or explicit CSS */
+html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
+
+.aspect-option {
+    display: flex; align-items: center; gap: 10px; padding: 10px;
+    border-radius: 10px; cursor: pointer; color: var(--text-sub);
+}
+.aspect-option:hover { background: rgba(255,255,255,0.05); }
+.aspect-option.selected { background: #1c241d; color: var(--accent); border: 1px solid rgba(209,250,49,0.2); }
+
+.input-row { display: flex; gap: 8px; padding: 8px 12px; align-items: flex-end; }
+.input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 12px; color: white; outline: none; resize: none; max-height: 100px; }
+.send-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
 /* --- Gallery Modal --- */
-.gallery-modal {
-    position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column;
-}
+.gallery-modal { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; }
 .gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #111; }
 .gallery-grid { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .gallery-item { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
@@ -103,11 +150,6 @@ body {
 .g-btn { flex: 1; border: none; padding: 8px; font-size: 10px; cursor: pointer; color: white; border-radius: 4px; }
 .g-del { background: #ef4444; }
 .g-down { background: var(--accent); color: black; }
-
-/* --- Footer --- */
-.footer-container { background: #09090b; border-top: 1px solid var(--border); padding: 10px; display: flex; gap: 10px; }
-.input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 12px; color: white; outline: none; }
-.send-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -117,28 +159,35 @@ body {
     <div id="landingPage" class="landing-overlay">
         <div class="landing-logo">🍌</div>
         <div class="landing-title">Nano Banana AI</div>
-        <div style="color:#888; margin-bottom:30px;">توليد صور بالذكاء الاصطناعي</div>
+        <div style="color:#888; margin-bottom:30px;">توليد صور بالذكاء الاصطناعي مع Pi Network</div>
         
         <button class="pi-login-btn" onclick="authenticatePi()">
             <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
-            تسجيل الدخول باستخدام Pi
+            <span id="txtLogin">تسجيل الدخول باستخدام Pi</span>
         </button>
     </div>
 
     <div class="header">
         <div style="display:flex; flex-direction:column;">
-            <div style="font-weight:700; font-size:16px;">Nano Banana</div>
+            <div class="header-title-area" onclick="toggleModelMenu()">
+                <div style="font-weight:700; font-size:16px;" id="headerModelName">Nano Banana Pro</div>
+                <svg class="chevron" id="modelChevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+            </div>
             <div id="piUserInfo" class="user-info-display" style="display:none;">
                 <span>@<span id="txtUsername">...</span></span>
             </div>
         </div>
         <div class="header-actions">
-            <button class="gallery-btn-header" onclick="openGallery()">
+            <button class="icon-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
+            <button class="icon-btn" onclick="openGallery()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
-                معرضي
+                <span id="txtGallery">معرضي</span>
             </button>
         </div>
     </div>
+
+    <div class="model-menu" id="modelMenu">
+        </div>
 
     <div class="chat-container" id="chatContainer">
         <div style="text-align:center; color:#555; margin-top:50px;" id="emptyMsg">
@@ -147,118 +196,321 @@ body {
     </div>
 
     <div class="footer-container">
-        <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
+        <div class="control-bar">
+            <div class="aspect-menu-dropdown" id="aspectMenu"></div>
+            <button class="aspect-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu()">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="currentAspectIcon"></span>
+                    <span id="currentAspectLabel">1:1</span>
+                </div>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#777"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+        </div>
+
+        <div class="input-row">
+            <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
     </div>
 
     <div id="galleryModal" class="gallery-modal">
         <div class="gallery-header">
-            <span style="font-weight:700; color:white;">معرض صوري</span>
+            <span style="font-weight:700; color:white;" id="txtGalleryTitle">معرض صوري</span>
             <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:20px;">✕</button>
         </div>
         <div class="gallery-grid" id="galleryGrid"></div>
     </div>
 
 <script>
-    // تهيئة Pi SDK
-    const Pi = window.Pi;
+    // --- Configuration ---
+    const MODELS = [
+        { id: 'flux', name: 'Flux Pro (Standard)', desc: 'Best Overall' },
+        { id: 'turbo', name: 'Flux Turbo', desc: 'Fastest' },
+        { id: 'realism', name: 'Nano Realism', desc: 'Photorealistic' },
+        { id: 'anime', name: 'Nano Anime', desc: 'Cartoon/Anime' }
+    ];
+
+    const RATIOS = [
+        { id: 'square', label: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
+        { id: 'portrait', label: '9:16', w: 768, h: 1344, icon: '<rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
+        { id: 'landscape', label: '16:9', w: 1344, h: 768, icon: '<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
+        { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
+    ];
+
+    const TRANSLATIONS = {
+        ar: {
+            login: "تسجيل الدخول باستخدام Pi",
+            gallery: "معرضي",
+            welcome: "مرحباً! اكتب وصفاً للصورة التي تريد تخيلها.",
+            placeholder: "تخيل أي شيء...",
+            generating: "جاري الإنشاء... (قد يستغرق 30 ثانية)",
+            download: "تحميل",
+            delete: "حذف",
+            error: "خطأ",
+            galleryTitle: "معرض صوري",
+            noImages: "لا توجد صور محفوظة.",
+            confirmDel: "هل أنت متأكد من الحذف؟"
+        },
+        en: {
+            login: "Login with Pi",
+            gallery: "My Gallery",
+            welcome: "Welcome! Describe an image to generate.",
+            placeholder: "Imagine anything...",
+            generating: "Generating... (approx 30s)",
+            download: "Download",
+            delete: "Delete",
+            error: "Error",
+            galleryTitle: "My Gallery",
+            noImages: "No saved images.",
+            confirmDel: "Are you sure you want to delete?"
+        }
+    };
+
+    // --- State ---
+    let currentLang = 'ar';
+    let currentModel = MODELS[0].id;
+    let currentWidth = 1024;
+    let currentHeight = 1024;
+    let currentRatioId = 'square';
     let piUser = null;
 
-    // استدعاء التهيئة فور التحميل
+    // --- Init ---
+    const Pi = window.Pi;
     document.addEventListener('DOMContentLoaded', () => {
         try {
-            Pi.init({ version: "2.0", sandbox: false }); // اجعلها false عند النشر النهائي
+            Pi.init({ version: "2.0", sandbox: true }); 
         } catch (e) { console.error("Pi Init Error:", e); }
+        
+        renderModelMenu();
+        renderAspectMenu();
+        updateAspectUI();
+        applyLanguage(currentLang);
     });
 
-    // 1. تسجيل الدخول
+    // --- Language Logic ---
+    function toggleLanguage() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('langBtn').textContent = currentLang === 'ar' ? 'EN' : 'AR';
+        applyLanguage(currentLang);
+    }
+
+    function applyLanguage(lang) {
+        const t = TRANSLATIONS[lang];
+        document.getElementById('txtLogin').textContent = t.login;
+        document.getElementById('txtGallery').textContent = t.gallery;
+        document.getElementById('emptyMsg').textContent = t.welcome;
+        document.getElementById('promptInput').placeholder = t.placeholder;
+        document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
+    }
+
+    // --- Auth Logic ---
     async function authenticatePi() {
         try {
-            const scopes = ['username']; // نحتاج اسم المستخدم فقط للربط
+            const scopes = ['username'];
             const auth = await Pi.authenticate(scopes, onIncompletePayment);
-            
             if(auth.user) {
                 piUser = auth.user;
                 document.getElementById('landingPage').style.display = 'none';
                 document.getElementById('piUserInfo').style.display = 'flex';
                 document.getElementById('txtUsername').textContent = piUser.username;
-                
-                // حفظ التوكن مؤقتاً إذا احتجت له (اختياري)
-                localStorage.setItem('pi_user', JSON.stringify(piUser));
             }
         } catch (err) {
             console.error(err);
-            alert("فشل تسجيل الدخول. يرجى المحاولة من داخل متصفح Pi.");
+            alert("Auth Failed / فشل المصادقة");
         }
     }
+    function onIncompletePayment(payment) {}
 
-    function onIncompletePayment(payment) {
-        // معالجة المدفوعات غير المكتملة إذا أضفت دفع مستقبلاً
-        console.log("Incomplete Payment found", payment);
+    // --- UI Logic (Models & Aspect) ---
+    function renderModelMenu() {
+        const menu = document.getElementById('modelMenu');
+        menu.innerHTML = '';
+        MODELS.forEach(m => {
+            const div = document.createElement('div');
+            div.className = `model-option ${m.id === currentModel ? 'active' : ''}`;
+            div.onclick = () => selectModel(m);
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight:700; font-size:14px; color:white;">${m.name}</div>
+                    <div style="font-size:11px; color:#888;">${m.desc}</div>
+                </div>
+                <svg class="check-mark" width="20" height="20" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            `;
+            menu.appendChild(div);
+        });
     }
 
-    // 2. إرسال البرومبت (Generate)
+    function selectModel(m) {
+        currentModel = m.id;
+        document.getElementById('headerModelName').textContent = m.name;
+        toggleModelMenu();
+        renderModelMenu();
+    }
+
+    function toggleModelMenu() {
+        const menu = document.getElementById('modelMenu');
+        const chevron = document.getElementById('modelChevron');
+        const isHidden = menu.style.display === 'none' || menu.style.display === '';
+        menu.style.display = isHidden ? 'flex' : 'none';
+        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        if(isHidden) document.getElementById('aspectMenu').style.display = 'none'; // Close other menu
+    }
+
+    function renderAspectMenu() {
+        const menu = document.getElementById('aspectMenu');
+        menu.innerHTML = '';
+        RATIOS.forEach(r => {
+            const div = document.createElement('div');
+            div.className = `aspect-option ${r.id === currentRatioId ? 'selected' : ''}`;
+            div.onclick = () => selectRatio(r);
+            div.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">${r.icon}</svg>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:12px; font-weight:700; color:white;">${r.label}</span>
+                    <span style="font-size:10px; opacity:0.7;">${r.w}x${r.h}</span>
+                </div>
+            `;
+            menu.appendChild(div);
+        });
+    }
+
+    function selectRatio(r) {
+        currentWidth = r.w;
+        currentHeight = r.h;
+        currentRatioId = r.id;
+        updateAspectUI();
+        toggleAspectMenu();
+        renderAspectMenu();
+    }
+
+    function updateAspectUI() {
+        const r = RATIOS.find(x => x.id === currentRatioId);
+        document.getElementById('currentAspectLabel').textContent = r.label;
+        document.getElementById('currentAspectIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none">${r.icon}</svg>`;
+    }
+
+    function toggleAspectMenu() {
+        const menu = document.getElementById('aspectMenu');
+        const isHidden = menu.style.display === 'none' || menu.style.display === '';
+        menu.style.display = isHidden ? 'flex' : 'none';
+        if(isHidden) document.getElementById('modelMenu').style.display = 'none'; // Close other menu
+    }
+
+    // --- Generation Logic ---
     async function sendPrompt() {
         const input = document.getElementById('promptInput');
         const text = input.value.trim();
+        const t = TRANSLATIONS[currentLang];
+        
         if (!text || !piUser) return;
 
-        // إضافة رسالة المستخدم
+        // Visuals
         addMessage(text, 'user');
         input.value = '';
-        
-        // مؤشر التحميل
-        const loadingId = addMessage('جاري الإنشاء... (قد يستغرق 30 ثانية)', 'bot', true);
+        const loadingId = addMessage(t.generating, 'bot', true);
 
         try {
-            // ملاحظة: نرسل اسم المستخدم للباك اند لربط الصورة به
+            // Note: Make sure backend reads these new params!
             const response = await fetch('/.netlify/functions/generate-and-save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: text,
-                    username: piUser.username, // المفتاح السري هنا: اسم المستخدم
-                    uid: piUser.uid
+                    username: piUser.username,
+                    uid: piUser.uid,
+                    model: currentModel,
+                    width: currentWidth,
+                    height: currentHeight
                 })
             });
 
             if (!response.ok) throw new Error('Server Error');
 
             const data = await response.json();
-            
-            // إزالة مؤشر التحميل وعرض الصورة
             document.getElementById(loadingId).remove();
             
             if(data.imageUrl) {
-                addBotImage(data.imageUrl, data.imageId);
+                addBotImage(data.imageUrl);
             } else {
-                addMessage('حدث خطأ في استجابة السيرفر.', 'bot');
+                addMessage(t.error, 'bot');
             }
 
         } catch (error) {
-            document.getElementById(loadingId).innerHTML = '<div style="color:red">فشل الإنشاء. حاول مرة أخرى.</div>';
+            document.getElementById(loadingId).innerHTML = `<div style="color:red">${t.error}</div>`;
             console.error(error);
         }
     }
 
-    // 3. فتح المعرض (جلب الصور الخاصة بالمستخدم فقط)
+    // --- Helpers ---
+    function addMessage(content, type, isLoading = false) {
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        if(isLoading) div.id = 'msg-' + Date.now();
+        div.innerHTML = `<div class="msg-bubble">${content}</div>`;
+        document.getElementById('chatContainer').appendChild(div);
+        document.getElementById('emptyMsg').style.display = 'none';
+        scrollToBottom();
+        return div.id;
+    }
+
+    function addBotImage(url) {
+        const t = TRANSLATIONS[currentLang];
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.innerHTML = `
+            <div class="msg-bubble">
+                <img src="${url}" class="msg-image" loading="lazy">
+                <div class="download-bar">
+                    <button class="d-btn" onclick="forceDownload('${url}')">${t.download}</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('chatContainer').appendChild(div);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        const c = document.getElementById('chatContainer');
+        c.scrollTop = c.scrollHeight;
+    }
+
+    async function forceDownload(url) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = `Nano-${Date.now()}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { window.URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 100);
+        } catch (e) {
+            window.open(url, '_blank');
+        }
+    }
+
+    // --- Gallery Logic ---
     async function openGallery() {
-        if(!piUser) { alert("يجب تسجيل الدخول أولاً"); return; }
+        const t = TRANSLATIONS[currentLang];
+        if(!piUser) { alert("Login required / يجب تسجيل الدخول"); return; }
         
         const modal = document.getElementById('galleryModal');
         const grid = document.getElementById('galleryGrid');
         modal.style.display = 'flex';
-        grid.innerHTML = '<div style="color:white; text-align:center;">جاري التحميل...</div>';
+        grid.innerHTML = '<div style="color:white; text-align:center;">Loading...</div>';
 
         try {
             const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
             const images = await res.json();
-
             grid.innerHTML = '';
+            
             if(images.length === 0) {
-                grid.innerHTML = '<div style="color:#777; padding:20px;">لا توجد صور محفوظة.</div>';
+                grid.innerHTML = `<div style="color:#777; padding:20px;">${t.noImages}</div>`;
                 return;
             }
 
@@ -268,97 +520,40 @@ body {
                 div.innerHTML = `
                     <img src="${img.url}" style="width:100%; aspect-ratio:1; object-fit:cover;">
                     <div class="gallery-actions">
-                        <button class="g-btn g-down" onclick="forceDownload('${img.url}')">تحميل</button>
-                        <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">حذف</button>
+                        <button class="g-btn g-down" onclick="forceDownload('${img.url}')">${t.download}</button>
+                        <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">${t.delete}</button>
                     </div>
                 `;
                 grid.appendChild(div);
             });
-
-        } catch (e) {
-            grid.innerHTML = '<div style="color:red">فشل تحميل المعرض</div>';
-        }
+        } catch (e) { grid.innerHTML = `<div style="color:red">${t.error}</div>`; }
     }
 
-    // 4. حذف الصورة
     async function deleteImage(imageId, btn) {
-        if(!confirm('هل أنت متأكد من حذف هذه الصورة؟')) return;
-        
+        const t = TRANSLATIONS[currentLang];
+        if(!confirm(t.confirmDel)) return;
         const parent = btn.closest('.gallery-item');
         parent.style.opacity = '0.5';
-
         try {
             const res = await fetch('/.netlify/functions/delete-image', {
                 method: 'POST',
                 body: JSON.stringify({ id: imageId, username: piUser.username })
             });
-            
-            if(res.ok) {
-                parent.remove();
-            } else {
-                alert("فشل الحذف");
-                parent.style.opacity = '1';
-            }
+            if(res.ok) parent.remove();
+            else { alert(t.error); parent.style.opacity = '1'; }
         } catch(e) { console.error(e); }
     }
 
-    // 5. التحميل داخل Pi Browser
-    // Pi Browser في بعض الأحيان يمنع التنزيل المباشر، لذا نستخدم خدعة Blob
-    async function forceDownload(url) {
-        const btn = event.target;
-        const oldText = btn.innerText;
-        btn.innerText = '...';
-        
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = blobUrl;
-            a.download = `Nano-Pi-${Date.now()}.jpg`;
-            
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-                document.body.removeChild(a);
-                btn.innerText = oldText;
-            }, 100);
-            
-        } catch (e) {
-            alert('فشل التحميل التلقائي. سيتم فتح الصورة في نافذة جديدة.');
-            window.open(url, '_blank');
-            btn.innerText = oldText;
+    // Close menus on click outside
+    document.addEventListener('click', (e) => {
+        if(!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
+            document.getElementById('modelMenu').style.display = 'none';
+            document.getElementById('modelChevron').style.transform = 'rotate(0deg)';
         }
-    }
-
-    // دوال مساعدة للواجهة
-    function addMessage(content, type, isLoading = false) {
-        const div = document.createElement('div');
-        div.className = `message ${type}`;
-        if(isLoading) div.id = 'msg-' + Date.now();
-        div.innerHTML = `<div class="msg-bubble">${content}</div>`;
-        document.getElementById('chatContainer').appendChild(div);
-        document.getElementById('emptyMsg').style.display = 'none';
-        return div.id;
-    }
-
-    function addBotImage(url, id) {
-        const div = document.createElement('div');
-        div.className = 'message bot';
-        div.innerHTML = `
-            <div class="msg-bubble">
-                <img src="${url}" class="msg-image" loading="lazy">
-                <div class="download-bar">
-                    <button class="d-btn" onclick="forceDownload('${url}')">تحميل الصورة</button>
-                </div>
-            </div>
-        `;
-        document.getElementById('chatContainer').appendChild(div);
-    }
+        if(!e.target.closest('#aspectMenu') && !e.target.closest('#aspectTriggerBtn')) {
+            document.getElementById('aspectMenu').style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>
