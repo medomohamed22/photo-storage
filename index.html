@@ -77,10 +77,6 @@ body {
 }
 .pi-login-btn:active { transform: scale(0.95); }
 .pi-icon { width: 24px; height: 24px; fill: #333; }
-.skip-btn {
-    background: transparent; color: var(--text-sub); border: none;
-    margin-top: 15px; cursor: pointer; font-size: 14px; text-decoration: underline;
-}
 
 /* --- Header --- */
 .header {
@@ -427,7 +423,7 @@ body {
             <div class="landing-title">AI Imagen</div>
             <div class="landing-desc">
                 مرحباً بك في الجيل الجديد من توليد الصور.<br>
-                سجل الدخول باستخدام محفظة Pi لحفظ صورك وإدارتها.
+                يجب تسجيل الدخول باستخدام محفظة Pi للمتابعة.
             </div>
             <div class="feature-tags">
                 <span class="tag">Flux Pro</span>
@@ -439,7 +435,6 @@ body {
                 <svg class="pi-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
                 تسجيل دخول Pi
             </button>
-            <button class="skip-btn" onclick="skipLogin()">الدخول كزائر</button>
         </div>
     </div>
 
@@ -514,7 +509,6 @@ body {
        SUPABASE CONFIG
        ========================================= */
     const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
-    // IMPORTANT: Replace this with your actual Supabase Anon Key
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM'; 
     
     let supabaseClient = null;
@@ -532,6 +526,7 @@ body {
     async function loginWithPi() {
         try {
             const Pi = window.Pi;
+            // SET SANDBOX TO FALSE FOR PRODUCTION
             Pi.init({ version: "2.0", sandbox: false }); 
 
             const scopes = ['username', 'payments'];
@@ -545,23 +540,20 @@ body {
             currentUser = authResult.user;
             console.log("Logged in as:", currentUser.username);
 
+            // Register/Update User in DB *BEFORE* updating UI
             await registerPiUser(currentUser);
             updateUIForLogin();
 
         } catch (err) {
             console.error("Pi Login Error:", err);
-            alert("فشل تسجيل الدخول عبر Pi Network. يرجى المحاولة من داخل متصفح Pi.");
+            alert("فشل تسجيل الدخول عبر Pi Network.");
         }
-    }
-
-    function skipLogin() {
-        // Just hide the landing page, user remains null
-        updateUIForLogin();
     }
 
     async function registerPiUser(user) {
         if (!supabaseClient) return;
         
+        // Upsert to ensure user exists before saving images
         const { error } = await supabaseClient
             .from('pi_users')
             .upsert({ 
@@ -571,7 +563,7 @@ body {
 
         if (error) {
             console.error("DB Register Error:", error);
-            alert("حدث خطأ في تسجيل بيانات المستخدم في قاعدة البيانات.");
+            alert("فشل الاتصال بقاعدة البيانات. قد لا يتم حفظ الصور.");
         }
     }
 
@@ -661,14 +653,13 @@ body {
         loadChatHistory();
     };
 
-    /* --- Supabase Storage Logic (FIXED FOR GUESTS) --- */
+    /* --- Supabase Storage Logic (STRICTLY FOR PI USERS) --- */
     async function saveToSupabase(blob, prompt) {
         if (!supabaseClient) return URL.createObjectURL(blob); 
 
-        // CRITICAL FIX: If no currentUser, DO NOT try to save to DB
-        // Just return a local Blob URL for the guest to see the image once
+        // If not logged in, stop immediately (Safety check)
         if (!currentUser) {
-            console.log("Guest user: Image will not be saved to DB.");
+            alert("يرجى تسجيل الدخول لحفظ الصور.");
             return URL.createObjectURL(blob);
         }
 
@@ -699,7 +690,7 @@ body {
                         model: currentModel,
                         width: currentWidth,
                         height: currentHeight,
-                        user_id: currentUser.uid 
+                        user_id: currentUser.uid // Linked to Foreign Key
                     }
                 ]);
 
@@ -717,9 +708,9 @@ body {
     async function openGallery() {
         if (!supabaseClient) return;
         
-        // Block gallery for guests
+        // Enforce login
         if (!currentUser) { 
-            alert("يجب تسجيل الدخول باستخدام Pi لفتح المعرض وحفظ الصور."); 
+            alert("يجب تسجيل الدخول باستخدام Pi لفتح المعرض."); 
             return; 
         }
 
@@ -790,13 +781,14 @@ body {
 
     /* --- Clear All Logic --- */
     async function clearAllData() {
+        if (!currentUser) return; // Only for logged-in users
         if(confirm(getTrans('confirmClear'))) {
             localStorage.removeItem('nanoBananaChat');
             chatContainer.innerHTML = '';
             chatContainer.appendChild(emptyState);
             emptyState.style.display = 'flex';
 
-            if (!supabaseClient || !currentUser) return;
+            if (!supabaseClient) return;
 
             const { data: files } = await supabaseClient
                 .from('generated_images')
@@ -817,9 +809,7 @@ body {
         }
     }
 
-    // ... (Standard UI Logic: toggleAspectMenu, toggleLanguage, renderModelMenu, etc. - UNCHANGED) ...
-    // Note: I'm keeping the rest of the UI functions exactly as they were in the previous correct version.
-    
+    // ... (UI Helper Functions below remain unchanged) ...
     function toggleAspectMenu() {
         const isHidden = aspectMenu.style.display === 'none' || aspectMenu.style.display === '';
         aspectMenu.style.display = isHidden ? 'flex' : 'none';
@@ -1023,25 +1013,17 @@ body {
         }
     }
 
-    // --- RENDER ERROR CARD ---
     function renderErrorCard(type, prompt) {
         const div = document.createElement('div');
         div.className = 'message bot';
-        
         let icon, titleKey, descKey, styleClass;
-        
         if (type === 429) {
-            styleClass = 'rate-limit';
-            titleKey = 'rateLimitTitle';
-            descKey = 'rateLimitDesc';
+            styleClass = 'rate-limit'; titleKey = 'rateLimitTitle'; descKey = 'rateLimitDesc';
             icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
         } else {
-            styleClass = 'generic';
-            titleKey = 'genericError';
-            descKey = 'error';
+            styleClass = 'generic'; titleKey = 'genericError'; descKey = 'error';
             icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
         }
-
         div.innerHTML = `
             <div class="msg-bubble">
                 <div class="error-card ${styleClass}">
@@ -1060,15 +1042,18 @@ body {
     }
 
     function retryLastMessage(prompt) {
-        // Remove the error card first (optional, looks cleaner)
         chatContainer.lastChild.remove();
         sendMessage(prompt);
     }
 
     async function sendMessage(manualPrompt = null) {
-        // If manualPrompt is provided (retry), use it. Else read input.
         const text = manualPrompt || promptInput.value.trim();
         if (!text || isGenerating) return;
+
+        if (!currentUser) {
+            alert("يرجى تسجيل الدخول أولاً.");
+            return;
+        }
 
         if (!manualPrompt) {
             promptInput.value = '';
@@ -1077,11 +1062,10 @@ body {
             isGenerating = true;
             sendBtn.disabled = true;
             promptInput.blur(); 
-            // Only render user message if it's a new message, not a retry
             renderUserMessage(text);
             saveToHistory('user', text);
         } else {
-            isGenerating = true; // Set generating for retry
+            isGenerating = true; 
         }
 
         const loaderId = renderLoader('generating');
@@ -1096,23 +1080,15 @@ body {
 
             const seed = Math.floor(Math.random() * 1000000);
             
-            // --- CALL BACKEND FUNCTION ---
-            // We use the redirecting backend now (fetch follows redirect automatically)
             const finalUrl = `/.netlify/functions/generate?prompt=${encodeURIComponent(finalPrompt)}&model=${currentModel}&width=${currentWidth}&height=${currentHeight}&seed=${seed}`;
 
             const response = await fetch(finalUrl);
             
-            if (response.status === 429) {
-                throw new Error("429");
-            }
-            if (!response.ok) {
-                throw new Error("Server Error");
-            }
+            if (response.status === 429) throw new Error("429");
+            if (!response.ok) throw new Error("Server Error");
 
-            // Get Blob from response (which is now the redirected image from Pollinations)
             const blob = await response.blob();
             
-            // --- UPLOAD TO SUPABASE & SAVE HISTORY ---
             const finalImageUrl = await saveToSupabase(blob, finalPrompt);
 
             removeLoader(loaderId);
@@ -1121,12 +1097,8 @@ body {
         } catch (error) {
             console.error(error);
             removeLoader(loaderId);
-            
-            if (error.message === "429") {
-                renderErrorCard(429, text);
-            } else {
-                renderErrorCard(500, text);
-            }
+            if (error.message === "429") renderErrorCard(429, text);
+            else renderErrorCard(500, text);
         } finally {
             isGenerating = false;
             sendBtn.disabled = false;
