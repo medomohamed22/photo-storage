@@ -1,8 +1,10 @@
 {
-  "name": "nano-banana-project",
+  "name": "nano-banana-pi",
   "version": "1.0.0",
-  "description": "Backend for Nano Banana",
+  "description": "Nano Banana with Pi Network",
+  "main": "index.html",
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
     "node-fetch": "^2.7.0"
   }
 }
