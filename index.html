@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -459,787 +460,98 @@ body {
 
 <script>
 /* =========================================
-   SUPABASE CONFIG
+   SUPABASE CONFIG (✅ صح)
 ========================================= */
 const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM'; // <-- سيب مفتاحك الحالي مكان ده
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM';
 
 let supabaseClient = null;
-try {
-  if (window.supabase?.createClient) {
-    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-  } else {
-    console.error("Supabase UMD not loaded");
-  }
-} catch (e) {
-  console.error("Supabase init error", e);
+if (window.supabase?.createClient) {
+  supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+} else {
+  console.error("Supabase library not loaded");
 }
 
 /* =========================================
-   PI NETWORK AUTH LOGIC
+   TIMEOUT FETCH (✅ صح)
 ========================================= */
-let currentUser = null;
-let piInited = false;
-
-async function loginWithPi() {
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    if (!window.Pi) {
-      alert("Pi SDK غير متاح. افتح الموقع من داخل Pi Browser.");
-      return;
-    }
-    if (!piInited) {
-      window.Pi.init({ version: "2.0", sandbox: false });
-      piInited = true;
-    }
-
-    const scopes = ['username', 'payments'];
-
-    function onIncompletePaymentFound(payment) {
-      console.log("Incomplete payment found", payment);
-    }
-
-    const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
-    if (!authResult?.user?.uid) throw new Error("Invalid Pi auth result");
-
-    currentUser = authResult.user;
-    await registerPiUser(currentUser);
-    updateUIForLogin();
-  } catch (err) {
-    console.error("Pi Login Error:", err);
-    alert("فشل تسجيل الدخول عبر Pi Network. تأكد أنك داخل Pi Browser وأن الدومين مسجل في تطبيقك.");
-  }
-}
-
-async function registerPiUser(user) {
-  if (!supabaseClient) return;
-  try {
-    const { error } = await supabaseClient
-      .from('pi_users')
-      .upsert({ uid: user.uid, username: user.username }, { onConflict: 'uid' });
-
-    if (error) console.error("DB Register Error:", error);
+    return await fetch(url, { ...options, signal: controller.signal });
   } catch (e) {
-    console.error("registerPiUser exception:", e);
-  }
-}
-
-function updateUIForLogin() {
-  const landingPage = document.getElementById('landingPage');
-  const badge = document.getElementById('piUserBadge');
-  const nameDisplay = document.getElementById('piUsernameDisplay');
-
-  landingPage.style.opacity = '0';
-  setTimeout(() => { landingPage.style.display = 'none'; }, 500);
-
-  if (currentUser) {
-    nameDisplay.innerText = currentUser.username || "Pi User";
-    badge.style.display = 'flex';
+    throw {
+      stage: "network",
+      status: 0,
+      message: e?.name === "AbortError" ? "Timeout" : "Fetch failed",
+      details: String(e?.message || e),
+      url
+    };
+  } finally {
+    clearTimeout(t);
   }
 }
 
 /* =========================================
-   APP LOGIC
+   BUILD REQUEST (✅ متوافق مع backend)
 ========================================= */
-let currentLang = localStorage.getItem('nanoLang') || 'ar';
-let currentModel = 'imagen-4';
-let currentWidth = 1024;
-let currentHeight = 1024;
-let currentRatioId = 'square';
-
-const RATIOS = [
-  { id: 'square', label: '1:1', ratioText: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-  { id: 'portrait', label: '9:16', ratioText: '9:16', w: 768, h: 1344, icon: '<rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-  { id: 'landscape', label: '16:9', ratioText: '16:9', w: 1344, h: 768, icon: '<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-  { id: 'wide', label: '21:9', ratioText: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
-];
-
-const MODELS = [
-  { id: 'imagen-4', name: 'Nano Banana Pro', desc: 'Google Flagship' },
-  { id: 'flux-klein', name: 'FLUX.2 Klein 4B', desc: 'Fast Detail' },
-  { id: 'flux-klein-9b', name: 'FLUX.2 Klein 9B', desc: 'High Fidelity' },
-  { id: 'gpt-image-1-mini', name: 'GPT Image 1 Mini', desc: 'Creative' }
-];
-
-const chatContainer = document.getElementById('chatContainer');
-const promptInput = document.getElementById('promptInput');
-const sendBtn = document.getElementById('sendBtn');
-const emptyState = document.getElementById('emptyState');
-const modelMenu = document.getElementById('modelMenu');
-const headerModelName = document.getElementById('headerModelName');
-const chevron = document.getElementById('chevron');
-const aspectMenu = document.getElementById('aspectMenu');
-const aspectTriggerBtn = document.getElementById('aspectTriggerBtn');
-const currentAspectLabel = document.getElementById('currentAspectLabel');
-const currentAspectIcon = document.getElementById('currentAspectIcon');
-const galleryModal = document.getElementById('galleryModal');
-const galleryGrid = document.getElementById('galleryGrid');
-
-const translations = {
-  ar: {
-    online: "متصل",
-    clear: "مسح الكل",
-    welcome: "أهلاً بك! أنا AI Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.",
-    placeholder: "تخيل أي شيء...",
-    generating: "إنشاء صورة...",
-    download: "تحميل HD",
-    downloading: "جاري التحميل...",
-    error: "حدث خطأ غير متوقع",
-    confirmClear: "تحذير: سيتم حذف جميع الصور والبيانات الخاصة بك نهائياً من السيرفر. هل أنت متأكد؟",
-    langLabel: "EN",
-    translating: "جاري ترجمة الوصف...",
-    retry: "إعادة المحاولة",
-    rateLimitTitle: "السيرفر مشغول حالياً",
-    rateLimitDesc: "يوجد ضغط كبير على الموديل. يرجى الانتظار بضع ثوانٍ ثم المحاولة مجدداً.",
-    genericError: "تعذر إنشاء الصورة",
-    gallery: "معرضي",
-    noImages: "لا توجد صور محفوظة.",
-    delete: "حذف",
-    loadingGallery: "جاري التحميل...",
-    debugDetails: "تفاصيل الخطأ",
-    copyDebug: "نسخ التفاصيل"
-  },
-  en: {
-    online: "Online",
-    clear: "Clear All",
-    welcome: "Welcome! I am AI Imagen.<br>Type any description to generate an image.",
-    placeholder: "Imagine anything...",
-    generating: "Creating Image...",
-    download: "Download HD",
-    downloading: "Downloading...",
-    error: "Unexpected error",
-    confirmClear: "Warning: All your images and data will be permanently deleted from the server. Are you sure?",
-    langLabel: "عربي",
-    translating: "Translating prompt...",
-    retry: "Retry",
-    rateLimitTitle: "Server Busy",
-    rateLimitDesc: "High traffic on this model. Please wait a few seconds and try again.",
-    genericError: "Failed to generate",
-    gallery: "My Gallery",
-    noImages: "No images saved.",
-    delete: "Delete",
-    loadingGallery: "Loading...",
-    debugDetails: "Error details",
-    copyDebug: "Copy details"
+async function requestGenerateImage(payload) {
+  const prompt = String(payload?.prompt || "").trim();
+  if (!prompt) {
+    throw { stage: "client", status: 0, message: "Empty prompt before request", details: payload };
   }
-};
 
-let isGenerating = false;
+  const params = new URLSearchParams({
+    prompt,
+    model: String(payload.model || "flux"),
+    width: String(payload.width || 1024),
+    height: String(payload.height || 1024),
+    seed: String(payload.seed || 1),
+  });
 
-window.onload = function() {
-  applyLanguage(currentLang);
-  renderModelMenu();
-  renderAspectMenu();
-  updateTriggerUI();
-  loadChatHistory();
-};
+  const url = `/.netlify/functions/generate?${params.toString()}`;
+  console.log("Generate URL:", url);
+
+  return await fetchWithTimeout(url, { method: "GET", headers: { "Accept": "*/*" } }, 30000);
+}
 
 /* =========================================
-   Helpers
+   PARSE BASE64 RESPONSE (✅ متوافق 100%)
 ========================================= */
-function getTrans(key) { return translations[currentLang][key] || key; }
-function isArabic(text) { return /[\u0600-\u06FF]/.test(text); }
-
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function scrollToBottom() {
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function safeJsonStringify(obj) {
-  try { return JSON.stringify(obj, null, 2); }
-  catch { return String(obj); }
-}
-
 function isProbablyBase64(s) {
-  if (!s || typeof s !== 'string') return false;
-  const t = s.trim();
-  if (t.length < 200) return false;
-  // base64 غالباً حروف/أرقام/+ /=
+  if (!s) return false;
+  const t = String(s).trim();
+  if (t.length < 64) return false;
+  // base64 عادةً بيكون فيه A-Z a-z 0-9 + / =
   return /^[A-Za-z0-9+/=\s]+$/.test(t);
 }
 
-async function fetchWithTimeout(url, opts = {}, timeoutMs = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...opts, signal: controller.signal });
-    clearTimeout(id);
-    return res;
-  } catch (e) {
-    clearTimeout(id);
-    throw e;
-  }
-}
-
-/* =========================================
-   Translation (best-effort)
-========================================= */
-async function translateToEnglish(text) {
-  try {
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-    const data = await res.json();
-    return (data && data[0] && data[0][0] && data[0][0][0]) ? data[0][0][0] : text;
-  } catch {
-    return text;
-  }
-}
-
-/* =========================================
-   History
-========================================= */
-function loadChatHistory() {
-  const history = JSON.parse(localStorage.getItem('nanoBananaChat')) || [];
-  if (history.length > 0) {
-    emptyState.style.display = 'none';
-    history.forEach(msg => {
-      if (msg.type === 'user') renderUserMessage(msg.content);
-      else if (msg.type === 'bot_img') renderBotMessage(msg.content, false);
-    });
-    scrollToBottom();
-  }
-}
-
-function saveToHistory(type, content) {
-  const history = JSON.parse(localStorage.getItem('nanoBananaChat')) || [];
-  history.push({ type, content, timestamp: Date.now() });
-  localStorage.setItem('nanoBananaChat', JSON.stringify(history));
-}
-
-/* =========================================
-   Render Messages
-========================================= */
-function renderUserMessage(text) {
-  const div = document.createElement('div');
-  div.className = 'message user';
-  div.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div>`;
-  chatContainer.appendChild(div);
-  scrollToBottom();
-}
-
-function renderBotMessage(imageUrl, save = true) {
-  const div = document.createElement('div');
-  div.className = 'message bot';
-  div.innerHTML = `
-    <div class="msg-bubble">
-      <div class="image-wrapper">
-        <img src="${imageUrl}" class="msg-image" alt="Art" onload="this.classList.add('loaded')">
-      </div>
-      <div class="download-btn-container">
-        <button onclick="downloadImage(${JSON.stringify(imageUrl)})" class="btn-download-hd">
-          <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-          <span>${getTrans('download')}</span>
-        </button>
-      </div>
-    </div>
-  `;
-  chatContainer.appendChild(div);
-  scrollToBottom();
-  if (save) saveToHistory('bot_img', imageUrl);
-}
-
-function renderLoader(statusTextKey = 'generating') {
-  const div = document.createElement('div');
-  div.className = 'message bot loading-msg';
-  div.id = 'loading-' + Date.now();
-  div.innerHTML = `
-    <div class="blur-wave-container">
-      <div class="blur-wave-bg"></div>
-      <div class="blur-wave-text" id="loaderText">${getTrans(statusTextKey)}</div>
-    </div>
-  `;
-  chatContainer.appendChild(div);
-  scrollToBottom();
-  return div.id;
-}
-
-function updateLoaderText(id, key) {
-  const loader = document.getElementById(id);
-  if (loader) {
-    const txt = loader.querySelector('#loaderText');
-    if (txt) txt.innerText = getTrans(key);
-  }
-}
-
-function removeLoader(id) {
-  const loader = document.getElementById(id);
-  if (loader) loader.remove();
-}
-
-/* =========================================
-   Download
-========================================= */
-async function forceDownload(url, btn) {
-  const span = btn?.querySelector?.('span');
-  const originalText = span ? span.innerText : getTrans('download');
-  if (span) span.innerText = getTrans('downloading');
-  if (btn) btn.disabled = true;
-
-  try {
-    const response = await fetch(url, { mode: 'cors' });
-    if (!response.ok) throw new Error("download_failed");
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `nano-art-${Date.now()}.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (err) {
-    console.error(err);
-    alert(getTrans('error'));
-  } finally {
-    if (btn) btn.disabled = false;
-    if (span) span.innerText = originalText;
-  }
-}
-
-function downloadImage(url) {
-  const btn = document.createElement('button');
-  btn.innerHTML = `<span>${getTrans('download')}</span>`;
-  forceDownload(url, btn);
-}
-
-/* =========================================
-   DEBUG ERROR SYSTEM
-========================================= */
-function stageTitle(stage){
-  const map = {
-    auth: "مشكلة تسجيل الدخول (Pi)",
-    translate: "مشكلة ترجمة الوصف",
-    backend: "مشكلة في السيرفر (Netlify Function)",
-    model: "مشكلة من مزود التوليد/الموديل",
-    decode: "مشكلة تحويل الصورة (Base64)",
-    supabase_storage: "مشكلة رفع الصورة (Supabase Storage)",
-    supabase_db: "مشكلة حفظ البيانات (Supabase DB)",
-    unknown: "خطأ غير معروف"
-  };
-  return map[stage] || map.unknown;
-}
-
-function userHint(stage, status){
-  if (stage === "auth") return "افتح الموقع من داخل Pi Browser وتأكد إن الدومين متسجل في Pi Developer Portal.";
-  if (stage === "backend") return "تأكد إن Netlify Function شغالة وإن الـEndpoint بيرد. لو فيه Rate limit جرّب بعد شوية.";
-  if (stage === "model") return "الموديل نفسه ممكن يكون عليه ضغط أو API محدود.";
-  if (stage === "decode") return "السيرفر غالباً رجّع نص خطأ بدل Base64. شوف التفاصيل.";
-  if (stage === "supabase_storage") return "اتأكد من Bucket permissions وCORS و إن الـanon key صحيح.";
-  if (status === 429) return getTrans('rateLimitDesc');
-  return getTrans('error');
-}
-
-function renderDebugErrorCard(errInfo, originalPrompt) {
-  const div = document.createElement('div');
-  div.className = 'message bot';
-
-  const status = errInfo?.status;
-  const is429 = status === 429;
-
-  const icon = '<svg class="error-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
-
-  const title = is429 ? getTrans('rateLimitTitle') : stageTitle(errInfo.stage || 'unknown');
-  const desc  = is429 ? getTrans('rateLimitDesc') : userHint(errInfo.stage || 'unknown', status);
-
-  const debugText = safeJsonStringify({
-    time: new Date().toISOString(),
-    stage: errInfo.stage,
-    status: errInfo.status,
-    message: errInfo.message,
-    details: errInfo.details,
-    request: errInfo.request,
-  });
-
-  const debugId = 'dbg-' + Date.now();
-
-  div.innerHTML = `
-    <div class="msg-bubble">
-      <div class="error-card ${is429 ? 'rate-limit' : 'generic'}">
-        ${icon}
-        <div class="error-title">${escapeHtml(title)}</div>
-        <div class="error-desc">${escapeHtml(desc)}</div>
-
-        <button class="retry-btn" onclick='retryLastMessage(${JSON.stringify(originalPrompt)})'>
-          <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-          <span>${getTrans('retry')}</span>
-        </button>
-
-        <button class="debug-toggle" onclick="toggleDebugBox('${debugId}')">${getTrans('debugDetails')}</button>
-        <div class="debug-box" id="${debugId}">${escapeHtml(debugText)}</div>
-        <div class="debug-actions">
-          <button class="copy-btn" onclick="copyDebug('${debugId}')">${getTrans('copyDebug')}</button>
-        </div>
-      </div>
-    </div>
-  `;
-  chatContainer.appendChild(div);
-  scrollToBottom();
-}
-
-function toggleDebugBox(id){
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-}
-
-async function copyDebug(id){
-  const el = document.getElementById(id);
-  if (!el) return;
-  const text = el.innerText;
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  }
-  alert("تم النسخ ✅");
-}
-
-function retryLastMessage(prompt) {
-  const last = chatContainer.lastElementChild;
-  if (last) last.remove();
-  sendMessage(prompt);
-}
-
-/* =========================================
-   Supabase Storage helpers
-========================================= */
-function extractStoragePath(publicUrl){
-  const marker = '/nano_images/';
-  const i = publicUrl.indexOf(marker);
-  if (i === -1) return null;
-  return publicUrl.substring(i + marker.length);
-}
-
-/* =========================================
-   Save to Supabase (PI users only)
-========================================= */
-async function saveToSupabase(blob, prompt) {
-  if (!supabaseClient) return URL.createObjectURL(blob);
-
-  if (!currentUser?.uid) {
-    alert("يرجى تسجيل الدخول لحفظ الصور.");
-    return URL.createObjectURL(blob);
-  }
-
-  try {
-    const filePath = `${currentUser.uid}/${Date.now()}.jpg`;
-
-    const { error: uploadError } = await supabaseClient.storage
-      .from('nano_images')
-      .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
-
-    if (uploadError) {
-      throw { stage: "supabase_storage", message: "Upload failed", details: uploadError };
-    }
-
-    const { data: publicUrlData } = supabaseClient.storage
-      .from('nano_images')
-      .getPublicUrl(filePath);
-
-    const publicUrl = publicUrlData?.publicUrl;
-    if (!publicUrl) {
-      throw { stage: "supabase_storage", message: "No public URL returned", details: publicUrlData };
-    }
-
-    const { error: dbError } = await supabaseClient
-      .from('generated_images')
-      .insert([{
-        prompt: prompt,
-        image_url: publicUrl,
-        model: currentModel,
-        width: currentWidth,
-        height: currentHeight,
-        user_id: currentUser.uid
-      }]);
-
-    if (dbError) {
-      // نخلي الصورة تظهر حتى لو DB وقع
-      console.error("Database Insert Error:", dbError);
-    }
-
-    return publicUrl;
-  } catch (err) {
-    console.error("saveToSupabase error:", err);
-    // رجّع رابط محلي عشان المستخدم ما يخسرش الصورة
-    return URL.createObjectURL(blob);
-  }
-}
-
-/* =========================================
-   Gallery
-========================================= */
-async function openGallery() {
-  if (!supabaseClient) { alert("Supabase غير متاح."); return; }
-  if (!currentUser?.uid) { alert("يجب تسجيل الدخول باستخدام Pi لفتح المعرض."); return; }
-
-  galleryModal.style.display = 'flex';
-  galleryGrid.innerHTML = `<div style="color:#888; text-align:center; grid-column:span 2;">${getTrans('loadingGallery')}</div>`;
-
-  const { data, error } = await supabaseClient
-    .from('generated_images')
-    .select('*')
-    .eq('user_id', currentUser.uid)
-    .order('created_at', { ascending: false });
-
-  galleryGrid.innerHTML = '';
-
-  if (error || !data || data.length === 0) {
-    galleryGrid.innerHTML = `<div style="color:#888; text-align:center; grid-column:span 2;">${getTrans('noImages')}</div>`;
-    return;
-  }
-
-  data.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'gallery-item';
-    div.innerHTML = `
-      <img src="${item.image_url}" class="gallery-img" loading="lazy">
-      <div class="gallery-actions">
-        <button class="g-btn g-download" onclick="downloadImage(${JSON.stringify(item.image_url)})">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="black"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-          ${getTrans('download')}
-        </button>
-        <button class="g-btn g-delete" onclick="deleteImage(${JSON.stringify(item.id)}, ${JSON.stringify(item.image_url)}, this)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          ${getTrans('delete')}
-        </button>
-      </div>
-    `;
-    galleryGrid.appendChild(div);
-  });
-}
-
-function closeGallery() { galleryModal.style.display = 'none'; }
-
-async function deleteImage(id, url, btnElement) {
-  if (!confirm('حذف هذه الصورة؟')) return;
-  if (!currentUser?.uid) return;
-
-  const parent = btnElement.closest('.gallery-item');
-  if (parent) parent.style.opacity = '0.5';
-
-  try {
-    const path = extractStoragePath(url);
-    if (path) await supabaseClient.storage.from('nano_images').remove([path]);
-
-    const { error } = await supabaseClient
-      .from('generated_images')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', currentUser.uid);
-
-    if (!error) {
-      if (parent) parent.remove();
-    } else {
-      alert('حدث خطأ أثناء الحذف');
-      if (parent) parent.style.opacity = '1';
-    }
-  } catch (e) {
-    console.error(e);
-    alert('حدث خطأ أثناء الحذف');
-    if (parent) parent.style.opacity = '1';
-  }
-}
-
-/* =========================================
-   Clear All (server + local)
-========================================= */
-async function clearAllData() {
-  if (!currentUser?.uid) { alert("سجّل دخول الأول."); return; }
-  if (!confirm(getTrans('confirmClear'))) return;
-
-  localStorage.removeItem('nanoBananaChat');
-  chatContainer.innerHTML = '';
-  chatContainer.appendChild(emptyState);
-  emptyState.style.display = 'flex';
-
-  if (!supabaseClient) return;
-
-  const { data: files, error: selErr } = await supabaseClient
-    .from('generated_images')
-    .select('image_url')
-    .eq('user_id', currentUser.uid);
-
-  if (!selErr && files && files.length > 0) {
-    const paths = files.map(f => extractStoragePath(f.image_url)).filter(Boolean);
-    if (paths.length) await supabaseClient.storage.from('nano_images').remove(paths);
-  }
-
-  await supabaseClient
-    .from('generated_images')
-    .delete()
-    .eq('user_id', currentUser.uid);
-
-  alert('تم مسح جميع البيانات بنجاح.');
-}
-
-/* =========================================
-   UI: Aspect menu + model menu + lang
-========================================= */
-function toggleAspectMenu() {
-  const isHidden = aspectMenu.style.display === 'none' || aspectMenu.style.display === '';
-  aspectMenu.style.display = isHidden ? 'flex' : 'none';
-  if (isHidden) aspectTriggerBtn.classList.add('open');
-  else aspectTriggerBtn.classList.remove('open');
-}
-
-document.addEventListener('click', function(event) {
-  // close aspect menu
-  if (!aspectMenu.contains(event.target) && !aspectTriggerBtn.contains(event.target)) {
-    aspectMenu.style.display = 'none';
-    aspectTriggerBtn.classList.remove('open');
-  }
-  // close model menu
-  const headerTitle = document.querySelector('.header-title');
-  if (headerTitle && !modelMenu.contains(event.target) && !headerTitle.contains(event.target)) {
-    modelMenu.style.display = 'none';
-    chevron.style.transform = 'rotate(0deg)';
-  }
-});
-
-function renderAspectMenu() {
-  aspectMenu.innerHTML = '';
-  RATIOS.forEach(r => {
-    const div = document.createElement('div');
-    const isSelected = r.id === currentRatioId;
-    div.className = `aspect-option ${isSelected ? 'selected' : ''}`;
-    div.onclick = () => selectRatio(r);
-    div.innerHTML = `
-      <svg viewBox="0 0 24 24">${r.icon}</svg>
-      <div class="aspect-info">
-        <span class="aspect-label">${r.label}</span>
-        <span class="aspect-ratio-text">${r.ratioText} • ${r.w}×${r.h}</span>
-      </div>
-    `;
-    aspectMenu.appendChild(div);
-  });
-}
-
-function selectRatio(r) {
-  currentWidth = r.w;
-  currentHeight = r.h;
-  currentRatioId = r.id;
-
-  localStorage.setItem('nanoRatio', currentRatioId);
-  updateTriggerUI();
-  renderAspectMenu();
-  aspectMenu.style.display = 'none';
-  aspectTriggerBtn.classList.remove('open');
-}
-
-function updateTriggerUI() {
-  const r = RATIOS.find(x => x.id === currentRatioId);
-  if (r) {
-    currentAspectLabel.innerText = r.ratioText;
-    currentAspectIcon.innerHTML = `<svg class="icon" viewBox="0 0 24 24">${r.icon}</svg>`;
-  }
-}
-
-function renderModelMenu() {
-  modelMenu.innerHTML = '';
-  MODELS.forEach(m => {
-    const div = document.createElement('div');
-    div.className = `model-option ${m.id === currentModel ? 'active' : ''}`;
-    div.onclick = () => selectModel(m.id, m.name);
-    div.innerHTML = `<div><div class="model-name">${m.name}</div><div class="model-desc">${m.desc}</div></div><svg class="check-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
-    modelMenu.appendChild(div);
-  });
-}
-
-function toggleModelMenu() {
-  const isHidden = modelMenu.style.display === 'none' || modelMenu.style.display === '';
-  modelMenu.style.display = isHidden ? 'flex' : 'none';
-  chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-}
-
-function selectModel(id, name) {
-  currentModel = id;
-  headerModelName.textContent = name;
-  modelMenu.style.display = 'none';
-  chevron.style.transform = 'rotate(0deg)';
-  renderModelMenu();
-}
-
-function toggleLanguage() {
-  currentLang = currentLang === 'ar' ? 'en' : 'ar';
-  localStorage.setItem('nanoLang', currentLang);
-  applyLanguage(currentLang);
-}
-
-function applyLanguage(lang) {
-  const t = translations[lang];
-  document.getElementById('txtOnline').innerText = t.online;
-  document.getElementById('clearBtn').innerText = t.clear;
-  document.getElementById('txtWelcome').innerHTML = t.welcome;
-  document.getElementById('promptInput').placeholder = t.placeholder;
-  document.getElementById('langBtn').innerText = t.langLabel;
-  document.getElementById('txtGallery').innerText = t.gallery;
-  document.getElementById('txtGalleryTitle').innerText = t.gallery;
-  renderAspectMenu();
-  updateTriggerUI();
-}
-
-/* =========================================
-   Backend Call (Compatible with latest)
-   - Try POST JSON first
-   - Fallback to GET query
-   - Supports JSON response or base64 text
-========================================= */
-async function requestGenerateImage(payload) {
-  const endpoint = new URL('/.netlify/functions/generate', window.location.origin).toString();
-
-  // 1) POST JSON
-  try {
-    const res = await fetchWithTimeout(endpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload)
-    }, 30000);
-
-    // لو السيرفر بيرفض POST
-    if (res.status === 404 || res.status === 405) throw { __fallback: true, res };
-
-    return res;
-  } catch (e) {
-    // fallback only if 404/405 or explicit marker
-    if (e?.__fallback) {
-      // 2) GET fallback
-      const u = new URL('/.netlify/functions/generate', window.location.origin);
-      Object.entries(payload).forEach(([k, v]) => u.searchParams.set(k, String(v)));
-      return await fetchWithTimeout(u.toString(), {}, 30000);
-    }
-    throw e;
-  }
-}
-
 async function parseImageResponse(response) {
-  const ct = (response.headers.get('content-type') || '').toLowerCase();
-
-  // JSON
-  if (ct.includes('application/json')) {
-    const j = await response.json().catch(() => ({}));
-    // متوقع: {base64, contentType} أو {image, mime} أو {error}
-    if (j?.error || j?.success === false) {
-      throw { stage: "backend", status: response.status, message: j?.error || j?.message || "Backend returned error", details: j };
-    }
-    const base64 = j.base64 || j.image || j.data;
-    const contentType = j.contentType || j.mime || 'image/jpeg';
-    if (!isProbablyBase64(base64)) {
-      throw { stage: "decode", status: response.status, message: "Invalid base64 in JSON response", details: j };
-    }
-    return { base64, contentType };
+  const ct = (response.headers.get('content-type') || 'image/jpeg').toLowerCase();
+  
+  const text = await response.text().catch(() => "");
+  if (!response.ok) {
+    throw {
+      stage: "backend",
+      status: response.status,
+      message: "Backend not ok",
+      details: text?.slice?.(0, 800) || text
+    };
   }
-
+  
+  const base64 = (text || "").trim();
+  if (!isProbablyBase64(base64)) {
+    throw {
+      stage: "backend",
+      status: response.status,
+      message: "Non-base64 response",
+      details: base64.slice(0, 400)
+    };
+  }
+  
+  return { base64, contentType: ct.includes('image/') ? ct : 'image/jpeg' };
+}
   // Text base64
   const text = await response.text();
   if (!isProbablyBase64(text)) {
@@ -1335,20 +647,21 @@ async function sendMessage(manualPrompt = null) {
     renderBotMessage(finalImageUrl, true);
 
   } catch (error) {
-    console.error("GEN ERROR:", error);
-    removeLoader(loaderId);
-
-    // normalize error
-    const errInfo = {
-      stage: error?.stage || (error?.name === 'AbortError' ? 'backend' : 'unknown'),
-      status: error?.status || (error?.message === '429' ? 429 : undefined),
-      message: error?.message || (error?.name === 'AbortError' ? 'Request timeout' : 'Unknown error'),
-      details: error?.details || error,
-      request: error?.request || reqMeta
-    };
-
-    renderDebugErrorCard(errInfo, text);
-  } finally {
+  console.error("GEN ERROR:", error);
+  removeLoader(loaderId);
+  
+  const errInfo = {
+    stage: error?.stage || (error?.name === 'AbortError' ? 'backend' : 'unknown'),
+    status: error?.status,
+    message: error?.message || (error?.name === 'AbortError' ? 'Request timeout' : 'Unknown error'),
+    details: error?.details || error,
+    request: error?.request || null,
+    // ✅ لو fetchWithTimeout بيرمي error فيه url خليها تظهر
+    url: error?.url || null
+  };
+  
+  renderDebugErrorCard(errInfo, text);
+} finally {
     isGenerating = false;
     sendBtn.disabled = false;
   }
