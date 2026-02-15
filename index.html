@@ -1,701 +1,364 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
-<title>Nano Banana Chat</title>
-
-<!-- ✅ Supabase UMD (مهم عشان window.supabase تشتغل) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<title>Nano Banana - Pi Edition</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
 <style>
-/* --- Design System --- */
+/* --- Design System (نفس التصميم السابق مع إضافات) --- */
 :root {
-  --bg: #09090b;
-  --chat-bg: #000000;
-  --card: #18181b;
-  --user-msg-bg: #27272a;
-  --bot-msg-bg: #18181b;
-  --accent: #d1fa31; /* Nano Banana Green */
-  --purple: #a855f7; /* Purple Accent */
-  --warning: #f59e0b;
-  --text-main: #ffffff;
-  --text-sub: #a1a1aa;
-  --border: #27272a;
-  --error: #ef4444;
-  --ok: #10b981;
-  --pi-color: #fdb927;
+    --bg: #09090b;
+    --chat-bg: #000000;
+    --card: #18181b;
+    --accent: #d1fa31;
+    --pi-gold: #fbbf24; /* لون مميز لشبكة باي */
+    --text-main: #ffffff;
+    --text-sub: #a1a1aa;
+    --border: #27272a;
+    --error: #ef4444;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--chat-bg);
-  color: var(--text-main);
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  overflow: hidden;
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--chat-bg); color: var(--text-main);
+    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
 }
 
 /* --- Landing Page --- */
 .landing-overlay {
-  position: fixed; inset: 0;
-  background: #000;
-  z-index: 9999;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 20px;
-  text-align: center;
-  transition: opacity 0.5s ease;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #000; z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px; text-align: center;
+    transition: opacity 0.5s ease;
 }
-.landing-content { max-width: 500px; animation: fadeUp 0.8s ease; }
-.landing-logo {
-  font-size: 80px; font-weight: 900; margin-bottom: 10px;
-  background: linear-gradient(135deg, #ffffff 20%, var(--purple) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.5));
-  letter-spacing: -3px;
-}
-.landing-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
-.landing-desc { color: var(--text-sub); line-height: 1.6; margin-bottom: 30px; font-size: 15px; }
-.feature-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
-.tag { background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); }
+.landing-logo { font-size: 60px; margin-bottom: 20px; text-shadow: 0 0 30px rgba(209, 250, 49, 0.4); }
+.landing-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
 .pi-login-btn {
-  background: var(--pi-color); color: #333;
-  border: none; padding: 14px 40px; border-radius: 30px;
-  font-weight: 800; font-size: 16px; cursor: pointer;
-  box-shadow: 0 0 20px rgba(253, 185, 39, 0.3);
-  transition: transform 0.2s;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: linear-gradient(135deg, #611f69 0%, #4a1452 100%); /* Pi Color Theme */
+    color: #fff; border: 1px solid #fbbf24;
+    padding: 14px 40px; border-radius: 30px;
+    font-weight: 700; font-size: 16px; cursor: pointer;
+    box-shadow: 0 0 20px rgba(97, 31, 105, 0.5);
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 20px;
 }
-.pi-login-btn:active { transform: scale(0.95); }
-.pi-icon { width: 24px; height: 24px; fill: #333; }
+.pi-login-btn svg { width: 24px; height: 24px; fill: #fbbf24; }
 
 /* --- Header --- */
 .header {
-  padding: 10px 16px;
-  background: rgba(9, 9, 11, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 100;
-  height: 60px;
-  flex-shrink: 0;
-  position: relative;
+    padding: 10px 16px; background: rgba(9, 9, 11, 0.95);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px; flex-shrink: 0; z-index: 100;
 }
-.header-title { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px; border-radius: 12px; transition: background 0.2s; }
-.header-title:active { background: rgba(255,255,255,0.05); }
-.header-chevron { width: 20px; height: 20px; fill: var(--text-sub); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.logo-circle {
-  width: 34px; height: 34px;
-  background: #1c241d; border: 1px solid #2d382e;
-  color: var(--accent); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 16px;
-  box-shadow: 0 0 15px rgba(209, 250, 49, 0.1);
+.user-info-display {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600;
+    color: var(--pi-gold);
+    background: rgba(251, 191, 36, 0.1);
+    padding: 4px 10px; border-radius: 20px;
+    border: 1px solid rgba(251, 191, 36, 0.2);
 }
-.header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: 0.5px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.status-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); display: inline-block; }
 .header-actions { display: flex; gap: 8px; }
-.lang-btn, .clear-btn {
-  background: var(--card); border: 1px solid var(--border);
-  color: var(--text-main); font-size: 11px;
-  cursor: pointer; padding: 6px 10px; border-radius: 20px;
-  font-weight: 600; transition: 0.2s; min-width: 40px;
+.gallery-btn-header {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text-main); padding: 6px 12px; border-radius: 20px;
+    font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px;
 }
-.lang-btn:active, .clear-btn:active { transform: scale(0.95); }
 
-/* --- Model Menu --- */
-.model-menu-overlay {
-  position: absolute; top: 60px; left: 0; right: 0;
-  background: rgba(9, 9, 11, 0.98); backdrop-filter: blur(20px);
-  z-index: 90; padding: 12px; display: none;
-  flex-direction: column; gap: 8px;
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  animation: curtainDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes curtainDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.model-option {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; background: var(--card);
-  border: 1px solid var(--border); border-radius: 14px;
-  color: var(--text-main); cursor: pointer; transition: 0.2s;
-}
-.model-option:active { transform: scale(0.98); }
-.model-option.active { border-color: var(--accent); background: #1c241d; box-shadow: 0 0 0 1px var(--accent); }
-.model-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
-.model-desc { font-size: 11px; color: var(--text-sub); }
-.check-icon { width: 20px; height: 20px; fill: var(--accent); opacity: 0; transition: 0.2s; }
-.model-option.active .check-icon { opacity: 1; }
-
-/* --- Chat Area --- */
-.chat-container {
-  flex: 1; overflow-y: auto; padding: 15px;
-  display: flex; flex-direction: column;
-  gap: 20px; scroll-behavior: smooth; padding-bottom: 20px;
-}
+/* --- Chat Area & Messages --- */
+.chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
 .message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
+.message.user { align-self: flex-end; } 
+.message.bot { align-self: flex-start; }
+.msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+.message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
+.message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
+
+/* Images */
+.msg-image { width: 100%; height: auto; display: block; }
+.download-bar {
+    padding: 10px; background: #111; display: flex; justify-content: center;
+    border-top: 1px solid #222;
+}
+.d-btn {
+    background: var(--accent); color: black; border: none;
+    padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 12px;
+    cursor: pointer; width: 100%;
+}
+
+/* --- Gallery Modal --- */
+.gallery-modal {
+    position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column;
+}
+.gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #111; }
+.gallery-grid { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.gallery-item { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.gallery-actions { display: flex; gap: 5px; padding: 5px; background: #222; }
+.g-btn { flex: 1; border: none; padding: 8px; font-size: 10px; cursor: pointer; color: white; border-radius: 4px; }
+.g-del { background: #ef4444; }
+.g-down { background: var(--accent); color: black; }
+
+/* --- Footer --- */
+.footer-container { background: #09090b; border-top: 1px solid var(--border); padding: 10px; display: flex; gap: 10px; }
+.input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 12px; color: white; outline: none; }
+.send-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-.message.user { align-self: flex-end; align-items: flex-end; }
-.message.bot { align-self: flex-start; align-items: flex-start; }
-.msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; position: relative; word-wrap: break-word; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-.message.user .msg-bubble { background: var(--user-msg-bg); color: #fff; border-bottom-left-radius: 4px; border-bottom-right-radius: 18px; }
-.message.bot .msg-bubble { background: transparent; padding: 0; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); width: 100%; max-width: 340px; }
-
-/* Image Styles */
-.image-wrapper { position: relative; width: 100%; min-height: 250px; background: #111; display: flex; align-items: center; justify-content: center; }
-.msg-image { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.5s ease; }
-.msg-image.loaded { opacity: 1; }
-
-/* Download Button */
-.download-btn-container {
-  padding: 10px; background: rgba(24, 24, 27, 0.9);
-  backdrop-filter: blur(5px); display: flex; justify-content: center;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-.btn-download-hd {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--accent); color: black;
-  text-decoration: none; padding: 10px 0; border-radius: 10px;
-  font-weight: 700; font-size: 13px; width: 100%;
-  justify-content: center; cursor: pointer; border: none;
-}
-.btn-download-hd:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn-download-hd svg { width: 16px; height: 16px; fill: black; }
-
-/* Loader */
-.blur-wave-container {
-  width: 280px; height: 280px; border-radius: 20px;
-  background: #000; position: relative; overflow: hidden;
-  border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-}
-.blur-wave-bg {
-  position: absolute; inset: -50%;
-  background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 60deg, transparent 120deg, var(--purple) 180deg, transparent 240deg, var(--accent) 300deg, transparent 360deg);
-  filter: blur(40px); opacity: 0.4; animation: rotateWave 3s linear infinite;
-}
-@keyframes rotateWave { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.blur-wave-text {
-  position: relative; z-index: 2; font-weight: 700; font-size: 14px;
-  color: var(--text-main); background: rgba(0,0,0,0.6);
-  padding: 10px 20px; border-radius: 30px;
-  backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
-  animation: pulseText 1.5s infinite ease-in-out;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-@keyframes pulseText { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
-
-/* Footer */
-.footer-container { background: #09090b; border-top: 1px solid var(--border); display: flex; flex-direction: column; padding-bottom: max(12px, env(safe-area-inset-bottom)); flex-shrink: 0; z-index: 100; position: relative; }
-.control-bar { padding: 8px 12px 0 12px; display: flex; justify-content: flex-start; gap: 10px; position: relative; overflow-x: auto; }
-.control-btn {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: 6px 12px;
-  color: var(--text-sub); font-size: 11px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s ease;
-  display: flex; align-items: center; gap: 8px;
-  min-width: 90px; justify-content: space-between;
-}
-.control-btn:active { transform: scale(0.98); }
-.control-btn svg.icon { width: 14px; height: 14px; fill: currentColor; }
-.control-btn svg.arrow { width: 12px; height: 12px; fill: var(--text-sub); transition: transform 0.2s; }
-.control-btn.open svg.arrow { transform: rotate(180deg); }
-.gallery-btn { justify-content: center; gap: 6px; min-width: auto; }
-
-/* Pi User Badge */
-.pi-user-badge {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(253, 185, 39, 0.1);
-  border: 1px solid var(--pi-color);
-  border-radius: 12px; padding: 6px 10px;
-  color: var(--pi-color); font-size: 11px; font-weight: 700;
-  white-space: nowrap;
-}
-.pi-user-badge svg { width: 12px; height: 12px; fill: var(--pi-color); }
-
-/* ✅ Aspect dropdown (يشتغل فعلياً) */
-.aspect-menu-dropdown {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 12px;
-  width: 200px;
-  background: rgba(24, 24, 27, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 6px;
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-  z-index: 200;
-  animation: fadeUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-.aspect-option {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 10px;
-  cursor: pointer; transition: 0.2s; color: var(--text-sub);
-}
-.aspect-option:hover { background: rgba(255,255,255,0.05); }
-.aspect-option.selected { background: #1c241d; color: var(--accent); border: 1px solid rgba(209, 250, 49, 0.2); }
-.aspect-option svg { width: 16px; height: 16px; fill: currentColor; }
-.aspect-info { display: flex; flex-direction: column; gap: 2px; }
-.aspect-label { font-size: 12px; font-weight: 700; }
-.aspect-ratio-text { font-size: 10px; opacity: 0.7; }
-
-/* Input */
-.input-row { padding: 8px 12px; display: flex; gap: 8px; align-items: flex-end; }
-.input-box {
-  flex: 1; background: var(--card); border: 1px solid var(--border);
-  border-radius: 20px; padding: 12px 16px; color: white; font-size: 14px;
-  max-height: 100px; overflow-y: auto; resize: none; outline: none;
-  line-height: 1.4; transition: border-color 0.2s;
-}
-.input-box:focus { border-color: var(--accent); }
-.send-btn {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--accent); color: black; border: none;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0;
-}
-.send-btn svg { width: 18px; height: 18px; fill: black; margin-right: 2px; }
-
-/* Empty State */
-.empty-state { text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-sub); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-.empty-logo { width: 60px; height: 60px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--accent); font-size: 26px; border: 1px solid var(--border); box-shadow: 0 0 20px rgba(0,0,0,0.3); }
-
-/* Gallery Modal */
-.gallery-modal { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; animation: fadeUp 0.3s ease; }
-.gallery-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(9, 9, 11, 0.95); backdrop-filter: blur(10px); }
-.gallery-title { font-size: 16px; font-weight: 700; color: #fff; }
-.close-gallery { background: none; border: none; color: var(--text-sub); font-size: 20px; cursor: pointer; }
-.gallery-grid { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.gallery-item { background: var(--card); border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--border); display: flex; flex-direction: column; }
-.gallery-img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; }
-.gallery-actions { display: flex; gap: 5px; padding: 8px; background: #1c1c1e; }
-.g-btn { flex: 1; border: none; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px; }
-.g-download { background: var(--accent); color: black; font-weight: 600; }
-.g-delete { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-
-/* ✅ Debug Error Card */
-.error-card {
-  padding: 18px; text-align: center;
-  background: rgba(39, 39, 42, 0.5);
-  display: flex; flex-direction: column; align-items: center;
-  gap: 10px; min-width: 250px;
-}
-.error-icon { width: 40px; height: 40px; margin-bottom: 2px; opacity: 0.9; }
-.error-title { font-weight: 800; font-size: 14px; color: #fff; }
-.error-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
-.retry-btn {
-  margin-top: 6px; background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.1); color: white;
-  padding: 8px 14px; border-radius: 12px; font-size: 12px;
-  cursor: pointer; transition: 0.2s;
-  display: flex; align-items: center; gap: 6px;
-}
-.retry-btn:hover { background: rgba(255,255,255,0.15); }
-.retry-btn svg { width: 14px; height: 14px; fill: white; }
-
-.debug-toggle {
-  margin-top: 6px;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.85);
-  padding: 7px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 12px;
-}
-.debug-box {
-  width: 100%;
-  margin-top: 8px;
-  text-align: left;
-  direction: ltr;
-  background: rgba(0,0,0,0.45);
-  border: 1px solid rgba(255,255,255,0.10);
-  padding: 10px;
-  border-radius: 12px;
-  display: none;
-  overflow: auto;
-  max-height: 180px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 11px;
-  color: rgba(255,255,255,0.9);
-}
-.debug-actions { display:flex; gap:8px; margin-top:8px; }
-.copy-btn {
-  flex:1;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: #fff;
-  padding: 8px 10px;
-  border-radius: 12px;
-  cursor:pointer;
-  font-size: 12px;
-}
-
-.error-card.rate-limit .error-icon { fill: var(--warning); }
-.error-card.rate-limit .error-title { color: var(--warning); }
-.error-card.generic .error-icon { fill: var(--error); }
-.error-card.generic .error-title { color: var(--error); }
-
-@media (max-width: 400px) {
-  .header h1 { font-size: 14px; }
-  .logo-circle { width: 30px; height: 30px; font-size: 14px; }
-  .msg-bubble { font-size: 13px; }
-  .blur-wave-container { width: 220px; height: 220px; }
-  .gallery-grid { grid-template-columns: 1fr; }
-}
 </style>
 </head>
-
 <body>
 
-<!-- Landing -->
-<div id="landingPage" class="landing-overlay">
-  <div class="landing-content">
-    <div class="landing-logo">Ai</div>
-    <div class="landing-title">AI Imagen</div>
-    <div class="landing-desc">
-      مرحباً بك في الجيل الجديد من توليد الصور.<br>
-      يجب تسجيل الدخول باستخدام محفظة Pi للمتابعة.
-    </div>
-    <div class="feature-tags">
-      <span class="tag">Flux Pro</span>
-      <span class="tag">Nano Banana Pro</span>
-      <span class="tag">High Speed</span>
+    <div id="landingPage" class="landing-overlay">
+        <div class="landing-logo">🍌</div>
+        <div class="landing-title">Nano Banana AI</div>
+        <div style="color:#888; margin-bottom:30px;">توليد صور بالذكاء الاصطناعي</div>
+        
+        <button class="pi-login-btn" onclick="authenticatePi()">
+            <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
+            تسجيل الدخول باستخدام Pi
+        </button>
     </div>
 
-    <!-- ✅ بدون Backticks -->
-    <button class="pi-login-btn" onclick="loginWithPi()">
-      <svg class="pi-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-      تسجيل دخول Pi
-    </button>
-  </div>
-</div>
-
-<!-- Gallery Modal -->
-<div id="galleryModal" class="gallery-modal">
-  <div class="gallery-header">
-    <div class="gallery-title" id="txtGalleryTitle">معرضي</div>
-    <button class="close-gallery" onclick="closeGallery()">✕</button>
-  </div>
-  <div class="gallery-grid" id="galleryGrid"></div>
-</div>
-
-<!-- Header -->
-<div class="header">
-  <div class="header-title" onclick="toggleModelMenu()">
-    <div class="logo-circle">G</div>
-    <div>
-      <h1 id="headerModelName">Nano Banana Pro</h1>
-      <div style="font-size: 11px; color: var(--accent); display:flex; align-items:center; gap:5px; margin-top:2px;">
-        <span class="status-dot"></span> <span id="txtOnline">متصل</span>
-      </div>
+    <div class="header">
+        <div style="display:flex; flex-direction:column;">
+            <div style="font-weight:700; font-size:16px;">Nano Banana</div>
+            <div id="piUserInfo" class="user-info-display" style="display:none;">
+                <span>@<span id="txtUsername">...</span></span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="gallery-btn-header" onclick="openGallery()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
+                معرضي
+            </button>
+        </div>
     </div>
-    <svg class="header-chevron" id="chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-  </div>
-  <div class="header-actions">
-    <button class="lang-btn" id="langBtn" onclick="toggleLanguage()">EN</button>
-    <button class="clear-btn" id="clearBtn" onclick="clearAllData()">مسح</button>
-  </div>
-</div>
 
-<div class="model-menu-overlay" id="modelMenu"></div>
-
-<!-- Chat -->
-<div class="chat-container" id="chatContainer">
-  <div class="empty-state" id="emptyState">
-    <div class="empty-logo">✨</div>
-    <p id="txtWelcome">أهلاً بك! أنا AI Imagen.<br>اكتب أي وصف وسأقوم بتحويله لصورة.</p>
-  </div>
-</div>
-
-<!-- Footer -->
-<div class="footer-container">
-  <div class="control-bar" id="controlBar">
-
-    <!-- ✅ ده الـ dropdown الحقيقي -->
-    <div class="aspect-menu-dropdown" id="aspectMenu"></div>
-
-    <!-- ✅ زر الأبعاد بدون Backticks -->
-    <button class="control-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu()">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span id="currentAspectIcon"></span>
-        <span id="currentAspectLabel">1:1</span>
-      </div>
-      <svg class="arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-    </button>
-
-    <button class="control-btn gallery-btn" onclick="openGallery()">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
-      <span id="txtGallery">معرضي</span>
-    </button>
-
-    <div id="piUserBadge" class="pi-user-badge" style="display:none;">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      <span id="piUsernameDisplay">User</span>
+    <div class="chat-container" id="chatContainer">
+        <div style="text-align:center; color:#555; margin-top:50px;" id="emptyMsg">
+            مرحباً! اكتب وصفاً للصورة التي تريد تخيلها.
+        </div>
     </div>
-  </div>
 
-  <div class="input-row">
-    <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-    </button>
-  </div>
-</div>
+    <div class="footer-container">
+        <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+    </div>
+
+    <div id="galleryModal" class="gallery-modal">
+        <div class="gallery-header">
+            <span style="font-weight:700; color:white;">معرض صوري</span>
+            <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:20px;">✕</button>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
 
 <script>
-/* =========================================
-   SUPABASE CONFIG (✅ صح)
-========================================= */
-const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM';
+    // تهيئة Pi SDK
+    const Pi = window.Pi;
+    let piUser = null;
 
-let supabaseClient = null;
-if (window.supabase?.createClient) {
-  supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-} else {
-  console.error("Supabase library not loaded");
-}
+    // استدعاء التهيئة فور التحميل
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            Pi.init({ version: "2.0", sandbox: false }); // اجعلها false عند النشر النهائي
+        } catch (e) { console.error("Pi Init Error:", e); }
+    });
 
-/* =========================================
-   TIMEOUT FETCH (✅ صح)
-========================================= */
-async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } catch (e) {
-    throw {
-      stage: "network",
-      status: 0,
-      message: e?.name === "AbortError" ? "Timeout" : "Fetch failed",
-      details: String(e?.message || e),
-      url
-    };
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-/* =========================================
-   BUILD REQUEST (✅ متوافق مع backend)
-========================================= */
-async function requestGenerateImage(payload) {
-  const prompt = String(payload?.prompt || "").trim();
-  if (!prompt) {
-    throw { stage: "client", status: 0, message: "Empty prompt before request", details: payload };
-  }
-
-  const params = new URLSearchParams({
-    prompt,
-    model: String(payload.model || "flux"),
-    width: String(payload.width || 1024),
-    height: String(payload.height || 1024),
-    seed: String(payload.seed || 1),
-  });
-
-  const url = `/.netlify/functions/generate?${params.toString()}`;
-  console.log("Generate URL:", url);
-
-  return await fetchWithTimeout(url, { method: "GET", headers: { "Accept": "*/*" } }, 30000);
-}
-
-/* =========================================
-   PARSE BASE64 RESPONSE (✅ متوافق 100%)
-========================================= */
-function isProbablyBase64(s) {
-  if (!s) return false;
-  const t = String(s).trim();
-  if (t.length < 64) return false;
-  // base64 عادةً بيكون فيه A-Z a-z 0-9 + / =
-  return /^[A-Za-z0-9+/=\s]+$/.test(t);
-}
-
-async function parseImageResponse(response) {
-  const ct = (response.headers.get('content-type') || 'image/jpeg').toLowerCase();
-  
-  const text = await response.text().catch(() => "");
-  if (!response.ok) {
-    throw {
-      stage: "backend",
-      status: response.status,
-      message: "Backend not ok",
-      details: text?.slice?.(0, 800) || text
-    };
-  }
-  
-  const base64 = (text || "").trim();
-  if (!isProbablyBase64(base64)) {
-    throw {
-      stage: "backend",
-      status: response.status,
-      message: "Non-base64 response",
-      details: base64.slice(0, 400)
-    };
-  }
-  
-  return { base64, contentType: ct.includes('image/') ? ct : 'image/jpeg' };
-}
-  // Text base64
-  const text = await response.text();
-  if (!isProbablyBase64(text)) {
-    // غالباً ده نص خطأ من الفنكشن
-    throw { stage: "backend", status: response.status, message: "Non-base64 response", details: text?.slice?.(0, 600) || text };
-  }
-  return { base64: text.trim(), contentType: ct.includes('image/') ? ct : 'image/jpeg' };
-}
-
-/* =========================================
-   Send Message
-========================================= */
-async function sendMessage(manualPrompt = null) {
-  const text = manualPrompt || promptInput.value.trim();
-  if (!text || isGenerating) return;
-
-  if (!currentUser?.uid) {
-    alert("يرجى تسجيل الدخول أولاً.");
-    return;
-  }
-
-  if (!manualPrompt) {
-    promptInput.value = '';
-    promptInput.style.height = 'auto';
-    emptyState.style.display = 'none';
-    isGenerating = true;
-    sendBtn.disabled = true;
-    promptInput.blur();
-    renderUserMessage(text);
-    saveToHistory('user', text);
-  } else {
-    isGenerating = true;
-    sendBtn.disabled = true;
-  }
-
-  const loaderId = renderLoader('generating');
-
-  // Debug context
-  const reqMeta = {
-    model: currentModel,
-    width: currentWidth,
-    height: currentHeight,
-    ratio: currentRatioId
-  };
-
-  try {
-    let finalPrompt = text;
-
-    if (isArabic(text)) {
-      updateLoaderText(loaderId, 'translating');
-      finalPrompt = await translateToEnglish(text);
-      updateLoaderText(loaderId, 'generating');
+    // 1. تسجيل الدخول
+    async function authenticatePi() {
+        try {
+            const scopes = ['username']; // نحتاج اسم المستخدم فقط للربط
+            const auth = await Pi.authenticate(scopes, onIncompletePayment);
+            
+            if(auth.user) {
+                piUser = auth.user;
+                document.getElementById('landingPage').style.display = 'none';
+                document.getElementById('piUserInfo').style.display = 'flex';
+                document.getElementById('txtUsername').textContent = piUser.username;
+                
+                // حفظ التوكن مؤقتاً إذا احتجت له (اختياري)
+                localStorage.setItem('pi_user', JSON.stringify(piUser));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("فشل تسجيل الدخول. يرجى المحاولة من داخل متصفح Pi.");
+        }
     }
 
-    const seed = Math.floor(Math.random() * 1000000);
-
-    // payload compatible with new backend
-    const payload = {
-      prompt: finalPrompt,
-      model: currentModel,
-      width: currentWidth,
-      height: currentHeight,
-      seed,
-      uid: currentUser.uid,
-      username: currentUser.username || ''
-    };
-
-    const response = await requestGenerateImage(payload);
-
-    if (response.status === 429) {
-      throw { stage: "backend", status: 429, message: "Rate limit", request: payload };
-    }
-    if (!response.ok) {
-      const peek = await response.text().catch(() => "");
-      throw { stage: "backend", status: response.status, message: "Backend not ok", details: peek?.slice?.(0, 600), request: payload };
+    function onIncompletePayment(payment) {
+        // معالجة المدفوعات غير المكتملة إذا أضفت دفع مستقبلاً
+        console.log("Incomplete Payment found", payment);
     }
 
-    const { base64, contentType } = await parseImageResponse(response);
+    // 2. إرسال البرومبت (Generate)
+    async function sendPrompt() {
+        const input = document.getElementById('promptInput');
+        const text = input.value.trim();
+        if (!text || !piUser) return;
 
-    // base64 -> blob
-    let bytes;
-    try {
-      bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    } catch (e) {
-      throw { stage: "decode", status: response.status, message: "atob failed (base64 invalid)", details: String(e), request: payload };
+        // إضافة رسالة المستخدم
+        addMessage(text, 'user');
+        input.value = '';
+        
+        // مؤشر التحميل
+        const loadingId = addMessage('جاري الإنشاء... (قد يستغرق 30 ثانية)', 'bot', true);
+
+        try {
+            // ملاحظة: نرسل اسم المستخدم للباك اند لربط الصورة به
+            const response = await fetch('/.netlify/functions/generate-and-save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: text,
+                    username: piUser.username, // المفتاح السري هنا: اسم المستخدم
+                    uid: piUser.uid
+                })
+            });
+
+            if (!response.ok) throw new Error('Server Error');
+
+            const data = await response.json();
+            
+            // إزالة مؤشر التحميل وعرض الصورة
+            document.getElementById(loadingId).remove();
+            
+            if(data.imageUrl) {
+                addBotImage(data.imageUrl, data.imageId);
+            } else {
+                addMessage('حدث خطأ في استجابة السيرفر.', 'bot');
+            }
+
+        } catch (error) {
+            document.getElementById(loadingId).innerHTML = '<div style="color:red">فشل الإنشاء. حاول مرة أخرى.</div>';
+            console.error(error);
+        }
     }
-    const blob = new Blob([bytes], { type: contentType || 'image/jpeg' });
 
-    // save
-    const finalImageUrl = await saveToSupabase(blob, finalPrompt);
+    // 3. فتح المعرض (جلب الصور الخاصة بالمستخدم فقط)
+    async function openGallery() {
+        if(!piUser) { alert("يجب تسجيل الدخول أولاً"); return; }
+        
+        const modal = document.getElementById('galleryModal');
+        const grid = document.getElementById('galleryGrid');
+        modal.style.display = 'flex';
+        grid.innerHTML = '<div style="color:white; text-align:center;">جاري التحميل...</div>';
 
-    removeLoader(loaderId);
-    renderBotMessage(finalImageUrl, true);
+        try {
+            const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
+            const images = await res.json();
 
-  } catch (error) {
-  console.error("GEN ERROR:", error);
-  removeLoader(loaderId);
-  
-  const errInfo = {
-    stage: error?.stage || (error?.name === 'AbortError' ? 'backend' : 'unknown'),
-    status: error?.status,
-    message: error?.message || (error?.name === 'AbortError' ? 'Request timeout' : 'Unknown error'),
-    details: error?.details || error,
-    request: error?.request || null,
-    // ✅ لو fetchWithTimeout بيرمي error فيه url خليها تظهر
-    url: error?.url || null
-  };
-  
-  renderDebugErrorCard(errInfo, text);
-} finally {
-    isGenerating = false;
-    sendBtn.disabled = false;
-  }
-}
+            grid.innerHTML = '';
+            if(images.length === 0) {
+                grid.innerHTML = '<div style="color:#777; padding:20px;">لا توجد صور محفوظة.</div>';
+                return;
+            }
 
-/* =========================================
-   Input autosize + Enter send
-========================================= */
-promptInput.addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = (this.scrollHeight) + 'px';
-  if (this.value === '') this.style.height = 'auto';
-});
+            images.forEach(img => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    <img src="${img.url}" style="width:100%; aspect-ratio:1; object-fit:cover;">
+                    <div class="gallery-actions">
+                        <button class="g-btn g-down" onclick="forceDownload('${img.url}')">تحميل</button>
+                        <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">حذف</button>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
 
-promptInput.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-});
+        } catch (e) {
+            grid.innerHTML = '<div style="color:red">فشل تحميل المعرض</div>';
+        }
+    }
 
-/* =========================================
-   Init ratio from storage
-========================================= */
-(function initRatio(){
-  const saved = localStorage.getItem('nanoRatio');
-  if (saved && RATIOS.some(r => r.id === saved)) {
-    currentRatioId = saved;
-    const r = RATIOS.find(x => x.id === saved);
-    currentWidth = r.w;
-    currentHeight = r.h;
-  }
-})();
+    // 4. حذف الصورة
+    async function deleteImage(imageId, btn) {
+        if(!confirm('هل أنت متأكد من حذف هذه الصورة؟')) return;
+        
+        const parent = btn.closest('.gallery-item');
+        parent.style.opacity = '0.5';
+
+        try {
+            const res = await fetch('/.netlify/functions/delete-image', {
+                method: 'POST',
+                body: JSON.stringify({ id: imageId, username: piUser.username })
+            });
+            
+            if(res.ok) {
+                parent.remove();
+            } else {
+                alert("فشل الحذف");
+                parent.style.opacity = '1';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // 5. التحميل داخل Pi Browser
+    // Pi Browser في بعض الأحيان يمنع التنزيل المباشر، لذا نستخدم خدعة Blob
+    async function forceDownload(url) {
+        const btn = event.target;
+        const oldText = btn.innerText;
+        btn.innerText = '...';
+        
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = `Nano-Pi-${Date.now()}.jpg`;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(a);
+                btn.innerText = oldText;
+            }, 100);
+            
+        } catch (e) {
+            alert('فشل التحميل التلقائي. سيتم فتح الصورة في نافذة جديدة.');
+            window.open(url, '_blank');
+            btn.innerText = oldText;
+        }
+    }
+
+    // دوال مساعدة للواجهة
+    function addMessage(content, type, isLoading = false) {
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        if(isLoading) div.id = 'msg-' + Date.now();
+        div.innerHTML = `<div class="msg-bubble">${content}</div>`;
+        document.getElementById('chatContainer').appendChild(div);
+        document.getElementById('emptyMsg').style.display = 'none';
+        return div.id;
+    }
+
+    function addBotImage(url, id) {
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.innerHTML = `
+            <div class="msg-bubble">
+                <img src="${url}" class="msg-image" loading="lazy">
+                <div class="download-bar">
+                    <button class="d-btn" onclick="forceDownload('${url}')">تحميل الصورة</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('chatContainer').appendChild(div);
+    }
 </script>
-
 </body>
 </html>
