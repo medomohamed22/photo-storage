@@ -528,7 +528,9 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
        SUPABASE INIT
        ========================================= */
     const supabaseUrl = 'https://jtbxdymviqmfhffixmat.supabase.co';
-    const supabaseKey = 'Sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
+    // تنبيه: استبدل النص التالي بمفتاح ANON KEY الصحيح من Supabase
+    // Settings -> API -> anon public
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnhkeW12aXFtZmhmZml4bWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDA5OTUsImV4cCI6MjA4NjcxNjk5NX0.tzhiOph4Q-GPOIrm1KfvxlnqygI4qXdUCzXlmsJiPjM'; 
     
     //FIXED: Renamed variable to avoid conflict with 'supabase' library object
     let supabaseClient = null;
@@ -618,7 +620,7 @@ html[dir="ltr"] .aspect-menu-dropdown { left: 12px; right: auto; }
 
     /* --- Supabase Storage Logic --- */
     async function saveToSupabase(blob, prompt) {
-        if (!supabaseClient) return URL.createObjectURL(blob); // Safety fallback
+        if (!supabaseClient) return URL.createObjectURL(blob); 
 
         try {
             const fileName = `nano_${Date.now()}.jpg`;
