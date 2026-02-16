@@ -1,812 +1,260 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>لوحة الأدمن | طلبات برو</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIWay Admin Dashboard</title>
+    <style>
+        :root {
+            --bg: #09090b;
+            --card-bg: #18181b;
+            --accent: #fbbf24; /* Gold */
+            --purple: #611f69;
+            --text: #ffffff;
+            --text-sub: #a1a1aa;
+            --border: #27272a;
+            --success: #10b981;
+        }
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
+        body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 
-    :root{
-      --bg:#0b0720;
-      --bg2:#120a2e;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.08);
-      --stroke:rgba(255,255,255,.10);
+        /* Login Screen */
+        #loginOverlay {
+            position: fixed; inset: 0; background: #000; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: var(--card-bg); padding: 40px; border-radius: 20px;
+            border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center;
+            box-shadow: 0 0 50px rgba(97, 31, 105, 0.2);
+        }
+        .login-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: var(--accent); }
+        .inp {
+            width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px;
+            border: 1px solid var(--border); background: #000; color: white; outline: none; text-align: center;
+        }
+        .btn-login {
+            width: 100%; padding: 12px; background: var(--purple); color: var(--accent);
+            font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-login:hover { background: #4a1550; }
 
-      --txt:#f3f4f6;
-      --muted:rgba(243,244,246,.72);
+        /* Dashboard */
+        .dashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+        .brand { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, var(--purple), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logout-btn { background: #333; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
 
-      --p:#6d28d9;
-      --p2:#8b5cf6;
-      --y:#f6c453;
-      --y2:#f59e0b;
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent); }
+        .card-title { color: var(--text-sub); font-size: 14px; margin-bottom: 10px; }
+        .card-value { font-size: 28px; font-weight: bold; }
+        .card-sub { font-size: 12px; color: var(--success); margin-top: 5px; }
 
-      --ok:#22c55e;
-      --bad:#ef4444;
-      --info:#60a5fa;
-    }
+        /* Table */
+        .table-container { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
+        .table-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .search-inp { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: #000; color: white; width: 250px; text-align: right; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { color: var(--text-sub); font-weight: 600; background: rgba(0,0,0,0.2); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .user-badge { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 32px; height: 32px; background: var(--purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--accent); font-size: 12px; }
 
-    body{
-      font-family:Tajawal,system-ui;
-      color:var(--txt);
-      background:
-        radial-gradient(900px 500px at 5% -10%, rgba(109,40,217,.20), transparent 60%),
-        radial-gradient(900px 500px at 95% 0%, rgba(246,196,83,.14), transparent 60%),
-        linear-gradient(180deg, var(--bg), var(--bg2));
-    }
-
-    .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.06));
-      border:1px solid var(--stroke);
-      border-radius:18px;
-      box-shadow: 0 18px 70px rgba(0,0,0,.25);
-      backdrop-filter: blur(10px);
-    }
-
-    .soft{
-      background: var(--card2);
-      border:1px solid var(--stroke);
-      border-radius:16px;
-    }
-
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace}
-
-    .badge{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      display:inline-flex;gap:8px;align-items:center;
-      color:var(--txt);
-      white-space:nowrap;
-    }
-
-    .btn{
-      padding:10px 12px;
-      border-radius:14px;
-      font-weight:800;
-      font-size:12px;
-      user-select:none;
-      transition:.15s;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color:var(--txt);
-    }
-    .btn:active{transform:scale(.98)}
-    .btnP{background: linear-gradient(135deg, rgba(109,40,217,.92), rgba(139,92,246,.75)); border-color: rgba(109,40,217,.35)}
-    .btnY{background: linear-gradient(135deg, rgba(246,196,83,.95), rgba(245,158,11,.75)); border-color: rgba(245,158,11,.35); color:#1f2937}
-    .btnG{background: linear-gradient(135deg, rgba(34,197,94,.92), rgba(22,163,74,.75)); border-color: rgba(34,197,94,.35)}
-    .btnR{background: linear-gradient(135deg, rgba(239,68,68,.92), rgba(220,38,38,.75)); border-color: rgba(239,68,68,.35)}
-    .btnB{background: linear-gradient(135deg, rgba(96,165,250,.92), rgba(37,99,235,.75)); border-color: rgba(96,165,250,.35)}
-    .btnW{background: rgba(255,255,255,.08)}
-    .btnS{background: rgba(17,24,39,.55)}
-
-    .input, select{
-      width:100%;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color:var(--txt);
-      border-radius:14px;
-      padding:10px 12px;
-      font-size:13px;
-      outline:none;
-      transition:.15s;
-    }
-    .input:focus, select:focus{
-      border-color: rgba(139,92,246,.55);
-      box-shadow: 0 0 0 4px rgba(109,40,217,.18);
-    }
-    ::placeholder{color:rgba(243,244,246,.55)}
-
-    table{border-collapse:separate;border-spacing:0;width:100%}
-    th,td{
-      border-bottom:1px solid rgba(255,255,255,.10);
-      padding:10px 10px;
-      vertical-align:top;
-      white-space:nowrap;
-    }
-    th{
-      position:sticky; top:0;
-      background: rgba(255,255,255,.06);
-      backdrop-filter: blur(10px);
-      text-align:right;
-      z-index:1;
-    }
-
-    .tableWrap{
-      overflow:auto;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-    }
-
-    .muted{color:var(--muted)}
-    .kpi{font-weight:900;font-size:22px;letter-spacing:.3px}
-    .statCard{display:flex;flex-direction:column;gap:6px;min-height:120px;justify-content:space-between}
-    .statValueRow{display:flex;align-items:baseline;gap:8px}
-    .seg{display:flex; gap:8px; flex-wrap:wrap;align-items:center}
-    .divider{height:1px;background: rgba(255,255,255,.10);margin: 10px 0}
-  </style>
+        .refresh-btn {
+            background: var(--accent); color: #000; border: none; padding: 8px 15px; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px;
+        }
+        .loading { opacity: 0.7; pointer-events: none; }
+    </style>
 </head>
+<body>
 
-<body class="pb-24">
-
-<header class="sticky top-0 z-50 px-3 pt-3">
-  <div class="max-w-6xl mx-auto glass p-4 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-2xl soft flex items-center justify-center">🛡️</div>
-      <div>
-        <div class="font-extrabold">لوحة الأدمن — طلبات برو</div>
-        <div class="text-[11px] muted">إدارة الطلبات + السحب + إحصائيات</div>
-      </div>
-    </div>
-    <div class="flex gap-2 flex-wrap">
-      <button class="btn btnW" onclick="refreshAll()">تحديث الكل</button>
-      <button class="btn btnS" onclick="logout()">خروج</button>
-    </div>
-  </div>
-</header>
-
-<div class="max-w-6xl mx-auto p-3 md:p-4 space-y-4">
-
-  <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-    <div class="glass p-4 statCard">
-      <div class="muted text-sm">إجمالي الطلبات</div>
-      <div id="statOrders" class="kpi">—</div>
-      <div class="text-[11px] muted mt-1">كل الحالات</div>
+    <div id="loginOverlay">
+        <div class="login-box">
+            <div class="login-title">🔒 دخول المدير</div>
+            <input type="password" id="adminPass" class="inp" placeholder="كلمة المرور السرية">
+            <button class="btn-login" onclick="login()">دخول</button>
+            <div id="loginMsg" style="color: red; margin-top: 10px; font-size: 12px;"></div>
+        </div>
     </div>
 
-    <div class="glass p-4 statCard">
-      <div class="muted text-sm">Pi من الطلبات</div>
-      <div id="statOrdersPi" class="kpi mono" style="color: var(--y)">—</div>
-      <div class="text-[11px] muted mt-1">pricing_snapshot.total_pi</div>
+    <div class="dashboard" id="dashboard">
+        <div class="header">
+            <div class="brand">AIWay Admin</div>
+            <div style="display:flex; gap:10px;">
+                <button class="refresh-btn" onclick="fetchData(this)">تحديث ↻</button>
+                <button class="logout-btn" onclick="logout()">خروج</button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="card">
+                <div class="card-title">إجمالي المبيعات (USD)</div>
+                <div class="card-value" id="totalUSD">$0.00</div>
+                <div class="card-sub">المبلغ الكلي</div>
+            </div>
+            <div class="card" style="--accent: #611f69;">
+                <div class="card-title">إجمالي المبيعات (Pi)</div>
+                <div class="card-value" id="totalPi">0.00 π</div>
+                <div class="card-sub">عملات باي المستلمة</div>
+            </div>
+            <div class="card" style="--accent: #10b981;">
+                <div class="card-title">صافي الأرباح (100% Markup)</div>
+                <div class="card-value" id="totalProfit" style="color: #10b981;">$0.00</div>
+                <div class="card-sub">نصف إجمالي الدولار</div>
+            </div>
+            <div class="card" style="--accent: #3b82f6;">
+                <div class="card-title">المستخدمين</div>
+                <div class="card-value" id="totalUsers">0</div>
+                <div class="card-sub">المسجلين في الموقع</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <span style="font-weight:700;">سجل المستخدمين</span>
+                <input type="text" class="search-inp" placeholder="بحث..." onkeyup="filterTable(this.value)">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>المستخدم</th>
+                        <th>الرصيد الحالي</th>
+                        <th>دفع (USD)</th>
+                        <th>دفع (Pi)</th>
+                        <th>تاريخ التسجيل</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
     </div>
-
-    <div class="glass p-4 statCard">
-      <div class="muted text-sm">طلبات السحب</div>
-      <div id="statWithdraws" class="kpi" style="color: var(--info)">—</div>
-      <div class="text-[11px] muted mt-1">كل الحالات</div>
-    </div>
-
-    <div class="glass p-4 statCard">
-      <div class="muted text-sm">Pi مسحوب</div>
-      <div id="statWithdrawPi" class="kpi mono" style="color: var(--p2)">—</div>
-      <div class="text-[11px] muted mt-1">withdrawals.amount</div>
-    </div>
-
-    <div class="glass p-4 statCard">
-      <div class="muted text-sm">أرباح التجار</div>
-      <div class="statValueRow">
-        <div id="statMerchantProfitEgp" class="kpi" style="color: var(--ok)">—</div>
-        <div class="muted text-sm">ج</div>
-      </div>
-      <div class="text-[12px]">
-        <span class="muted">≈</span>
-        <b id="statMerchantProfitPi" class="mono" style="color: var(--p2)">—</b>
-        <span class="muted">Pi</span>
-      </div>
-      <div class="text-[11px] muted">إجمالي أرباح التجار</div>
-    </div>
-
-    <div class="glass p-4 statCard">
-      <div class="muted text-sm">أرباح الموقع</div>
-      <div class="statValueRow">
-        <div id="statSiteProfitEgp" class="kpi" style="color: var(--y)">—</div>
-        <div class="muted text-sm">ج</div>
-      </div>
-      <div class="text-[12px] mt-1">
-        <span class="muted">≈</span>
-        <b id="statSiteProfitPi" class="mono" style="color: var(--p2)">—</b>
-        <span class="muted">Pi</span>
-      </div>
-      <div class="text-[11px] muted mt-1">platform_fee لكل طلب</div>
-    </div>
-  </div>
-
-  <div class="glass p-4 space-y-3">
-    <div class="seg">
-      <span class="badge">📦 الطلبات</span>
-
-      <div class="w-full md:w-56">
-        <select id="ordersFilter" class="input" onchange="loadOrders()">
-          <option value="all">كل الحالات</option>
-          <option value="pending">pending</option>
-          <option value="accepted">accepted</option>
-          <option value="shipping">shipping</option>
-          <option value="arrived">arrived</option>
-          <option value="delivered">delivered</option>
-          <option value="canceled">canceled</option>
-        </select>
-      </div>
-
-      <div class="w-full md:w-80">
-        <input id="searchUser" class="input" placeholder="بحث بالعميل / الدليفري..." oninput="loadOrders()"/>
-      </div>
-
-      <button class="btn btnP" onclick="loadOrders()">تحديث الطلبات</button>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="seg">
-      <span class="badge">💸 السحب</span>
-
-      <div class="w-full md:w-56">
-        <select id="wdFilter" class="input" onchange="loadWithdraws()">
-          <option value="all">كل الحالات</option>
-          <option value="pending">pending</option>
-          <option value="approved">approved</option>
-          <option value="paid">paid</option>
-          <option value="rejected">rejected</option>
-        </select>
-      </div>
-
-      <button class="btn btnY" onclick="loadWithdraws()">تحديث السحب</button>
-    </div>
-  </div>
-
-  <div class="glass p-4">
-    <div class="flex items-center justify-between mb-3 gap-2">
-      <div>
-        <b class="text-base">الطلبات</b>
-        <div class="text-[11px] muted mt-1">آخر 200 طلب حسب الفلتر</div>
-      </div>
-      <div class="flex gap-2 flex-wrap">
-        <button class="btn btnW" onclick="loadOrders()">تحديث</button>
-      </div>
-    </div>
-
-    <div class="tableWrap">
-      <table class="text-sm">
-        <thead>
-          <tr>
-            <th>الوقت</th>
-            <th>المنتج</th>
-            <th>النوع</th>
-            <th>العميل</th>
-            <th>الدليفري</th>
-            <th>EGP</th>
-            <th>Pi</th>
-            <th>ربح التاجر</th>
-            <th>الحالة</th>
-            <th>إجراء</th>
-          </tr>
-        </thead>
-        <tbody id="ordersTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="glass p-4">
-    <div class="flex items-center justify-between mb-3 gap-2">
-      <div>
-        <b class="text-base">طلبات السحب (Pi)</b>
-        <div class="text-[11px] muted mt-1">آخر 200 طلب حسب الفلتر</div>
-      </div>
-      <div class="flex gap-2 flex-wrap">
-        <button class="btn btnW" onclick="loadWithdraws()">تحديث</button>
-      </div>
-    </div>
-
-    <div class="tableWrap">
-      <table class="text-sm">
-        <thead>
-          <tr>
-            <th>الوقت</th>
-            <th>الدليفري</th>
-            <th>المبلغ (Pi)</th>
-            <th>عنوان محفظة Pi</th>
-            <th>الحالة</th>
-            <th>إجراء</th>
-          </tr>
-        </thead>
-        <tbody id="withdrawTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
 
 <script>
-/* ========== CONFIG ========== */
-const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // تخزين كلمة المرور مؤقتاً في الجلسة لتحديث البيانات دون طلبها مجدداً
+    let sessionPass = localStorage.getItem('admin_pass') || '';
 
-/* ========== AUTH (LOGIN ONLY) ========== */
-async function guardLogin(){
-  try{
-    const { data, error } = await db.auth.getSession();
-    if(error) throw error;
-    if(!data?.session){
-      location.href = './login.html';
-      return false;
+    // --- Login Logic ---
+    async function login() {
+        const password = document.getElementById('adminPass').value;
+        const msg = document.getElementById('loginMsg');
+        
+        if(!password) { msg.textContent = "ادخل كلمة المرور"; return; }
+
+        msg.textContent = "جاري الاتصال...";
+        
+        // نجرب جلب البيانات للتأكد من كلمة المرور
+        const success = await fetchData(null, password);
+        
+        if (success) {
+            localStorage.setItem('admin_pass', password);
+            sessionPass = password;
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        } else {
+            msg.textContent = "كلمة المرور غير صحيحة";
+        }
     }
-    return true;
-  }catch(e){
-    console.error(e);
-    try{ await db.auth.signOut(); }catch{}
-    location.href = './login.html';
-    return false;
-  }
-}
 
-async function logout(){
-  await db.auth.signOut();
-  location.href = './login.html';
-}
-
-db.auth.onAuthStateChange((event) => {
-  if(event === 'SIGNED_OUT') location.href = './login.html';
-});
-
-/* ========== HELPERS ========== */
-function esc(s){
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
-}
-function fmtDate(ts){
-  try{ return new Date(ts).toLocaleString('ar-EG'); }catch{ return ts; }
-}
-function badgeStatus(s){
-  const base = 'badge';
-  const cls =
-    s==='pending' ? 'border-yellow-400/30 text-yellow-200 bg-yellow-500/10' :
-    s==='accepted' ? 'border-green-400/30 text-green-200 bg-green-500/10' :
-    s==='shipping' ? 'border-orange-400/30 text-orange-200 bg-orange-500/10' :
-    s==='arrived' ? 'border-blue-400/30 text-blue-200 bg-blue-500/10' :
-    s==='approved' ? 'border-purple-400/30 text-purple-200 bg-purple-500/10' :
-    s==='paid' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
-    s==='rejected' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
-    s==='delivered' ? 'border-emerald-400/30 text-emerald-200 bg-emerald-500/10' :
-    s==='canceled' ? 'border-red-400/30 text-red-200 bg-red-500/10' :
-    'border-white/10 text-white/80 bg-white/5';
-  return `<span class="${base} ${cls}">${esc(s)}</span>`;
-}
-function num(v, d=0){
-  const n = Number(v);
-  return Number.isFinite(n) ? n : d;
-}
-function pick(obj, keys, fallback=null){
-  for(const k of keys){
-    if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
-  }
-  return fallback;
-}
-
-/* ===== Orders helpers (حسب أعمدة orders عندك) ===== */
-function getPricingSnapshot(order){
-  const raw = pick(order, ['pricing_snapshot','pricing_sr','pricing_snap','pricing'], null);
-  if(!raw) return {};
-  if(typeof raw === 'object') return raw;
-  try{ return JSON.parse(raw); }catch{ return {}; }
-}
-function getOrderProductName(o){ return pick(o, ['product_name','product','product_r','product_title','item_name'], '-'); }
-function getOrderType(o){ return pick(o, ['order_type','order_typ','type'], 'any'); }
-function getCustomerLabel(o){ return pick(o, ['customer_pi_username','customer_username','customer_user','customer','username','pi_username'], '-'); }
-function getDeliveryLabel(o){ return pick(o, ['delivery_id','delivery_username','delivery_user','delivery_u','delivery'], '-'); }
-
-function calcMerchantProfitEgp(order){
-  const price = num(pick(order, ['price'], 0), 0);
-  if(price > 0) return price;
-
-  const total = num(pick(order, ['total_price','total_pric'], 0), 0);
-  const deliveryFee = num(pick(order, ['delivery_fee','delivery_f'], 0), 0);
-  const platformFee = num(pick(order, ['platform_fee','platform_'], 10), 10);
-
-  const fallback = total - deliveryFee - platformFee;
-  return fallback > 0 ? fallback : Math.max(0, total - platformFee);
-}
-function sumMerchantProfitPi(orders){
-  let totalPi = 0;
-  (orders || []).forEach(o=>{
-    const snap = getPricingSnapshot(o);
-    const piEgp = num(snap.pi_egp, 0);
-    if(piEgp > 0) totalPi += (calcMerchantProfitEgp(o) / piEgp);
-  });
-  return totalPi;
-}
-function sumSiteProfitPi(orders){
-  let totalPi = 0;
-  (orders || []).forEach(o=>{
-    const snap = getPricingSnapshot(o);
-    const piEgp = num(snap.pi_egp, 0);
-    const platformFee = num(pick(o, ['platform_fee','platform_'], 10), 10);
-    if(piEgp > 0) totalPi += (platformFee / piEgp);
-  });
-  return totalPi;
-}
-
-/* ========== STATS (تعتمد على الكاش) ========== */
-let __cacheOrders = [];
-let __cacheWithdraws = [];
-
-async function loadStats(){
-  const orders = __cacheOrders || [];
-  const wds = __cacheWithdraws || [];
-
-  const totalOrders = orders.length;
-  const ordersPi = orders.reduce((sum,o)=>{
-    const snap = getPricingSnapshot(o);
-    return sum + num(snap.total_pi, 0);
-  }, 0);
-
-  const totalWithdraws = wds.length;
-  const withdrawPi = wds.reduce((sum,w)=> sum + num(pick(w,['amount_pi','amount'],0),0), 0);
-
-  const merchantProfitEgp = orders.reduce((sum,o)=> sum + calcMerchantProfitEgp(o), 0);
-  const merchantProfitPi = sumMerchantProfitPi(orders);
-
-  const siteProfitEgp = orders.reduce((sum,o)=> sum + num(pick(o,['platform_fee','platform_'],10),10), 0);
-  const siteProfitPi = sumSiteProfitPi(orders);
-
-  document.getElementById('statOrders').innerText = totalOrders;
-  document.getElementById('statOrdersPi').innerText = ordersPi.toFixed(3);
-  document.getElementById('statWithdraws').innerText = totalWithdraws;
-  document.getElementById('statWithdrawPi').innerText = withdrawPi.toFixed(3);
-
-  document.getElementById('statMerchantProfitEgp').innerText = merchantProfitEgp.toFixed(0);
-  document.getElementById('statMerchantProfitPi').innerText = merchantProfitPi.toFixed(4);
-
-  document.getElementById('statSiteProfitEgp').innerText = siteProfitEgp.toFixed(0);
-  document.getElementById('statSiteProfitPi').innerText = siteProfitPi.toFixed(4);
-}
-
-/* ========== ORDERS ========== */
-async function loadOrders(){
-  const statusFilter = document.getElementById('ordersFilter').value;
-  const q = document.getElementById('searchUser').value.trim().toLowerCase();
-
-  let query = db.from('orders')
-    .select('*')
-    .order('created_at',{ascending:false})
-    .limit(200);
-
-  if(statusFilter !== 'all') query = query.eq('status', statusFilter);
-
-  const { data, error } = await query;
-  const tb = document.getElementById('ordersTable');
-
-  if(error){
-    console.error(error);
-    tb.innerHTML = `<tr><td colspan="10" class="p-3 text-center" style="color:#fca5a5">خطأ في جلب الطلبات: ${esc(error.message)}</td></tr>`;
-    return;
-  }
-
-  const list = (data||[]);
-  __cacheOrders = list;
-
-  const filtered = list.filter(o=>{
-    if(!q) return true;
-    const a = String(getCustomerLabel(o) || '').toLowerCase();
-    const b = String(getDeliveryLabel(o) || '').toLowerCase();
-    const p = String(getOrderProductName(o) || '').toLowerCase();
-    return a.includes(q) || b.includes(q) || p.includes(q);
-  });
-
-  tb.innerHTML = filtered.map(o=>{
-    const snap = getPricingSnapshot(o);
-    const pi = num(snap.total_pi, 0);
-    const egp = num(pick(o,['total_price','total_pric'],0), 0);
-    const merchantEgp = calcMerchantProfitEgp(o);
-
-    const id = o.id;
-
-    return `
-      <tr>
-        <td class="muted">${esc(fmtDate(o.created_at))}</td>
-        <td><b>${esc(getOrderProductName(o))}</b></td>
-        <td class="muted">${esc(getOrderType(o))}</td>
-        <td>${esc(getCustomerLabel(o))}</td>
-        <td>${esc(getDeliveryLabel(o))}</td>
-        <td class="mono">${egp.toFixed(2)}</td>
-        <td class="mono" style="color:var(--y)">${pi ? pi.toFixed(3) : '—'}</td>
-        <td class="mono" style="color:var(--ok)">${merchantEgp.toFixed(2)} ج</td>
-        <td>${badgeStatus(o.status)}</td>
-        <td>
-          <div class="flex gap-1 flex-wrap">
-            <button class="btn btnB" onclick="setOrderStatus('${id}','shipping')">shipping</button>
-            <button class="btn btnB" onclick="setOrderStatus('${id}','arrived')">arrived</button>
-            <button class="btn btnG" onclick="setOrderStatus('${id}','delivered')">delivered</button>
-            <button class="btn btnR" onclick="setOrderStatus('${id}','canceled')">cancel</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('') || `<tr><td colspan="10" class="p-3 text-center muted">لا توجد بيانات</td></tr>`;
-
-  loadStats();
-}
-
-async function setOrderStatus(id, st){
-  const ok = await Swal.fire({
-    icon:'question',
-    title:'تأكيد',
-    text:`تغيير حالة الطلب إلى: ${st} ؟`,
-    showCancelButton:true,
-    confirmButtonText:'نعم',
-    cancelButtonText:'إلغاء',
-    background: '#0b0720',
-    color: '#f3f4f6',
-    confirmButtonColor: '#6d28d9',
-    cancelButtonColor: '#334155'
-  });
-  if(!ok.isConfirmed) return;
-
-  const { error } = await db.from('orders').update({ status: st }).eq('id', id);
-  if(error){
-    console.error(error);
-    return Swal.fire('خطأ', error.message, 'error');
-  }
-  Swal.fire({
-    icon:'success',
-    title:'تم',
-    text:'تم تحديث الحالة',
-    timer:1100,
-    showConfirmButton:false,
-    background:'#0b0720',
-    color:'#f3f4f6'
-  });
-  loadOrders();
-}
-
-/* ========== WITHDRAWALS (حسب أعمدة جدول withdrawals في صورك) ========== */
-/**
- * withdrawals columns (حسب صورك):
- * id, created_at, pi_user_id, username, amount, wallet_address, txid, status,
- * approved_by, approved_at, rejected_reason
- */
-
-function getWdUserId(w){ return pick(w, ['pi_user_id','user_id'], null); }
-function getWdUsername(w){ return pick(w, ['username','pi_username'], '-'); }
-function getWdAmount(w){ return num(pick(w,['amount'],0), 0); }
-function getWdWallet(w){ return pick(w, ['wallet_address','wallet_ad','wallet'], '-'); }
-
-async function loadWithdraws(){
-  const st = document.getElementById('wdFilter').value;
-
-  let q = db.from('withdrawals')
-    .select('*')
-    .order('created_at',{ascending:false})
-    .limit(200);
-
-  if(st !== 'all') q = q.eq('status', st);
-
-  const { data, error } = await q;
-  const tb = document.getElementById('withdrawTable');
-
-  if(error){
-    console.error(error);
-    tb.innerHTML = `<tr><td colspan="6" class="p-3 text-center" style="color:#fca5a5">خطأ في جلب السحب: ${esc(error.message)}</td></tr>`;
-    return;
-  }
-
-  const list = (data||[]);
-  __cacheWithdraws = list;
-
-  tb.innerHTML = list.map(w=>{
-    const amountPi = getWdAmount(w).toFixed(3);
-    const wallet = getWdWallet(w);
-
-    const actions = `
-      <div class="flex gap-1 flex-wrap">
-        ${w.status==='pending' ? `<button class="btn btnP" onclick="approveWithdraw('${w.id}')">موافقة</button>` : ''}
-        ${w.status==='approved' ? `<button class="btn btnY" onclick="markPaid('${w.id}')">تم الدفع</button>` : ''}
-        ${(w.status==='pending' || w.status==='approved') ? `<button class="btn btnR" onclick="rejectWithdraw('${w.id}')">رفض</button>` : ''}
-        <button class="btn btnW" onclick="copyText('${esc(wallet)}')">نسخ العنوان</button>
-      </div>
-    `;
-
-    return `
-      <tr>
-        <td class="muted">${esc(fmtDate(w.created_at))}</td>
-        <td><b>${esc(getWdUsername(w))}</b></td>
-        <td class="mono" style="color:var(--y)">${amountPi} Pi</td>
-        <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">${esc(wallet)}</td>
-        <td>${badgeStatus(w.status)}</td>
-        <td>${actions}</td>
-      </tr>
-    `;
-  }).join('') || `<tr><td colspan="6" class="p-3 text-center muted">لا توجد بيانات</td></tr>`;
-
-  loadStats();
-}
-
-function copyText(t){
-  navigator.clipboard?.writeText(t);
-  Swal.fire({
-    icon:'success',
-    title:'تم النسخ',
-    timer:900,
-    showConfirmButton:false,
-    background:'#0b0720',
-    color:'#f3f4f6'
-  });
-}
-
-/* ====== APPROVE (يكتب approved_by/approved_at فقط) ====== */
-async function approveWithdraw(id){
-  const ok = await Swal.fire({
-    icon:'question',
-    title:'موافقة على السحب؟',
-    text:'سيتم تحويل الحالة إلى approved',
-    showCancelButton:true,
-    confirmButtonText:'موافقة',
-    cancelButtonText:'إلغاء',
-    background:'#0b0720',
-    color:'#f3f4f6',
-    confirmButtonColor:'#6d28d9',
-    cancelButtonColor:'#334155'
-  });
-  if(!ok.isConfirmed) return;
-
-  const { data: ses } = await db.auth.getSession();
-  const who = ses?.session?.user?.email || ses?.session?.user?.id || 'admin';
-
-  const { error } = await db.from('withdrawals').update({
-    status:'approved',
-    approved_by: who,
-    approved_at: new Date().toISOString(),
-    rejected_reason: null
-  }).eq('id', id);
-
-  if(error) return Swal.fire('خطأ', error.message, 'error');
-
-  Swal.fire({
-    icon:'success',
-    title:'تمت الموافقة',
-    timer:1100,
-    showConfirmButton:false,
-    background:'#0b0720',
-    color:'#f3f4f6'
-  });
-  loadWithdraws();
-}
-
-/* ====== MARK PAID
-   - يخصم amount من delivery_wallet.balance_pi
-   - يكتب status='paid' و txid (اختياري)
-   ملاحظة: delivery_wallet حسب صورك فيه:
-   delivery_user_id (PK) + delivery_username + balance_pi + updated_at
-===== */
-async function markPaid(id){
-  try{
-    const { data: w, error: e1 } = await db.from('withdrawals').select('*').eq('id', id).single();
-    if(e1) throw e1;
-    if(!w) throw new Error('Withdraw not found');
-    if(w.status !== 'approved') return Swal.fire('تنبيه','لازم يكون approved الأول','warning');
-
-    const amt = getWdAmount(w);
-    if(amt <= 0) return Swal.fire('خطأ','amount غير صحيح','error');
-
-    const userId = getWdUserId(w);
-    const username = getWdUsername(w);
-
-    const { value: txid } = await Swal.fire({
-      title:'TXID (اختياري)',
-      input:'text',
-      inputPlaceholder:'اكتب txid لو موجود',
-      showCancelButton:true,
-      confirmButtonText:'متابعة',
-      cancelButtonText:'إلغاء',
-      background:'#0b0720',
-      color:'#f3f4f6'
-    });
-    if(txid === undefined) return;
-
-    const ok = await Swal.fire({
-      icon:'warning',
-      title:'تأكيد تم الدفع',
-      html:`سيتم خصم <b class="mono">${amt.toFixed(3)} Pi</b> من رصيد الدليفري <b>${esc(username)}</b>`,
-      showCancelButton:true,
-      confirmButtonText:'تم الدفع',
-      cancelButtonText:'إلغاء',
-      background:'#0b0720',
-      color:'#f3f4f6',
-      confirmButtonColor:'#f6c453',
-      cancelButtonColor:'#334155'
-    });
-    if(!ok.isConfirmed) return;
-
-    // 1) اقرأ محفظة الدليفري
-    let walQuery = db.from('delivery_wallet').select('*').limit(1);
-    if(userId) walQuery = walQuery.eq('delivery_user_id', userId);
-    else walQuery = walQuery.eq('delivery_username', username);
-
-    const { data: wal, error: e2 } = await walQuery.maybeSingle();
-    if(e2) throw e2;
-    if(!wal) return Swal.fire('خطأ','محفظة الدليفري غير موجودة في delivery_wallet','error');
-
-    const balance = num(pick(wal, ['balance_pi','balance_p','balance'], 0), 0);
-    if(balance < amt) return Swal.fire('خطأ','رصيد الدليفري غير كافي','error');
-
-    // 2) خصم الرصيد
-    let updWal = db.from('delivery_wallet').update({
-      balance_pi: (balance - amt),
-      updated_at: new Date().toISOString()
-    });
-    if(userId) updWal = updWal.eq('delivery_user_id', userId);
-    else updWal = updWal.eq('delivery_username', username);
-
-    const { error: e3 } = await updWal;
-    if(e3) throw e3;
-
-    // 3) تحديث السحب إلى paid
-    const { error: e4 } = await db.from('withdrawals').update({
-      status:'paid',
-      txid: (txid || null)
-    }).eq('id', id);
-    if(e4) throw e4;
-
-    Swal.fire({
-      icon:'success',
-      title:'تم تسجيل الدفع',
-      text:'تم خصم الرصيد وتحديث الحالة',
-      background:'#0b0720',
-      color:'#f3f4f6'
-    });
-    loadWithdraws();
-
-  }catch(e){
-    console.error(e);
-    Swal.fire('خطأ', e?.message || 'حصل خطأ', 'error');
-  }
-}
-
-/* ====== REJECT (يكتب rejected_reason فقط) ====== */
-async function rejectWithdraw(id){
-  const { value: reason } = await Swal.fire({
-    title:'سبب الرفض',
-    input:'text',
-    inputPlaceholder:'مثال: العنوان غير صحيح',
-    showCancelButton:true,
-    confirmButtonText:'رفض',
-    cancelButtonText:'إلغاء',
-    background:'#0b0720',
-    color:'#f3f4f6',
-    confirmButtonColor:'#ef4444',
-    cancelButtonColor:'#334155'
-  });
-  if(reason === undefined) return;
-
-  const { error } = await db.from('withdrawals').update({
-    status:'rejected',
-    rejected_reason: (reason || null)
-  }).eq('id', id);
-
-  if(error) return Swal.fire('خطأ', error.message, 'error');
-
-  Swal.fire({
-    icon:'info',
-    title:'تم الرفض',
-    timer:1100,
-    showConfirmButton:false,
-    background:'#0b0720',
-    color:'#f3f4f6'
-  });
-  loadWithdraws();
-}
-
-/* ========== INIT ========== */
-async function refreshAll(){
-  await Promise.allSettled([loadOrders(), loadWithdraws()]);
-  await loadStats();
-}
-
-(async ()=>{
-  const ok = await guardLogin();
-  if(!ok) return;
-  await refreshAll();
-})();
+    async function logout() {
+        localStorage.removeItem('admin_pass');
+        window.location.reload();
+    }
+
+    // --- Fetch Data from Backend API ---
+    async function fetchData(btn = null, passOverride = null) {
+        if(btn) btn.classList.add('loading');
+        
+        const passToSend = passOverride || sessionPass;
+
+        try {
+            const res = await fetch('/.netlify/functions/get-admin-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: passToSend })
+            });
+
+            if (res.status === 401) return false; // Wrong Password
+            if (!res.ok) throw new Error("Server Error");
+
+            const data = await res.json();
+            renderDashboard(data);
+            return true;
+
+        } catch (err) {
+            console.error(err);
+            if(!passOverride) alert("فشل الاتصال بالسيرفر");
+            return false;
+        } finally {
+            if(btn) btn.classList.remove('loading');
+        }
+    }
+
+    // --- Render Logic ---
+    function renderDashboard(data) {
+        const { users, stats } = data;
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+
+        // Stats Cards
+        document.getElementById('totalUSD').textContent = `$${stats.totalUSD.toFixed(2)}`;
+        document.getElementById('totalPi').textContent = `${stats.totalPi.toFixed(4)} π`;
+        document.getElementById('totalProfit').textContent = `$${(stats.totalUSD / 2).toFixed(2)}`;
+        document.getElementById('totalUsers').textContent = stats.totalUsers;
+
+        // Table
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="user-badge">
+                        <div class="avatar">${user.username ? user.username.substring(0,2).toUpperCase() : '??'}</div>
+                        <div>${user.username || 'Unknown'}</div>
+                    </div>
+                </td>
+                <td style="color: var(--accent); font-weight:bold;">${user.token_balance || 0}</td>
+                <td>$${(user.total_usd_spent || 0).toFixed(2)}</td>
+                <td>${(user.total_pi_spent || 0).toFixed(4)} π</td>
+                <td style="color: var(--text-sub); font-size:12px;">
+                    ${new Date(user.created_at).toLocaleDateString('en-GB')}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- Search ---
+    function filterTable(query) {
+        const rows = document.querySelectorAll('#usersTableBody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+        });
+    }
+
+    // Check Session on Load
+    window.onload = () => {
+        if (sessionPass) {
+            // محاولة الدخول المباشر إذا كانت كلمة المرور محفوظة
+            fetchData(null, sessionPass).then(success => {
+                if(success) {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                }
+            });
+        }
+    };
 </script>
 
 </body>
 </html>
-```0
