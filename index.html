@@ -8,13 +8,13 @@
 <style>
 /* --- Design System & New Colors --- */
 :root {
-    --bg: #050505; /* أسود أعمق */
+    --bg: #050505; 
     --chat-bg: #000000;
     --card: #121212;
     
-    /* الألوان المستوحاة من اللوجو (بنفسجي -> برتقالي) */
-    --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #f59e0b 100%);
-    --primary-glow: rgba(124, 58, 237, 0.5);
+    /* Gradient from Logo (Purple to Orange/Gold) */
+    --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #f59e0b 100%);
+    --text-gradient: linear-gradient(135deg, #a78bfa 0%, #fbbf24 100%);
     
     --pi-purple: #7c3aed;
     --pi-gold: #f59e0b;
@@ -41,7 +41,7 @@ body {
     align-items: center; justify-content: center;
     padding: 20px; text-align: center;
     transition: opacity 0.5s ease;
-    background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%); /* خلفية خفيفة جداً */
+    background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
 }
 
 .landing-lang-btn {
@@ -51,20 +51,16 @@ body {
     font-weight: 700; z-index: 10; backdrop-filter: blur(10px);
 }
 
-/* New Logo Image Style */
-.landing-logo-img {
-    max-width: 280px;
-    width: 80%;
-    height: auto;
-    margin-bottom: 20px;
-    filter: drop-shadow(0 0 30px var(--primary-glow)); /* توهج بنفسجي حول اللوجو */
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+/* Updated Text Logo Style */
+.landing-logo-text {
+    font-size: 64px; 
+    font-weight: 900; 
+    margin-bottom: 10px;
+    background: var(--text-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.4));
+    letter-spacing: -2px;
 }
 
 .landing-desc { color: #ccc; margin-bottom: 40px; font-size: 15px; line-height: 1.6; max-width: 300px; }
@@ -79,7 +75,7 @@ body {
 }
 
 .f-images {
-    background: var(--primary-gradient); /* استخدام التدرج */
+    background: var(--primary-gradient);
     color: white;
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
 }
@@ -94,12 +90,12 @@ body {
 }
 
 .pi-login-btn {
-    background: var(--primary-gradient); /* التدرج الجديد */
+    background: var(--primary-gradient);
     color: white;
     border: none;
     padding: 14px 50px; border-radius: 30px;
     font-weight: 800; font-size: 16px; cursor: pointer;
-    box-shadow: 0 0 30px var(--primary-glow);
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
     display: flex; align-items: center; gap: 10px;
     transition: transform 0.2s;
 }
@@ -119,6 +115,7 @@ body {
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
 
+/* Token Badge in Header (Updated to π) */
 .header-cost-badge {
     background: var(--pi-gold); color: #000;
     font-size: 11px; font-weight: 800;
@@ -155,7 +152,7 @@ body {
 
 .msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
 
-/* User Bubble: Purple Gradient */
+/* User Bubble */
 .message.user .msg-bubble { 
     background: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
     color: #fff; border: 1px solid rgba(124, 58, 237, 0.3);
@@ -176,9 +173,11 @@ body {
     cursor: pointer; display: flex; align-items: center; gap: 6px;
 }
 
-/* Animation */
+/* Animation & Image Placeholders */
 .loading-box {
-    width: 280px; height: 280px;
+    width: 280px; 
+    /* Default aspect ratio placeholder to avoid resizing */
+    aspect-ratio: 1/1; 
     border-radius: 20px;
     position: relative; overflow: hidden;
     background: #000; border: 1px solid var(--border);
@@ -199,8 +198,20 @@ body {
 @keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-.msg-image { width: 100%; height: auto; display: block; opacity: 0; transition: opacity 1.5s ease; }
+/* Image Style: Fixed smooth transition */
+.image-container {
+    position: relative;
+    width: 100%;
+    /* This ensures box doesn't shrink then grow. JS sets min-height/ratio */
+    min-height: 280px; 
+    background: #000;
+}
+.msg-image { 
+    width: 100%; height: auto; display: block; 
+    opacity: 0; transition: opacity 0.8s ease-in; /* Smooth fade in */
+}
 .msg-image.loaded { opacity: 1; }
+
 .download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
 .d-btn { background: var(--pi-gold); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
@@ -337,8 +348,7 @@ body {
     <div id="landingPage" class="landing-overlay">
         <button class="landing-lang-btn" onclick="toggleLanguage()" id="landingLangBtn">AR</button>
 
-        <img src="119680.jpg" alt="AIWay Logo" class="landing-logo-img">
-
+        <div class="landing-logo-text">AiWay</div>
         <div class="landing-desc" id="txtLandingDesc">Generate professional images using state-of-the-art AI technologies</div>
         
         <div class="features-title" id="txtFeaturesTitle">Site Supports</div>
@@ -441,7 +451,7 @@ body {
     </div>
 
 <script>
-    // --- Config (Updated Models) ---
+    // --- Config ---
     const MODELS = [
         { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google', cost: 1 },
         { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Quality', cost: 5 },
@@ -469,7 +479,7 @@ body {
             delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
             noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
             sec: "ث", noImage: "مفيش صورة للتحميل",
-            buy: "شراء", tokens: "توكين", pi: "Pi", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
+            buy: "شراء", tokens: "توكين", pi: "π", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
             cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
             login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
             dlTitle: "تم نسخ رابط الصورة! 📋",
@@ -481,7 +491,7 @@ body {
             delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
             noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
             sec: "s", noImage: "No image to download",
-            buy: "Buy", tokens: "Tokens", pi: "Pi", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
+            buy: "Buy", tokens: "Tokens", pi: "π", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
             cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
             login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
             dlTitle: "Link Copied! 📋",
@@ -544,7 +554,6 @@ body {
         document.getElementById('txtFeaturesTitle').textContent = t.features;
         document.getElementById('txtSoon').textContent = t.soon;
         
-        // Modal Texts
         document.getElementById('txtDlTitle').textContent = t.dlTitle;
         document.getElementById('txtDlDesc').innerHTML = t.dlDesc.replace(/\n/g, '<br>');
 
@@ -771,6 +780,7 @@ body {
             if (!response.ok) { triggerCooldown(20); throw new Error('Server Error'); }
 
             const data = await response.json();
+            // Remove Loader
             document.getElementById(loadingId).remove();
             
             if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
@@ -821,13 +831,20 @@ body {
         scrollToBottom();
     }
 
+    // --- Updated Bot Image Logic (Smooth Sizing) ---
     function addBotImage(url) {
         const t = TRANSLATIONS[currentLang];
         const div = document.createElement('div');
         div.className = 'message bot';
+        
+        // Calculate aspect ratio for the container
+        let aspectRatio = currentWidth / currentHeight;
+        
         div.innerHTML = `
             <div class="msg-bubble">
-                <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
+                <div class="image-container" style="aspect-ratio: ${aspectRatio};">
+                    <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
+                </div>
                 <div class="download-bar">
                     <button class="d-btn" onclick="forceDownload('${url}', this)">${t.download}</button>
                 </div>
@@ -842,11 +859,9 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- Updated Download Logic (Copy & Show Modal) ---
+    // --- Download Logic ---
     async function forceDownload(url, btn) {
-        // Prepare the download URL
         const downloadUrl = url + "?download=";
-        
         try {
             await navigator.clipboard.writeText(downloadUrl);
             showInfoModal(downloadUrl);
@@ -859,8 +874,7 @@ body {
                 document.execCommand('copy');
                 showInfoModal(downloadUrl);
             } catch (err) {
-                console.error('Fallback copy failed', err);
-                alert("Failed to copy link. Please manually open: " + downloadUrl);
+                alert("Failed to copy link.");
             }
             document.body.removeChild(textArea);
         }
@@ -885,7 +899,6 @@ body {
             grid.innerHTML = '';
             if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
             
-            // Loop images and force render buttons for EACH
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
