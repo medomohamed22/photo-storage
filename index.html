@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
@@ -25,7 +25,7 @@ body {
     margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--chat-bg); color: var(--text-main);
     display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-    direction: rtl; /* Fixed Direction as requested */
+    direction: rtl; 
 }
 
 /* --- Landing Page --- */
@@ -38,7 +38,6 @@ body {
     transition: opacity 0.5s ease;
 }
 
-/* Lang Button on Landing Page */
 .landing-lang-btn {
     position: absolute; top: 20px; right: 20px;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
@@ -57,7 +56,6 @@ body {
 
 .landing-desc { color: #aaa; margin-bottom: 40px; font-size: 15px; line-height: 1.6; max-width: 300px; }
 
-/* Features Section (New) */
 .features-title { font-size: 14px; color: var(--text-sub); margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
 .features-container { display: flex; gap: 15px; justify-content: center; margin-bottom: 50px; }
 
@@ -67,14 +65,12 @@ body {
     border: none; cursor: default; position: relative; min-width: 110px;
 }
 
-/* Active Feature (AI Images) */
 .f-images {
     background: var(--pi-gold); color: white;
     box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
-/* Inactive Feature (AI Video) */
 .f-video {
     background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3);
     border: 1px solid rgba(255,255,255,0.1);
@@ -110,7 +106,6 @@ body {
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
 
-/* Header Cost Badge */
 .header-cost-badge {
     background: var(--pi-gold); color: #000;
     font-size: 11px; font-weight: 800;
@@ -149,7 +144,6 @@ body {
 .message.user .msg-bubble { background: #27272a; color: #fff; border-bottom-left-radius: 4px; }
 .message.bot .msg-bubble { background: transparent; padding: 0; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px; }
 
-/* No Token Alert */
 .no-token-card {
     background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: 20px; padding: 20px; text-align: center;
@@ -185,13 +179,8 @@ body {
 @keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 
-/* Image Style */
-.msg-image { 
-    width: 100%; height: auto; display: block; 
-    opacity: 0; transition: opacity 1.5s ease; 
-}
+.msg-image { width: 100%; height: auto; display: block; opacity: 0; transition: opacity 1.5s ease; }
 .msg-image.loaded { opacity: 1; }
-
 .download-bar { padding: 12px; background: #141414; display: flex; justify-content: center; border-top: 1px solid #222; }
 .d-btn { background: var(--accent); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
@@ -265,33 +254,38 @@ body {
 .buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
 .buy-icon { width: 24px; height: 24px; fill: var(--accent); }
 
-/* --- Gallery Styling --- */
+/* --- Gallery Styling (Updated for Overlay) --- */
 .gallery-grid { 
-    flex: 1; overflow-y: auto; padding: 12px; 
+    flex: 1; overflow-y: auto; /* Enable Scrolling */
+    padding: 10px; 
     display: grid; grid-template-columns: repeat(2, 1fr); 
-    gap: 12px; align-content: start;
+    gap: 10px; align-content: start;
 }
 .gallery-item { 
     position: relative; border-radius: 12px; overflow: hidden; 
-    border: 1px solid var(--border); background: #18181b;
-    display: flex; flex-direction: column; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    border: 1px solid var(--border); 
+    aspect-ratio: 1/1; /* Force Square */
 }
 .gallery-item img {
-    width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
+    width: 100%; height: 100%; object-fit: cover; display: block;
 }
+/* Overlay Actions */
 .gallery-actions { 
-    display: flex; gap: 5px; padding: 8px; background: #111; border-top: 1px solid #222;
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 10px; 
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+    display: flex; gap: 8px; 
+    z-index: 5;
 }
 .g-btn { 
-    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
+    flex: 1; border: none; padding: 6px 0; font-size: 11px; 
     cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
     display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
-.g-del { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.g-del:active { background: rgba(239, 68, 68, 0.3); }
+.g-del { background: rgba(239, 68, 68, 0.5); color: white; }
+.g-del:active { background: rgba(239, 68, 68, 0.8); }
 .g-down { background: var(--accent); color: black; }
-.g-down:active { opacity: 0.8; }
+.g-down:active { opacity: 0.9; }
 
 /* Save Help */
 .save-help-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -828,6 +822,7 @@ body {
             grid.innerHTML = '';
             if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
             
+            // Loop images and force render buttons for EACH
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
