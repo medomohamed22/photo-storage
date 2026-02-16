@@ -6,8 +6,10 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
   
-  // نستقبل بيانات الدفع + معرف المستخدم لزيادة رصيده
-  const { paymentId, txid, pi_uid, tokenAmount } = JSON.parse(event.body);
+  // نستقبل بيانات الدفع + بيانات المبلغ (دولار وباي) لتخزينها
+  // usdAmount: قيمة الباقة بالدولار (1, 5, 10)
+  // pAmount: المبلغ الذي دفعه المستخدم بعملة باي
+  const { paymentId, txid, pi_uid, tokenAmount, usdAmount, pAmount } = JSON.parse(event.body);
   
   if (!paymentId || !txid || !pi_uid) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing payment data' }) };
@@ -30,26 +32,46 @@ exports.handler = async (event) => {
     if (response.ok) {
       const data = await response.json();
       
-      // 2. زيادة رصيد المستخدم في Supabase
-      // نستخدم RPC أو استعلام مباشر. هنا سنستخدم استعلام مباشر للتبسيط
-      // نجلب الرصيد الحالي أولاً (أو ننشئ المستخدم لو مش موجود)
+      // 2. تحديث بيانات المستخدم في Supabase (رصيد + إحصائيات)
+      
+      // جلب البيانات الحالية للمستخدم
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('token_balance')
+        .select('token_balance, total_usd_spent, total_pi_spent')
         .eq('pi_uid', pi_uid)
         .single();
 
-      let newBalance = parseInt(tokenAmount || 0);
-      
+      // تحويل القيم لأرقام لضمان الجمع الصحيح
+      const tokensToAdd = parseInt(tokenAmount || 0);
+      const usdToAdd = parseFloat(usdAmount || 0);
+      const piToAdd = parseFloat(pAmount || 0);
+
       if (user) {
-        newBalance += (user.token_balance || 0);
-        await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
+        // تحديث مستخدم موجود: نجمع الجديد على القديم
+        const newBalance = (user.token_balance || 0) + tokensToAdd;
+        const newTotalUsd = (user.total_usd_spent || 0) + usdToAdd;
+        const newTotalPi = (user.total_pi_spent || 0) + piToAdd;
+
+        await supabase.from('users').update({ 
+            token_balance: newBalance,
+            total_usd_spent: newTotalUsd,
+            total_pi_spent: newTotalPi
+        }).eq('pi_uid', pi_uid);
+
+        return { statusCode: 200, body: JSON.stringify({ completed: true, newBalance, data }) };
+
       } else {
-        // مستخدم جديد
-        await supabase.from('users').insert({ pi_uid: pi_uid, token_balance: newBalance });
+        // مستخدم جديد: ننشئ سجل جديد بالقيم الحالية
+        await supabase.from('users').insert({ 
+            pi_uid: pi_uid, 
+            token_balance: tokensToAdd,
+            total_usd_spent: usdToAdd,
+            total_pi_spent: piToAdd
+        });
+
+        return { statusCode: 200, body: JSON.stringify({ completed: true, newBalance: tokensToAdd, data }) };
       }
 
-      return { statusCode: 200, body: JSON.stringify({ completed: true, newBalance, data }) };
     } else {
       const error = await response.json();
       return { statusCode: response.status, body: JSON.stringify({ error }) };
