@@ -254,35 +254,49 @@ body {
 .buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
 .buy-icon { width: 24px; height: 24px; fill: var(--accent); }
 
-/* --- Gallery Styling --- */
+/* --- Gallery Styling (Fix Overlap) --- */
 .gallery-grid { 
-    flex: 1; overflow-y: auto; padding: 10px; 
-    display: grid; grid-template-columns: repeat(2, 1fr); 
-    gap: 10px; align-content: start;
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 12px; 
+    padding-bottom: 50px; /* Space for scrolling */
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    grid-auto-rows: min-content; /* Ensure rows fit content */
+    gap: 15px; /* Better Spacing */
+    align-content: start;
 }
 .gallery-item { 
-    position: relative; border-radius: 12px; overflow: hidden; 
+    position: relative; 
+    border-radius: 12px; 
+    overflow: hidden; 
     border: 1px solid var(--border); 
     aspect-ratio: 1/1; 
+    background: #18181b;
+    display: flex;
+    flex-direction: column;
 }
 .gallery-item img {
     width: 100%; height: 100%; object-fit: cover; display: block;
 }
+/* Overlay Actions */
 .gallery-actions { 
     position: absolute; bottom: 0; left: 0; right: 0;
     padding: 10px; 
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 100%);
     display: flex; gap: 8px; 
     z-index: 5;
+    backdrop-filter: blur(2px);
 }
 .g-btn { 
-    flex: 1; border: none; padding: 6px 0; font-size: 11px; 
+    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
     cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
     display: flex; align-items: center; justify-content: center; transition: 0.2s;
+    text-transform: uppercase; letter-spacing: 0.5px;
 }
-.g-del { background: rgba(239, 68, 68, 0.5); color: white; }
+.g-del { background: rgba(239, 68, 68, 0.6); color: white; border: 1px solid rgba(239, 68, 68, 0.3); }
 .g-del:active { background: rgba(239, 68, 68, 0.8); }
-.g-down { background: var(--accent); color: black; }
+.g-down { background: var(--accent); color: black; border: 1px solid var(--accent); }
 .g-down:active { opacity: 0.9; }
 
 /* Download Help Modal Styling */
@@ -326,7 +340,7 @@ body {
     <div class="header">
         <div class="header-title-area" onclick="toggleModelMenu()">
             <div style="font-weight:700; font-size:16px; display:flex; align-items:center;" id="headerModelName">
-                Nano Banana
+                Imagen 4
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s; margin-inline-start:5px;"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
@@ -406,10 +420,10 @@ body {
     </div>
 
 <script>
-    // --- Config ---
+    // --- Config (Updated Models) ---
     const MODELS = [
-        { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative', cost: 1 },
-        { id: 'gptimage', name: 'Chat GPT Image', desc: 'Coherent', cost: 5 },
+        { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google', cost: 1 },
+        { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Quality', cost: 5 },
         { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2 },
         { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 4 }
     ];
@@ -646,7 +660,7 @@ body {
         });
     }
 
-        async function buyTokens(pkg, piAmount) {
+    async function buyTokens(pkg, piAmount) {
         if (!piUser) { alert("Login first"); return; }
         try {
             const paymentData = {
@@ -660,14 +674,13 @@ body {
                     if (!res.ok) throw new Error("Approval Failed");
                 },
                 onReadyForServerCompletion: async (paymentId, txid) => {
-                    // التعديل هنا: إرسال username مع باقي البيانات
                     const res = await fetch('/.netlify/functions/complete', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            paymentId,
-                            txid,
+                        method: 'POST', 
+                        body: JSON.stringify({ 
+                            paymentId, 
+                            txid, 
                             pi_uid: piUser.uid,
-                            username: piUser.username, // <--- تم إضافة هذا السطر
+                            username: piUser.username,
                             tokenAmount: pkg.tokens,
                             usdAmount: pkg.usd,
                             pAmount: paymentData.amount
@@ -682,9 +695,9 @@ body {
                 onCancel: (paymentId) => { console.log("Cancelled"); },
                 onError: (error) => { console.error("Error", error); }
             });
-        } catch (e) { console.error(e);
-            alert("Payment Failed"); }
+        } catch (e) { console.error(e); alert("Payment Failed"); }
     }
+
     function updateCooldownUI() {
         const now = Date.now();
         const btn = document.getElementById('sendBtn');
@@ -811,15 +824,12 @@ body {
     // --- Updated Download Logic (Copy & Show Modal) ---
     async function forceDownload(url, btn) {
         // Prepare the download URL
-        // We append ?download= to prompt immediate download in Chrome
         const downloadUrl = url + "?download=";
         
         try {
-            // Attempt 1: Modern Clipboard API
             await navigator.clipboard.writeText(downloadUrl);
             showInfoModal(downloadUrl);
         } catch (err) {
-            // Attempt 2: Fallback for older WebViews
             const textArea = document.createElement("textarea");
             textArea.value = downloadUrl;
             document.body.appendChild(textArea);
@@ -854,6 +864,7 @@ body {
             grid.innerHTML = '';
             if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
             
+            // Loop images and force render buttons for EACH
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
@@ -895,4 +906,4 @@ body {
     });
 </script>
 </body>
-</html>
+</html>```
