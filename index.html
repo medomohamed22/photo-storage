@@ -115,7 +115,7 @@ body {
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
 
-/* Token Badge in Header (Updated to π) */
+/* Token Badge in Header */
 .header-cost-badge {
     background: var(--pi-gold); color: #000;
     font-size: 11px; font-weight: 800;
@@ -156,8 +156,8 @@ body {
     font-size: 14px;
     line-height: 1.5;
     word-wrap: break-word;
-    display: flex; /* Added for bot messages to stack image and button */
-    flex-direction: column; /* Stack vertically */
+    display: flex; 
+    flex-direction: column; 
 }
 
 /* User Bubble */
@@ -192,7 +192,6 @@ body {
 /* Animation & Image Placeholders */
 .loading-box {
     width: 280px; 
-    /* Default aspect ratio placeholder to avoid resizing */
     aspect-ratio: 1/1; 
     border-radius: 20px;
     position: relative; overflow: hidden;
@@ -218,13 +217,12 @@ body {
 .image-container {
     position: relative;
     width: 100%;
-    /* This ensures box doesn't shrink then grow. JS sets min-height/ratio */
     min-height: 280px; 
     background: #000;
 }
 .msg-image { 
     width: 100%; height: auto; display: block; 
-    opacity: 0; transition: opacity 0.8s ease-in; /* Smooth fade in */
+    opacity: 0; transition: opacity 0.8s ease-in; 
 }
 .msg-image.loaded { opacity: 1; }
 
@@ -234,7 +232,7 @@ body {
     display: flex;
     justify-content: center;
     border-top: 1px solid #222;
-    width: 100%; /* Ensure it takes full width */
+    width: 100%;
 }
 .d-btn { background: var(--pi-gold); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
@@ -402,7 +400,7 @@ body {
             <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">AR</button>
             <button class="token-btn" onclick="openBuyModal()">
                 <svg class="token-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.38 0 2.53-.83 2.53-1.94 0-.85-.38-1.55-2.03-1.95l-1.04-.25c-2.31-.55-3.62-1.89-3.62-3.63 0-1.86 1.34-3.2 3.14-3.56V4h2.67v1.9c1.68.39 2.92 1.43 3.08 3.13h-2.01c-.13-.88-.95-1.57-2.19-1.57-1.32 0-2.19.85-2.19 1.83 0 .74.43 1.35 2.17 1.77l.82.2c2.51.6 3.84 1.95 3.84 3.73 0 1.96-1.5 3.33-3.22 3.66z"/></svg>
-                <span id="tokenBalance">0</span>
+                <span id="tokenBalance">0</span> π
             </button>
         </div>
     </div>
@@ -476,7 +474,7 @@ body {
 <script>
     // --- Config ---
     const MODELS = [
-        { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google:Like Nano Banana', cost: 1 },
+        { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google', cost: 1 },
         { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Quality', cost: 5 },
         { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2 },
         { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 4 }
@@ -506,7 +504,8 @@ body {
             cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
             login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
             dlTitle: "تم نسخ رابط الصورة! 📋",
-            dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح."
+            dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح.",
+            rateLimit: "ضغط عالي! انتظر 25 ثانية..."
         },
         en: {
             gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
@@ -518,7 +517,8 @@ body {
             cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
             login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
             dlTitle: "Link Copied! 📋",
-            dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution."
+            dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution.",
+            rateLimit: "High traffic! Wait 25s..."
         }
     };
 
@@ -800,10 +800,12 @@ body {
                 return;
             }
 
-            if (!response.ok) { triggerCooldown(20); throw new Error('Server Error'); }
+            if (!response.ok) { 
+                // Error Trigger for high load
+                throw new Error('Server Error');
+            }
 
             const data = await response.json();
-            // Remove Loader
             document.getElementById(loadingId).remove();
             
             if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
@@ -812,7 +814,10 @@ body {
             else addMessage(t.error, 'bot');
 
         } catch (error) {
-            document.getElementById(loadingId).innerHTML = `<div style="color:red; padding:10px;">${t.error}</div>`;
+            // Updated Error Handling with 25s cooldown
+            triggerCooldown(25);
+            const errorMsg = t.rateLimit;
+            document.getElementById(loadingId).innerHTML = `<div style="color:#f59e0b; padding:10px; font-weight:bold;">⚠️ ${errorMsg}</div>`;
         }
     }
 
@@ -854,13 +859,11 @@ body {
         scrollToBottom();
     }
 
-    // --- Updated Bot Image Logic (Smooth Sizing) ---
     function addBotImage(url) {
         const t = TRANSLATIONS[currentLang];
         const div = document.createElement('div');
         div.className = 'message bot';
         
-        // Calculate aspect ratio for the container
         let aspectRatio = currentWidth / currentHeight;
         
         div.innerHTML = `
@@ -882,13 +885,18 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- Download Logic ---
+    // --- Updated Download Logic (Copy & Show Modal) ---
     async function forceDownload(url, btn) {
+        // Prepare the download URL
+        // We append ?download= to prompt immediate download in Chrome
         const downloadUrl = url + "?download=";
+        
         try {
+            // Attempt 1: Modern Clipboard API
             await navigator.clipboard.writeText(downloadUrl);
             showInfoModal(downloadUrl);
         } catch (err) {
+            // Attempt 2: Fallback for older WebViews
             const textArea = document.createElement("textarea");
             textArea.value = downloadUrl;
             document.body.appendChild(textArea);
@@ -897,7 +905,8 @@ body {
                 document.execCommand('copy');
                 showInfoModal(downloadUrl);
             } catch (err) {
-                alert("Failed to copy link.");
+                console.error('Fallback copy failed', err);
+                alert("Failed to copy link. Please manually open: " + downloadUrl);
             }
             document.body.removeChild(textArea);
         }
