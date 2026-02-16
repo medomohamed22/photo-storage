@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIWay Admin Dashboard</title>
+    <title>لوحة تحكم المدير - AIWay</title>
     <style>
         :root {
             --bg: #09090b;
@@ -41,34 +41,49 @@
         }
         .btn-login:hover { background: #4a1550; }
 
-        /* Dashboard */
+        /* Dashboard Container */
         .dashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-        .brand { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, var(--purple), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; gap: 15px; }
+        .brand { font-size: 24px; font-weight: 900; background: linear-gradient(135deg, var(--purple), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .logout-btn { background: #333; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
 
         /* Stats Cards */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent); }
-        .card-title { color: var(--text-sub); font-size: 14px; margin-bottom: 10px; }
-        .card-value { font-size: 28px; font-weight: bold; }
-        .card-sub { font-size: 12px; color: var(--success); margin-top: 5px; }
+        .card-title { color: var(--text-sub); font-size: 13px; margin-bottom: 8px; }
+        .card-value { font-size: 24px; font-weight: bold; }
+        .card-sub { font-size: 11px; color: var(--success); margin-top: 5px; }
 
-        /* Table */
-        .table-container { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
-        .table-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .search-inp { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: #000; color: white; width: 250px; text-align: right; }
+        /* Table Styling (Fixed Scrolling) */
+        .table-card { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        .table-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .search-inp { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: #000; color: white; width: 100%; max-width: 250px; text-align: right; }
         
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: right; border-bottom: 1px solid var(--border); font-size: 14px; }
+        /* The Wrapper that makes it scrollable */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto; /* Enable horizontal scroll */
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on mobile */
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 800px; /* Force minimum width to ensure columns don't squash */ }
+        
+        th, td { 
+            padding: 15px; 
+            text-align: right; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 14px; 
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+        
         th { color: var(--text-sub); font-weight: 600; background: rgba(0,0,0,0.2); }
         tr:last-child td { border-bottom: none; }
         tr:hover { background: rgba(255,255,255,0.02); }
         
         .user-badge { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 32px; height: 32px; background: var(--purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--accent); font-size: 12px; }
+        .avatar { width: 32px; height: 32px; background: var(--purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--accent); font-size: 12px; flex-shrink: 0; }
 
         .refresh-btn {
             background: var(--accent); color: #000; border: none; padding: 8px 15px; 
@@ -90,7 +105,7 @@
 
     <div class="dashboard" id="dashboard">
         <div class="header">
-            <div class="brand">AIWay Admin</div>
+            <div class="brand">AIWay Dashboard</div>
             <div style="display:flex; gap:10px;">
                 <button class="refresh-btn" onclick="fetchData(this)">تحديث ↻</button>
                 <button class="logout-btn" onclick="logout()">خروج</button>
@@ -99,49 +114,53 @@
 
         <div class="stats-grid">
             <div class="card">
-                <div class="card-title">إجمالي المبيعات (USD)</div>
+                <div class="card-title">إجمالي الدخل (USD)</div>
                 <div class="card-value" id="totalUSD">$0.00</div>
-                <div class="card-sub">المبلغ الكلي</div>
+                <div class="card-sub">كل المدفوعات بالدولار</div>
             </div>
             <div class="card" style="--accent: #611f69;">
-                <div class="card-title">إجمالي المبيعات (Pi)</div>
+                <div class="card-title">إجمالي الدخل (Pi)</div>
                 <div class="card-value" id="totalPi">0.00 π</div>
-                <div class="card-sub">عملات باي المستلمة</div>
+                <div class="card-sub">كل المدفوعات بالباي</div>
             </div>
             <div class="card" style="--accent: #10b981;">
                 <div class="card-title">صافي الأرباح (100% Markup)</div>
                 <div class="card-value" id="totalProfit" style="color: #10b981;">$0.00</div>
-                <div class="card-sub">نصف إجمالي الدولار</div>
+                <div class="card-sub">50% من إجمالي الدولار</div>
             </div>
             <div class="card" style="--accent: #3b82f6;">
-                <div class="card-title">المستخدمين</div>
+                <div class="card-title">عدد المستخدمين</div>
                 <div class="card-value" id="totalUsers">0</div>
-                <div class="card-sub">المسجلين في الموقع</div>
+                <div class="card-sub">المسجلين في النظام</div>
             </div>
         </div>
 
-        <div class="table-container">
+        <div class="table-card">
             <div class="table-header">
-                <span style="font-weight:700;">سجل المستخدمين</span>
-                <input type="text" class="search-inp" placeholder="بحث..." onkeyup="filterTable(this.value)">
+                <span style="font-weight:700; color:white;">سجل المستخدمين المفصل</span>
+                <input type="text" class="search-inp" placeholder="بحث باسم المستخدم..." onkeyup="filterTable(this.value)">
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>المستخدم</th>
-                        <th>الرصيد الحالي</th>
-                        <th>دفع (USD)</th>
-                        <th>دفع (Pi)</th>
-                        <th>تاريخ التسجيل</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody"></tbody>
-            </table>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>الرصيد المتبقي</th>
+                            <th>أنفق (USD)</th>
+                            <th>أنفق (Pi)</th>
+                            <th>تاريخ الانضمام</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
 <script>
-    // تخزين كلمة المرور مؤقتاً في الجلسة لتحديث البيانات دون طلبها مجدداً
+    // تخزين كلمة المرور في الجلسة
     let sessionPass = localStorage.getItem('admin_pass') || '';
 
     // --- Login Logic ---
@@ -153,7 +172,7 @@
 
         msg.textContent = "جاري الاتصال...";
         
-        // نجرب جلب البيانات للتأكد من كلمة المرور
+        // محاولة جلب البيانات للتحقق من صحة كلمة المرور
         const success = await fetchData(null, password);
         
         if (success) {
@@ -172,6 +191,7 @@
     }
 
     // --- Fetch Data from Backend API ---
+    // هذه الدالة تتصل بملف الباك إند get-admin-stats.js الذي أنشأناه سابقاً
     async function fetchData(btn = null, passOverride = null) {
         if(btn) btn.classList.add('loading');
         
@@ -184,7 +204,7 @@
                 body: JSON.stringify({ password: passToSend })
             });
 
-            if (res.status === 401) return false; // Wrong Password
+            if (res.status === 401) return false; // كلمة المرور خطأ
             if (!res.ok) throw new Error("Server Error");
 
             const data = await res.json();
@@ -206,46 +226,51 @@
         const tbody = document.getElementById('usersTableBody');
         tbody.innerHTML = '';
 
-        // Stats Cards
+        // تحديث الكروت العلوية
         document.getElementById('totalUSD').textContent = `$${stats.totalUSD.toFixed(2)}`;
         document.getElementById('totalPi').textContent = `${stats.totalPi.toFixed(4)} π`;
         document.getElementById('totalProfit').textContent = `$${(stats.totalUSD / 2).toFixed(2)}`;
         document.getElementById('totalUsers').textContent = stats.totalUsers;
 
-        // Table
+        // ملء الجدول
         users.forEach(user => {
+            // القيم الافتراضية 0 في حال كانت null
+            const usdSpent = user.total_usd_spent || 0;
+            const piSpent = user.total_pi_spent || 0;
+            const balance = user.token_balance || 0;
+            const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('ar-EG') : 'غير معروف';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
                     <div class="user-badge">
                         <div class="avatar">${user.username ? user.username.substring(0,2).toUpperCase() : '??'}</div>
-                        <div>${user.username || 'Unknown'}</div>
+                        <div>${user.username || 'بدون اسم'}</div>
                     </div>
                 </td>
-                <td style="color: var(--accent); font-weight:bold;">${user.token_balance || 0}</td>
-                <td>$${(user.total_usd_spent || 0).toFixed(2)}</td>
-                <td>${(user.total_pi_spent || 0).toFixed(4)} π</td>
-                <td style="color: var(--text-sub); font-size:12px;">
-                    ${new Date(user.created_at).toLocaleDateString('en-GB')}
-                </td>
+                <td style="color: var(--accent); font-weight:bold;">${balance} Token</td>
+                <td style="color: #a1a1aa;">$${usdSpent.toFixed(2)}</td>
+                <td style="color: var(--purple); font-weight:600;">${piSpent.toFixed(4)} π</td>
+                <td style="direction:ltr; text-align:right; color: #777;">${joinDate}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // --- Search ---
+    // --- Search Function ---
     function filterTable(query) {
         const rows = document.querySelectorAll('#usersTableBody tr');
         rows.forEach(row => {
-            const text = row.innerText.toLowerCase();
+            // البحث في العمود الأول (اسم المستخدم)
+            const text = row.cells[0].innerText.toLowerCase();
             row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
         });
     }
 
     // Check Session on Load
+    // إذا كان المستخدم قد دخل سابقاً، نحاول الدخول مباشرة
     window.onload = () => {
         if (sessionPass) {
-            // محاولة الدخول المباشر إذا كانت كلمة المرور محفوظة
             fetchData(null, sessionPass).then(success => {
                 if(success) {
                     document.getElementById('loginOverlay').style.display = 'none';
