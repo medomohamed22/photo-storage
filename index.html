@@ -5,20 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
 <title>AIWay</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-/* --- Design System & New Colors --- */
+/* --- Design System --- */
 :root {
     --bg: #050505; 
     --chat-bg: #000000;
     --card: #121212;
-    
-    /* Gradient from Logo (Purple to Orange/Gold) */
     --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #f59e0b 100%);
     --text-gradient: linear-gradient(135deg, #a78bfa 0%, #fbbf24 100%);
-    
     --pi-purple: #7c3aed;
     --pi-gold: #f59e0b;
-    
     --text-main: #ffffff;
     --text-sub: #a1a1aa;
     --border: #27272a;
@@ -43,60 +40,30 @@ body {
     transition: opacity 0.5s ease;
     background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
 }
-
 .landing-lang-btn {
     position: absolute; top: 20px; right: 20px;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
     color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
     font-weight: 700; z-index: 10; backdrop-filter: blur(10px);
 }
-
-/* Updated Text Logo Style */
 .landing-logo-text {
-    font-size: 64px; 
-    font-weight: 900; 
-    margin-bottom: 10px;
-    background: var(--text-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.4));
-    letter-spacing: -2px;
+    font-size: 64px; font-weight: 900; margin-bottom: 10px;
+    background: var(--text-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.4)); letter-spacing: -2px;
 }
-
 .landing-desc { color: #ccc; margin-bottom: 40px; font-size: 15px; line-height: 1.6; max-width: 300px; }
-
-.features-title { font-size: 14px; color: var(--pi-gold); margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
 .features-container { display: flex; gap: 15px; justify-content: center; margin-bottom: 50px; }
-
 .feature-btn {
     padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 14px;
     display: flex; flex-direction: column; align-items: center; gap: 5px;
     border: none; cursor: default; position: relative; min-width: 110px;
 }
-
-.f-images {
-    background: var(--primary-gradient);
-    color: white;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
-}
-
-.f-video {
-    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.soon-badge {
-    font-size: 9px; background: #333; color: #fff; padding: 2px 6px; border-radius: 4px;
-    position: absolute; bottom: -10px; border: 1px solid #444;
-}
-
+.f-images { background: var(--primary-gradient); color: white; box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+.f-video { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); }
 .pi-login-btn {
-    background: var(--primary-gradient);
-    color: white;
-    border: none;
-    padding: 14px 50px; border-radius: 30px;
-    font-weight: 800; font-size: 16px; cursor: pointer;
-    box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
-    display: flex; align-items: center; gap: 10px;
+    background: var(--primary-gradient); color: white; border: none;
+    padding: 14px 50px; border-radius: 30px; font-weight: 800; font-size: 16px; cursor: pointer;
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.4); display: flex; align-items: center; gap: 10px;
     transition: transform 0.2s;
 }
 .pi-login-btn:active { transform: scale(0.95); }
@@ -114,34 +81,19 @@ body {
     padding: 4px 8px; border-radius: 12px; transition: 0.2s;
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
-
-/* Token Badge in Header */
 .header-cost-badge {
-    background: var(--pi-gold); color: #000;
-    font-size: 11px; font-weight: 800;
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin-right: 5px; 
+    background: var(--pi-gold); color: #000; font-size: 11px; font-weight: 800;
+    width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 5px; 
 }
-
 .header-left { display: flex; gap: 8px; align-items: center; }
-
 .token-btn {
-    background: rgba(245, 158, 11, 0.1); 
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    color: var(--pi-gold);
-    padding: 0 12px; height: 34px; border-radius: 18px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-    transition: 0.2s;
+    background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);
+    color: var(--pi-gold); padding: 0 12px; height: 34px; border-radius: 18px;
+    font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;
 }
-.token-btn:active { transform: scale(0.95); }
-.token-icon { width: 14px; height: 14px; fill: currentColor; }
-
 .lang-btn {
-    background: var(--card); border: 1px solid var(--border);
-    color: var(--text-main); padding: 0 12px; height: 34px; border-radius: 18px;
-    font-size: 11px; font-weight: 600; cursor: pointer;
+    background: var(--card); border: 1px solid var(--border); color: var(--text-main);
+    padding: 0 12px; height: 34px; border-radius: 18px; font-size: 11px; font-weight: 600; cursor: pointer;
 }
 
 /* --- Chat & Content --- */
@@ -151,112 +103,54 @@ body {
 .message.bot { align-self: flex-start; }
 
 .msg-bubble {
-    padding: 12px 16px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-wrap: break-word;
-    display: flex; 
-    flex-direction: column; 
+    padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word;
+    display: flex; flex-direction: column;
 }
-
 /* User Bubble */
 .message.user .msg-bubble { 
     background: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
-    color: #fff; border: 1px solid rgba(124, 58, 237, 0.3);
-    border-bottom-left-radius: 4px; 
+    color: #fff; border: 1px solid rgba(124, 58, 237, 0.3); border-bottom-left-radius: 4px; 
+}
+/* Bot Text Bubble (Markdown Support) */
+.message.bot.text .msg-bubble {
+    background: #111; border: 1px solid var(--border); color: #ddd; width: 100%;
+}
+.message.bot.text .msg-bubble p { margin: 0 0 8px 0; }
+.message.bot.text .msg-bubble code { background: #222; padding: 2px 5px; border-radius: 4px; font-family: monospace; color: var(--pi-gold); }
+.message.bot.text .msg-bubble pre { background: #000; padding: 10px; border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
+
+/* Bot Media Bubble */
+.message.bot.media .msg-bubble {
+    background: transparent; padding: 0; border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden; width: 100%; max-width: 320px;
 }
 
-.message.bot .msg-bubble {
-    background: transparent;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    overflow: hidden;
-    width: 100%;
-    max-width: 320px;
-}
-
-.no-token-card {
-    background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 20px; padding: 20px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.no-token-text { color: #fca5a5; font-size: 14px; font-weight: 600; margin-bottom: 5px; }
-.buy-now-btn {
-    background: var(--pi-gold); color: black; border: none;
-    padding: 8px 24px; border-radius: 20px; font-weight: 700; font-size: 12px;
-    cursor: pointer; display: flex; align-items: center; gap: 6px;
-}
-
-/* Animation & Image Placeholders */
-.loading-box {
-    width: 280px; 
-    aspect-ratio: 1/1; 
-    border-radius: 20px;
-    position: relative; overflow: hidden;
-    background: #000; border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-}
-.blur-wave {
-    position: absolute; inset: -50%;
-    background: conic-gradient(from 0deg, transparent 0deg, var(--pi-purple) 100deg, transparent 180deg, var(--pi-gold) 260deg, transparent 360deg);
-    filter: blur(40px); opacity: 0.5;
-    animation: rotateWave 4s linear infinite;
-}
-.loading-text {
-    position: relative; z-index: 2; font-weight: 700; font-size: 13px; color: white;
-    background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
-    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
-    animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
-
-/* Image Style: Fixed smooth transition */
-.image-container {
-    position: relative;
-    width: 100%;
-    min-height: 280px; 
-    background: #000;
-}
-.msg-image { 
-    width: 100%; height: auto; display: block; 
-    opacity: 0; transition: opacity 0.8s ease-in; 
-}
-.msg-image.loaded { opacity: 1; }
+/* --- Media Styling --- */
+.image-container { position: relative; width: 100%; min-height: 280px; background: #000; display: flex; align-items: center; justify-content: center; }
+.msg-image, .msg-video { width: 100%; height: auto; display: block; opacity: 0; transition: opacity 0.8s ease-in; }
+.msg-image.loaded, .msg-video.loaded { opacity: 1; }
 
 .download-bar {
-    padding: 12px;
-    background: #141414;
-    display: flex;
-    justify-content: center;
-    border-top: 1px solid #222;
-    width: 100%;
+    padding: 12px; background: #141414; display: flex; justify-content: center;
+    border-top: 1px solid #222; width: 100%;
 }
 .d-btn { background: var(--pi-gold); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
 
 /* --- Footer --- */
 .footer-container { background: #050505; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; position: relative; }
 .control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; position: relative; }
-
 .footer-btn {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
-    font-size: 12px; font-weight: 600; cursor: pointer;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px;
+    color: var(--text-sub); font-size: 12px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
-    transition: 0.2s;
 }
 .input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
 .input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
 .send-btn { 
-    width: 48px; height: 48px; border-radius: 50%; 
-    background: var(--primary-gradient); border: none; cursor: pointer; 
-    display: flex; align-items: center; justify-content: center; 
-    transition: 0.3s; font-weight: 700; font-size: 12px;
+    width: 48px; height: 48px; border-radius: 50%; background: var(--primary-gradient); border: none; cursor: pointer; 
+    display: flex; align-items: center; justify-content: center; transition: 0.3s;
 }
 .send-btn:disabled { background: #333; cursor: not-allowed; }
-.countdown-text { color: white; font-size: 10px; text-align: center; line-height: 1; }
 
 /* --- Menus --- */
 .model-menu, .aspect-menu-dropdown {
@@ -266,17 +160,11 @@ body {
 }
 .model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
 .aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; width: 200px; margin-bottom: 8px; padding: 8px; z-index: 200; }
-
 .menu-option {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;
-    border: 1px solid transparent; transition: 0.2s;
+    display: flex; justify-content: space-between; align-items: center; padding: 12px;
+    background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer; border: 1px solid transparent;
 }
 .menu-option.active { border-color: var(--pi-purple); background: rgba(124, 58, 237, 0.1); }
-.cost-badge-menu {
-    background: rgba(255,255,255,0.1); color: var(--pi-gold);
-    font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;
-}
 
 /* --- Modals --- */
 .modal-overlay { 
@@ -285,81 +173,39 @@ body {
 }
 .modal-window {
     width: 90%; max-width: 400px; max-height: 80vh; background: #111;
-    border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
-    display: flex; flex-direction: column;
+    border: 1px solid var(--border); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;
 }
-.modal-header { 
-    padding: 15px; border-bottom: 1px solid var(--border); 
-    display: flex; justify-content: space-between; align-items: center; background: #18181b; 
-}
+.modal-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #18181b; }
 
 /* Buy Grid */
 .buy-grid { padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .buy-card {
-    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; transition: 0.2s;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 15px; border-radius: 16px;
+    display: flex; justify-content: space-between; align-items: center; cursor: pointer;
 }
 .buy-card:active { border-color: var(--pi-gold); background: rgba(245, 158, 11, 0.1); }
-.buy-info { display: flex; flex-direction: column; gap: 4px; }
-.buy-amount { color: var(--text-main); font-weight: 700; font-size: 16px; }
-.buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
-.buy-icon { width: 24px; height: 24px; fill: var(--pi-gold); }
 
-/* --- Gallery Styling --- */
-.gallery-grid { 
-    flex: 1; 
-    overflow-y: auto; 
-    padding: 12px; 
-    padding-bottom: 50px;
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    grid-auto-rows: min-content; 
-    gap: 15px; 
-    align-content: start;
-}
-.gallery-item { 
-    position: relative; 
-    border-radius: 12px; 
-    overflow: hidden; 
-    border: 1px solid var(--border); 
-    aspect-ratio: 1/1; 
-    background: #18181b;
-    display: flex;
-    flex-direction: column;
-}
-.gallery-item img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
-}
-/* Overlay Actions */
+/* Gallery */
+.gallery-grid { flex: 1; overflow-y: auto; padding: 12px; padding-bottom: 50px; display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: min-content; gap: 15px; align-content: start; }
+.gallery-item { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); aspect-ratio: 1/1; background: #18181b; display: flex; flex-direction: column; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gallery-actions { 
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 10px; 
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; 
     background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 100%);
-    display: flex; gap: 8px; 
-    z-index: 5;
-    backdrop-filter: blur(2px);
+    display: flex; gap: 8px; z-index: 5; backdrop-filter: blur(2px);
 }
-.g-btn { 
-    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
-    cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
-    display: flex; align-items: center; justify-content: center; transition: 0.2s;
-    text-transform: uppercase; letter-spacing: 0.5px;
-}
-.g-del { background: rgba(239, 68, 68, 0.6); color: white; border: 1px solid rgba(239, 68, 68, 0.3); }
-.g-del:active { background: rgba(239, 68, 68, 0.8); }
+.g-btn { flex: 1; border: none; padding: 8px 0; font-size: 11px; cursor: pointer; color: white; border-radius: 6px; font-weight: 700; }
+.g-del { background: rgba(239, 68, 68, 0.6); border: 1px solid rgba(239, 68, 68, 0.3); }
 .g-down { background: var(--pi-gold); color: black; border: 1px solid var(--pi-gold); }
-.g-down:active { opacity: 0.9; }
 
-/* Download Help Modal Styling */
-.dl-help-icon { font-size: 40px; margin-bottom: 10px; }
-.dl-help-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--pi-gold); }
-.dl-help-text { color: #ccc; text-align: center; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
-.dl-copy-box { 
-    background: rgba(255,255,255,0.1); border: 1px dashed #555; 
-    padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--pi-gold);
-    width: 100%; text-align: center; margin-bottom: 15px; word-break: break-all;
-}
+/* Loaders */
+.loading-box { width: 280px; aspect-ratio: 1/1; border-radius: 20px; position: relative; overflow: hidden; background: #000; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.blur-wave { position: absolute; inset: -50%; background: conic-gradient(from 0deg, transparent 0deg, var(--pi-purple) 100deg, transparent 180deg, var(--pi-gold) 260deg, transparent 360deg); filter: blur(40px); opacity: 0.5; animation: rotateWave 4s linear infinite; }
+.loading-text { position: relative; z-index: 2; font-weight: 700; font-size: 13px; color: white; background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px; }
+@keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Download Modal */
+.dl-copy-box { background: rgba(255,255,255,0.1); border: 1px dashed #555; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--pi-gold); width: 100%; text-align: center; margin-bottom: 15px; word-break: break-all; }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -368,21 +214,8 @@ body {
 
     <div id="landingPage" class="landing-overlay">
         <button class="landing-lang-btn" onclick="toggleLanguage()" id="landingLangBtn">AR</button>
-
         <div class="landing-logo-text">AiWay</div>
         <div class="landing-desc" id="txtLandingDesc">Generate professional images using state-of-the-art AI technologies</div>
-        
-        <div class="features-title" id="txtFeaturesTitle">Site Supports</div>
-        <div class="features-container">
-            <button class="feature-btn f-images">
-                <span>Ai Images</span>
-            </button>
-            <button class="feature-btn f-video">
-                <span>Ai Video</span>
-                <span class="soon-badge" id="txtSoon">Soon</span>
-            </button>
-        </div>
-
         <button class="pi-login-btn" onclick="authenticatePi()">
             <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
             <span id="txtLogin">Pi Login</span>
@@ -419,7 +252,6 @@ body {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
                 <span id="txtGallery">Gallery</span>
             </button>
-            
             <div class="aspect-menu-dropdown" id="aspectMenu"></div>
             <button class="footer-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -429,7 +261,6 @@ body {
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="#777"><path d="M7 10l5 5 5-5z"/></svg>
             </button>
         </div>
-
         <div class="input-row">
             <textarea id="promptInput" class="input-box" rows="1" placeholder="Imagine anything..." dir="auto"></textarea>
             <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
@@ -463,21 +294,25 @@ body {
         <div class="modal-window" style="padding:20px; align-items:center;">
             <div class="dl-help-icon">📋</div>
             <div class="dl-help-title" id="txtDlTitle">Link Copied!</div>
-            <div class="dl-help-text" id="txtDlDesc">
-                Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.
-            </div>
+            <div class="dl-help-text" id="txtDlDesc">...</div>
             <div class="dl-copy-box" id="dlLinkBox">...</div>
             <button class="g-btn g-down" onclick="document.getElementById('downloadInfoModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">OK</button>
         </div>
     </div>
 
 <script>
-    // --- Config ---
+    // --- Config with New Models & Costs ---
     const MODELS = [
-        { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google', cost: 1 },
-        { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Quality', cost: 5 },
-        { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2 },
-        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 4 }
+        // Image Models
+        { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google', cost: 1, type: 'image' },
+        { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Quality', cost: 5, type: 'image' },
+        { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2, type: 'image' },
+        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 4, type: 'image' },
+        // Video Model
+        { id: 'grok-video', name: 'Grok Video', desc: 'Video Generation', cost: 6, type: 'video' },
+        // Chat Models
+        { id: 'openai', name: 'GPT-5 Mini', desc: 'Fast Chat', cost: 1, type: 'chat' },
+        { id: 'openai-large', name: 'GPT-5.2', desc: 'Smart Chat', cost: 3, type: 'chat' }
     ];
 
     const RATIOS = [
@@ -496,20 +331,20 @@ body {
     const TRANSLATIONS = {
         ar: {
             gallery: "معرضي", welcome: "أهلاً بك في AIWay <br> اختر الموديل واكتب ما تتخيله",
-            placeholder: "تخيل أي شيء...", generating: "جاري الإنشاء...", download: "تحميل",
+            placeholder: "تخيل أي شيء...", generating: "جاري المعالجة...", download: "تحميل",
             delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
             noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
             sec: "ث", noImage: "مفيش صورة للتحميل",
             buy: "شراء", tokens: "توكين", pi: "π", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
             cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
             login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
-            dlTitle: "تم نسخ رابط الصورة! 📋",
-            dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح.",
+            dlTitle: "تم نسخ الرابط! 📋",
+            dlDesc: "بسبب قيود متصفح Pi، الصق الرابط في كروم للتحميل.",
             rateLimit: "ضغط عالي! انتظر 25 ثانية..."
         },
         en: {
             gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
-            placeholder: "Imagine anything...", generating: "Generating...", download: "Download",
+            placeholder: "Imagine anything...", generating: "Processing...", download: "Download",
             delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
             noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
             sec: "s", noImage: "No image to download",
@@ -517,7 +352,7 @@ body {
             cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
             login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
             dlTitle: "Link Copied! 📋",
-            dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution.",
+            dlDesc: "Due to Pi Browser limitations, paste link in Chrome to download.",
             rateLimit: "High traffic! Wait 25s..."
         }
     };
@@ -550,9 +385,7 @@ body {
             const data = await res.json();
             if(data.price) {
                 currentPiPrice = data.price;
-                if(document.getElementById('buyModal').style.display === 'flex') {
-                    renderBuyGrid(); 
-                }
+                if(document.getElementById('buyModal').style.display === 'flex') renderBuyGrid(); 
             }
         } catch(e) { console.log("Using default price"); }
     }
@@ -576,10 +409,8 @@ body {
         document.getElementById('txtLogin').textContent = t.login;
         document.getElementById('txtFeaturesTitle').textContent = t.features;
         document.getElementById('txtSoon').textContent = t.soon;
-        
         document.getElementById('txtDlTitle').textContent = t.dlTitle;
-        document.getElementById('txtDlDesc').innerHTML = t.dlDesc.replace(/\n/g, '<br>');
-
+        document.getElementById('txtDlDesc').innerHTML = t.dlDesc;
         renderModelMenu();
         renderBuyGrid();
     }
@@ -620,10 +451,11 @@ body {
             const div = document.createElement('div');
             div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
             div.onclick = () => selectModel(m);
+            let typeBadge = m.type === 'chat' ? '💬' : (m.type === 'video' ? '🎬' : '🖼️');
             div.innerHTML = `
                 <div>
                     <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center; gap:8px;">
-                        ${m.name}
+                        ${typeBadge} ${m.name}
                         <span class="cost-badge-menu">${m.cost} ${t.cost}</span>
                     </div>
                     <div style="font-size:11px; color:#888;">${m.desc}</div>
@@ -635,10 +467,15 @@ body {
     }
 
     function selectModel(m) {
+        if(typeof m === 'string') m = MODELS.find(mod => mod.id === m);
         currentModel = m.id;
         updateHeaderModelUI();
         toggleModelMenu();
         renderModelMenu();
+        // Hide Aspect Ratio for Chat models
+        const aspectBtn = document.getElementById('aspectTriggerBtn');
+        if(m.type === 'chat') aspectBtn.style.display = 'none';
+        else aspectBtn.style.display = 'flex';
     }
 
     function toggleModelMenu() {
@@ -800,24 +637,26 @@ body {
                 return;
             }
 
-            if (!response.ok) { 
-                // Error Trigger for high load
-                throw new Error('Server Error');
-            }
+            if (!response.ok) { triggerCooldown(25); throw new Error('Server Error'); }
 
             const data = await response.json();
             document.getElementById(loadingId).remove();
             
             if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
 
-            if(data.imageUrl) addBotImage(data.imageUrl);
-            else addMessage(t.error, 'bot');
+            if (data.result.type === 'text') {
+                addBotText(data.result.content);
+            } else if (data.result.type === 'video') {
+                addBotVideo(data.result.url);
+            } else {
+                addBotImage(data.result.url);
+            }
 
         } catch (error) {
-            // Updated Error Handling with 25s cooldown
             triggerCooldown(25);
             const errorMsg = t.rateLimit;
-            document.getElementById(loadingId).innerHTML = `<div style="color:#f59e0b; padding:10px; font-weight:bold;">⚠️ ${errorMsg}</div>`;
+            const loader = document.getElementById(loadingId);
+            if(loader) loader.innerHTML = `<div style="color:#f59e0b; padding:10px; font-weight:bold;">⚠️ ${errorMsg}</div>`;
         }
     }
 
@@ -880,23 +719,45 @@ body {
         scrollToBottom();
     }
 
+    function addBotVideo(url) {
+        const t = TRANSLATIONS[currentLang];
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.innerHTML = `
+            <div class="msg-bubble media">
+                <div class="image-container">
+                    <video src="${url}" class="msg-video" autoplay loop controls onloadstart="this.classList.add('loaded')"></video>
+                </div>
+                <div class="download-bar">
+                    <button class="d-btn" onclick="forceDownload('${url}', this)">${t.download}</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('chatContainer').appendChild(div);
+        scrollToBottom();
+    }
+
+    function addBotText(text) {
+        const div = document.createElement('div');
+        div.className = 'message bot text';
+        // Render Markdown
+        let html = marked.parse(text);
+        div.innerHTML = `<div class="msg-bubble">${html}</div>`;
+        document.getElementById('chatContainer').appendChild(div);
+        scrollToBottom();
+    }
+
     function scrollToBottom() {
         const c = document.getElementById('chatContainer');
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- Updated Download Logic (Copy & Show Modal) ---
     async function forceDownload(url, btn) {
-        // Prepare the download URL
-        // We append ?download= to prompt immediate download in Chrome
         const downloadUrl = url + "?download=";
-        
         try {
-            // Attempt 1: Modern Clipboard API
             await navigator.clipboard.writeText(downloadUrl);
             showInfoModal(downloadUrl);
         } catch (err) {
-            // Attempt 2: Fallback for older WebViews
             const textArea = document.createElement("textarea");
             textArea.value = downloadUrl;
             document.body.appendChild(textArea);
@@ -905,8 +766,7 @@ body {
                 document.execCommand('copy');
                 showInfoModal(downloadUrl);
             } catch (err) {
-                console.error('Fallback copy failed', err);
-                alert("Failed to copy link. Please manually open: " + downloadUrl);
+                alert("Failed to copy link.");
             }
             document.body.removeChild(textArea);
         }
@@ -917,7 +777,6 @@ body {
         document.getElementById('downloadInfoModal').style.display = 'flex';
     }
 
-    // --- Gallery ---
     async function openGallery() {
         const t = TRANSLATIONS[currentLang];
         if(!piUser) { alert("Login Required"); return; }
@@ -934,6 +793,7 @@ body {
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
+                // Handle different media types in gallery if saved in DB, defaulting to image logic for now
                 div.innerHTML = `
                     <img src="${img.url}" loading="lazy">
                     <div class="gallery-actions">
