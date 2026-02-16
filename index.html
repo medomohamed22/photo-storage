@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
@@ -25,7 +25,7 @@ body {
     margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--chat-bg); color: var(--text-main);
     display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-    direction: rtl; 
+    direction: rtl; /* Fixed Direction as requested */
 }
 
 /* --- Landing Page --- */
@@ -38,36 +38,64 @@ body {
     transition: opacity 0.5s ease;
 }
 
+/* Lang Button on Landing Page */
+.landing-lang-btn {
+    position: absolute; top: 20px; right: 20px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    font-weight: 700; z-index: 10;
+}
+
 .landing-logo-text {
-    font-size: 48px; font-weight: 900; margin-bottom: 20px;
+    font-size: 56px; font-weight: 900; margin-bottom: 10px;
     background: linear-gradient(135deg, var(--pi-purple) 0%, var(--pi-gold) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 20px rgba(97, 31, 105, 0.4));
+    filter: drop-shadow(0 0 25px rgba(97, 31, 105, 0.5));
     letter-spacing: -1px;
 }
 
-.landing-desc { color: #888; margin-bottom: 30px; font-size: 14px; line-height: 1.6; }
+.landing-desc { color: #aaa; margin-bottom: 40px; font-size: 15px; line-height: 1.6; max-width: 300px; }
 
-.model-tags { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px; }
-.tag {
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-    padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--text-sub);
-    cursor: default; pointer-events: none;
+/* Features Section (New) */
+.features-title { font-size: 14px; color: var(--text-sub); margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.features-container { display: flex; gap: 15px; justify-content: center; margin-bottom: 50px; }
+
+.feature-btn {
+    padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    border: none; cursor: default; position: relative; min-width: 110px;
+}
+
+/* Active Feature (AI Images) */
+.f-images {
+    background: var(--pi-gold); color: white;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Inactive Feature (AI Video) */
+.f-video {
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.soon-badge {
+    font-size: 9px; background: #333; color: #fff; padding: 2px 6px; border-radius: 4px;
+    position: absolute; bottom: -10px; border: 1px solid #444;
 }
 
 .pi-login-btn {
     background: var(--pi-purple);
     color: var(--pi-gold);
     border: 1px solid var(--pi-gold);
-    padding: 12px 40px; border-radius: 30px;
+    padding: 14px 50px; border-radius: 30px;
     font-weight: 800; font-size: 16px; cursor: pointer;
-    box-shadow: 0 0 25px rgba(97, 31, 105, 0.4);
+    box-shadow: 0 0 30px rgba(97, 31, 105, 0.5);
     display: flex; align-items: center; gap: 10px;
     transition: transform 0.2s;
 }
 .pi-login-btn:active { transform: scale(0.95); }
-.pi-login-btn svg { width: 22px; height: 22px; fill: var(--pi-gold); }
+.pi-login-btn svg { width: 24px; height: 24px; fill: var(--pi-gold); }
 
 /* --- Header --- */
 .header {
@@ -82,13 +110,13 @@ body {
 }
 .header-title-area:active { background: rgba(255,255,255,0.05); }
 
-/* Header Cost Badge (New) */
+/* Header Cost Badge */
 .header-cost-badge {
     background: var(--pi-gold); color: #000;
     font-size: 11px; font-weight: 800;
     width: 20px; height: 20px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    margin-right: 5px; /* مسافة صغيرة عن الاسم */
+    margin-right: 5px; 
 }
 
 .header-left { display: flex; gap: 8px; align-items: center; }
@@ -237,7 +265,7 @@ body {
 .buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
 .buy-icon { width: 24px; height: 24px; fill: var(--accent); }
 
-/* --- Gallery Styling (Fixed) --- */
+/* --- Gallery Styling --- */
 .gallery-grid { 
     flex: 1; overflow-y: auto; padding: 12px; 
     display: grid; grid-template-columns: repeat(2, 1fr); 
@@ -276,12 +304,22 @@ body {
 <body>
 
     <div id="landingPage" class="landing-overlay">
+        <button class="landing-lang-btn" onclick="toggleLanguage()" id="landingLangBtn">AR</button>
+
         <div class="landing-logo-text">AIWay</div>
-        <div class="landing-desc" id="txtLandingDesc">توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي</div>
-        <div class="model-tags">
-            <div class="tag">Nano Banana</div><div class="tag">GPT Image</div>
-            <div class="tag">FLUX.2 Klein 4B</div><div class="tag">FLUX.2 Klein 9B</div>
+        <div class="landing-desc" id="txtLandingDesc">Generate professional images using state-of-the-art AI technologies</div>
+        
+        <div class="features-title" id="txtFeaturesTitle">Site Supports</div>
+        <div class="features-container">
+            <button class="feature-btn f-images">
+                <span>Ai Images</span>
+            </button>
+            <button class="feature-btn f-video">
+                <span>Ai Video</span>
+                <span class="soon-badge" id="txtSoon">Soon</span>
+            </button>
         </div>
+
         <button class="pi-login-btn" onclick="authenticatePi()">
             <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
             <span id="txtLogin">Pi Login</span>
@@ -296,7 +334,7 @@ body {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s; margin-inline-start:5px;"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
         <div class="header-left">
-            <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
+            <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">AR</button>
             <button class="token-btn" onclick="openBuyModal()">
                 <svg class="token-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.38 0 2.53-.83 2.53-1.94 0-.85-.38-1.55-2.03-1.95l-1.04-.25c-2.31-.55-3.62-1.89-3.62-3.63 0-1.86 1.34-3.2 3.14-3.56V4h2.67v1.9c1.68.39 2.92 1.43 3.08 3.13h-2.01c-.13-.88-.95-1.57-2.19-1.57-1.32 0-2.19.85-2.19 1.83 0 .74.43 1.35 2.17 1.77l.82.2c2.51.6 3.84 1.95 3.84 3.73 0 1.96-1.5 3.33-3.22 3.66z"/></svg>
                 <span id="tokenBalance">0</span>
@@ -308,7 +346,7 @@ body {
 
     <div class="chat-container" id="chatContainer">
         <div style="text-align:center; color:#555; margin-top:50px;" id="emptyMsg">
-            أهلاً بك في AI Way <br> اختر الموديل واكتب ما تتخيله
+            Welcome to AIWay <br> Select a model and imagine
         </div>
     </div>
 
@@ -316,7 +354,7 @@ body {
         <div class="control-bar">
             <button class="footer-btn" onclick="openGallery()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
-                <span id="txtGallery">معرضي</span>
+                <span id="txtGallery">Gallery</span>
             </button>
             
             <div class="aspect-menu-dropdown" id="aspectMenu"></div>
@@ -330,7 +368,7 @@ body {
         </div>
 
         <div class="input-row">
-            <textarea id="promptInput" class="input-box" rows="1" placeholder="تخيل أي شيء..." dir="auto"></textarea>
+            <textarea id="promptInput" class="input-box" rows="1" placeholder="Imagine anything..." dir="auto"></textarea>
             <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
                 <svg id="sendIcon" width="22" height="22" viewBox="0 0 24 24" fill="black"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 <span id="countdownEl" class="countdown-text" style="display:none;"></span>
@@ -341,7 +379,7 @@ body {
     <div id="galleryModal" class="modal-overlay">
         <div class="modal-window" style="height:80%;">
             <div class="modal-header">
-                <span style="font-weight:700; color:white;" id="txtGalleryTitle">معرض صوري</span>
+                <span style="font-weight:700; color:white;" id="txtGalleryTitle">My Gallery</span>
                 <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
             </div>
             <div class="gallery-grid" id="galleryGrid"></div>
@@ -351,7 +389,7 @@ body {
     <div id="buyModal" class="modal-overlay">
         <div class="modal-window">
             <div class="modal-header">
-                <span style="font-weight:700; color:white;" id="txtBuyTitle">شراء توكين</span>
+                <span style="font-weight:700; color:white;" id="txtBuyTitle">Buy Tokens</span>
                 <button onclick="document.getElementById('buyModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
             </div>
             <div class="buy-grid" id="buyGrid"></div>
@@ -361,13 +399,13 @@ body {
     <div id="saveHelpModal" class="modal-overlay">
         <div class="modal-window">
             <div class="modal-header">
-                <span style="font-weight:700; color:white;">حفظ الصورة</span>
+                <span style="font-weight:700; color:white;">Save Image</span>
                 <button onclick="document.getElementById('saveHelpModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
             </div>
             <div class="save-help-content">
                 <img id="saveHelpImg" class="save-help-img" src="">
                 <div class="save-help-text" id="txtSaveHelp"></div>
-                <button class="g-btn g-down" onclick="document.getElementById('saveHelpModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">تم / Done</button>
+                <button class="g-btn g-down" onclick="document.getElementById('saveHelpModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">Done</button>
             </div>
         </div>
     </div>
@@ -398,7 +436,8 @@ body {
             noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
             sec: "ث", noImage: "مفيش صورة للتحميل", saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'",
             buy: "شراء", tokens: "توكين", pi: "Pi", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
-            cost: "توكين"
+            cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
+            login: "Pi Login", features: "الموقع يدعم", soon: "قريباً"
         },
         en: {
             gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
@@ -407,11 +446,13 @@ body {
             noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
             sec: "s", noImage: "No image to download", saveHelp: "Long Press the image above<br>then select 'Save Image'",
             buy: "Buy", tokens: "Tokens", pi: "Pi", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
-            cost: "Tokens"
+            cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
+            login: "Pi Login", features: "Site Supports", soon: "Soon"
         }
     };
 
-    let currentLang = 'ar';
+    // --- State ---
+    let currentLang = 'en'; // Default English
     let currentModel = MODELS[0].id;
     let currentWidth = 1024;
     let currentHeight = 1024;
@@ -426,23 +467,35 @@ body {
         renderAspectMenu();
         updateAspectUI();
         updateHeaderModelUI();
-        applyLanguage('ar'); 
+        applyLanguage('en'); 
     });
 
     function toggleLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        document.getElementById('langBtn').textContent = currentLang === 'ar' ? 'EN' : 'AR';
+        const label = currentLang === 'ar' ? 'EN' : 'AR';
+        document.getElementById('langBtn').textContent = label;
+        document.getElementById('landingLangBtn').textContent = label;
         applyLanguage(currentLang);
     }
 
     function applyLanguage(lang) {
         const t = TRANSLATIONS[lang];
+        // Header & Chat
         document.getElementById('txtGallery').textContent = t.gallery;
         document.getElementById('emptyMsg').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
+        
+        // Modals
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
         document.getElementById('txtBuyTitle').textContent = t.buyTitle;
         document.getElementById('txtSaveHelp').innerHTML = t.saveHelp;
+        
+        // Landing
+        document.getElementById('txtLandingDesc').textContent = t.desc;
+        document.getElementById('txtLogin').textContent = t.login;
+        document.getElementById('txtFeaturesTitle').textContent = t.features;
+        document.getElementById('txtSoon').textContent = t.soon;
+
         renderModelMenu();
         renderBuyGrid();
     }
@@ -472,7 +525,6 @@ body {
     // --- Menus Logic ---
     function updateHeaderModelUI() {
         const m = MODELS.find(x => x.id === currentModel);
-        // Put the cost inside the small yellow badge
         const badge = `<span class="header-cost-badge">${m.cost}</span>`;
         document.getElementById('headerModelName').innerHTML = `${m.name} ${badge}`;
     }
@@ -583,7 +635,7 @@ body {
         try {
             const paymentData = {
                 amount: pkg.pi,
-                memo: `${pkg.tokens} Tokens - AI Imagen`,
+                memo: `${pkg.tokens} Tokens - AIWay`,
                 metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
             };
             await Pi.createPayment(paymentData, {
@@ -776,7 +828,6 @@ body {
             grid.innerHTML = '';
             if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
             
-            // Loop images and force render buttons for EACH
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
