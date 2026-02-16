@@ -254,22 +254,20 @@ body {
 .buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
 .buy-icon { width: 24px; height: 24px; fill: var(--accent); }
 
-/* --- Gallery Styling (Updated for Overlay) --- */
+/* --- Gallery Styling --- */
 .gallery-grid { 
-    flex: 1; overflow-y: auto; /* Enable Scrolling */
-    padding: 10px; 
+    flex: 1; overflow-y: auto; padding: 10px; 
     display: grid; grid-template-columns: repeat(2, 1fr); 
     gap: 10px; align-content: start;
 }
 .gallery-item { 
     position: relative; border-radius: 12px; overflow: hidden; 
     border: 1px solid var(--border); 
-    aspect-ratio: 1/1; /* Force Square */
+    aspect-ratio: 1/1; 
 }
 .gallery-item img {
     width: 100%; height: 100%; object-fit: cover; display: block;
 }
-/* Overlay Actions */
 .gallery-actions { 
     position: absolute; bottom: 0; left: 0; right: 0;
     padding: 10px; 
@@ -408,9 +406,9 @@ body {
     // --- Config ---
     const MODELS = [
         { id: 'imagen-4', name: 'Nano Banana', desc: 'Creative', cost: 1 },
-        { id: 'gptimage', name: 'Chat GPT Image', desc: 'Coherent', cost: 3 },
+        { id: 'gptimage', name: 'Chat GPT Image', desc: 'Coherent', cost: 5 },
         { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2 },
-        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 2 }
+        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 4 }
     ];
 
     const RATIOS = [
@@ -420,7 +418,8 @@ body {
         { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
     ];
 
-    const PACKAGES = [ { pi: 1, tokens: 10 }, { pi: 2, tokens: 20 }, { pi: 3, tokens: 30 } ];
+    // Packages in USD ($1, $5, $10)
+    const PACKAGES = [ { usd: 1, tokens: 50 }, { usd: 5, tokens: 250 }, { usd: 10, tokens: 500 } ];
 
     const TRANSLATIONS = {
         ar: {
@@ -431,7 +430,8 @@ body {
             sec: "ث", noImage: "مفيش صورة للتحميل", saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'",
             buy: "شراء", tokens: "توكين", pi: "Pi", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
             cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
-            login: "Pi Login", features: "الموقع يدعم", soon: "قريباً"
+            login: "Pi Login", features: "الموقع يدعم", soon: "قريباً",
+            usd: "دولار"
         },
         en: {
             gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
@@ -441,7 +441,8 @@ body {
             sec: "s", noImage: "No image to download", saveHelp: "Long Press the image above<br>then select 'Save Image'",
             buy: "Buy", tokens: "Tokens", pi: "Pi", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
             cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
-            login: "Pi Login", features: "Site Supports", soon: "Soon"
+            login: "Pi Login", features: "Site Supports", soon: "Soon",
+            usd: "USD"
         }
     };
 
@@ -453,6 +454,7 @@ body {
     let currentRatioId = 'square';
     let piUser = null;
     let cooldownEndTime = 0;
+    let currentPiPrice = 40.0; // Default fallback price
 
     const Pi = window.Pi;
     document.addEventListener('DOMContentLoaded', () => {
@@ -462,7 +464,24 @@ body {
         updateAspectUI();
         updateHeaderModelUI();
         applyLanguage('en'); 
+        fetchPiPrice(); // Get real price on load
+        setInterval(fetchPiPrice, 10000); // Poll every 10s
     });
+
+    // --- Price Fetching ---
+    async function fetchPiPrice() {
+        try {
+            // Using our backend function to get price (safe way)
+            const res = await fetch('/.netlify/functions/get-pi-price');
+            const data = await res.json();
+            if(data.price) {
+                currentPiPrice = data.price;
+                if(document.getElementById('buyModal').style.display === 'flex') {
+                    renderBuyGrid(); // Live update if open
+                }
+            }
+        } catch(e) { console.log("Using default price"); }
+    }
 
     function toggleLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
@@ -602,21 +621,26 @@ body {
         if(isHidden) document.getElementById('modelMenu').style.display = 'none';
     }
 
-    // --- Payments ---
+    // --- Payments (Dynamic Calc) ---
     function openBuyModal() { renderBuyGrid(); document.getElementById('buyModal').style.display = 'flex'; }
 
     function renderBuyGrid() {
         const grid = document.getElementById('buyGrid');
         grid.innerHTML = '';
         const t = TRANSLATIONS[currentLang];
+        
         PACKAGES.forEach(pkg => {
+            // Calculate Pi Amount dynamically
+            const piAmount = (pkg.usd / currentPiPrice).toFixed(4);
+            
             const div = document.createElement('div');
             div.className = 'buy-card';
-            div.onclick = () => buyTokens(pkg);
+            div.onclick = () => buyTokens(pkg, piAmount);
             div.innerHTML = `
                 <div class="buy-info">
                     <span class="buy-amount">${pkg.tokens} ${t.tokens}</span>
-                    <span class="buy-cost">${pkg.pi} ${t.pi}</span>
+                    <span class="buy-cost" style="color:#aaa; font-size:11px;">$${pkg.usd}</span>
+                    <span class="buy-cost">${piAmount} ${t.pi}</span>
                 </div>
                 <svg class="buy-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
             `;
@@ -624,11 +648,11 @@ body {
         });
     }
 
-    async function buyTokens(pkg) {
+    async function buyTokens(pkg, piAmount) {
         if (!piUser) { alert("Login first"); return; }
         try {
             const paymentData = {
-                amount: pkg.pi,
+                amount: parseFloat(piAmount),
                 memo: `${pkg.tokens} Tokens - AIWay`,
                 metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
             };
