@@ -646,7 +646,7 @@ body {
         });
     }
 
-    async function buyTokens(pkg, piAmount) {
+        async function buyTokens(pkg, piAmount) {
         if (!piUser) { alert("Login first"); return; }
         try {
             const paymentData = {
@@ -660,8 +660,18 @@ body {
                     if (!res.ok) throw new Error("Approval Failed");
                 },
                 onReadyForServerCompletion: async (paymentId, txid) => {
+                    // التعديل هنا: إرسال username مع باقي البيانات
                     const res = await fetch('/.netlify/functions/complete', {
-                        method: 'POST', body: JSON.stringify({ paymentId, txid, pi_uid: piUser.uid, tokenAmount: pkg.tokens })
+                        method: 'POST',
+                        body: JSON.stringify({
+                            paymentId,
+                            txid,
+                            pi_uid: piUser.uid,
+                            username: piUser.username, // <--- تم إضافة هذا السطر
+                            tokenAmount: pkg.tokens,
+                            usdAmount: pkg.usd,
+                            pAmount: paymentData.amount
+                        })
                     });
                     if (!res.ok) throw new Error("Completion Failed");
                     const data = await res.json();
@@ -672,9 +682,9 @@ body {
                 onCancel: (paymentId) => { console.log("Cancelled"); },
                 onError: (error) => { console.error("Error", error); }
             });
-        } catch (e) { console.error(e); alert("Payment Failed"); }
+        } catch (e) { console.error(e);
+            alert("Payment Failed"); }
     }
-
     function updateCooldownUI() {
         const now = Date.now();
         const btn = document.getElementById('sendBtn');
