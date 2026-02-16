@@ -285,10 +285,15 @@ body {
 .g-down { background: var(--accent); color: black; }
 .g-down:active { opacity: 0.9; }
 
-/* Save Help */
-.save-help-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-.save-help-img { max-width: 100%; max-height: 50vh; border-radius: 12px; border: 2px solid var(--accent); margin-bottom: 20px; }
-.save-help-text { color: white; text-align: center; margin-bottom: 20px; font-size: 16px; }
+/* Download Help Modal Styling */
+.dl-help-icon { font-size: 40px; margin-bottom: 10px; }
+.dl-help-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
+.dl-help-text { color: #ccc; text-align: center; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+.dl-copy-box { 
+    background: rgba(255,255,255,0.1); border: 1px dashed #555; 
+    padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--pi-gold);
+    width: 100%; text-align: center; margin-bottom: 15px; word-break: break-all;
+}
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -388,17 +393,15 @@ body {
         </div>
     </div>
 
-    <div id="saveHelpModal" class="modal-overlay">
-        <div class="modal-window">
-            <div class="modal-header">
-                <span style="font-weight:700; color:white;">Save Image</span>
-                <button onclick="document.getElementById('saveHelpModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+    <div id="downloadInfoModal" class="modal-overlay">
+        <div class="modal-window" style="padding:20px; align-items:center;">
+            <div class="dl-help-icon">📋</div>
+            <div class="dl-help-title" id="txtDlTitle">Link Copied!</div>
+            <div class="dl-help-text" id="txtDlDesc">
+                Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.
             </div>
-            <div class="save-help-content">
-                <img id="saveHelpImg" class="save-help-img" src="">
-                <div class="save-help-text" id="txtSaveHelp"></div>
-                <button class="g-btn g-down" onclick="document.getElementById('saveHelpModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">Done</button>
-            </div>
+            <div class="dl-copy-box" id="dlLinkBox">...</div>
+            <button class="g-btn g-down" onclick="document.getElementById('downloadInfoModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">OK</button>
         </div>
     </div>
 
@@ -418,13 +421,11 @@ body {
         { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
     ];
 
-    // Packages in USD ($1, $5, $10)
     const PACKAGES = [ 
-    { usd: 1, tokens: 150 }, 
-    { usd: 5, tokens: 750 }, 
-    { usd: 10, tokens: 1500 } 
-];
-
+        { usd: 1, tokens: 150 }, 
+        { usd: 5, tokens: 750 }, 
+        { usd: 10, tokens: 1500 } 
+    ];
 
     const TRANSLATIONS = {
         ar: {
@@ -432,34 +433,36 @@ body {
             placeholder: "تخيل أي شيء...", generating: "جاري الإنشاء...", download: "تحميل",
             delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
             noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
-            sec: "ث", noImage: "مفيش صورة للتحميل", saveHelp: "اضغط مطولاً على الصورة أعلاه<br>ثم اختر 'حفظ الصورة'",
+            sec: "ث", noImage: "مفيش صورة للتحميل",
             buy: "شراء", tokens: "توكين", pi: "Pi", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
             cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
-            login: "Pi Login", features: "الموقع يدعم", soon: "قريباً",
-            usd: "دولار"
+            login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
+            dlTitle: "تم نسخ رابط الصورة! 📋",
+            dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح."
         },
         en: {
             gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
             placeholder: "Imagine anything...", generating: "Generating...", download: "Download",
             delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
             noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
-            sec: "s", noImage: "No image to download", saveHelp: "Long Press the image above<br>then select 'Save Image'",
+            sec: "s", noImage: "No image to download",
             buy: "Buy", tokens: "Tokens", pi: "Pi", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
             cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
-            login: "Pi Login", features: "Site Supports", soon: "Soon",
-            usd: "USD"
+            login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
+            dlTitle: "Link Copied! 📋",
+            dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution."
         }
     };
 
     // --- State ---
-    let currentLang = 'en'; // Default English
+    let currentLang = 'en'; 
     let currentModel = MODELS[0].id;
     let currentWidth = 1024;
     let currentHeight = 1024;
     let currentRatioId = 'square';
     let piUser = null;
     let cooldownEndTime = 0;
-    let currentPiPrice = 40.0; // Default fallback price
+    let currentPiPrice = 40.0; 
 
     const Pi = window.Pi;
     document.addEventListener('DOMContentLoaded', () => {
@@ -469,20 +472,18 @@ body {
         updateAspectUI();
         updateHeaderModelUI();
         applyLanguage('en'); 
-        fetchPiPrice(); // Get real price on load
-        setInterval(fetchPiPrice, 10000); // Poll every 10s
+        fetchPiPrice(); 
+        setInterval(fetchPiPrice, 10000); 
     });
 
-    // --- Price Fetching ---
     async function fetchPiPrice() {
         try {
-            // Using our backend function to get price (safe way)
             const res = await fetch('/.netlify/functions/get-pi-price');
             const data = await res.json();
             if(data.price) {
                 currentPiPrice = data.price;
                 if(document.getElementById('buyModal').style.display === 'flex') {
-                    renderBuyGrid(); // Live update if open
+                    renderBuyGrid(); 
                 }
             }
         } catch(e) { console.log("Using default price"); }
@@ -498,21 +499,19 @@ body {
 
     function applyLanguage(lang) {
         const t = TRANSLATIONS[lang];
-        // Header & Chat
         document.getElementById('txtGallery').textContent = t.gallery;
         document.getElementById('emptyMsg').innerHTML = t.welcome;
         document.getElementById('promptInput').placeholder = t.placeholder;
-        
-        // Modals
         document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
         document.getElementById('txtBuyTitle').textContent = t.buyTitle;
-        document.getElementById('txtSaveHelp').innerHTML = t.saveHelp;
-        
-        // Landing
         document.getElementById('txtLandingDesc').textContent = t.desc;
         document.getElementById('txtLogin').textContent = t.login;
         document.getElementById('txtFeaturesTitle').textContent = t.features;
         document.getElementById('txtSoon').textContent = t.soon;
+        
+        // Modal Texts
+        document.getElementById('txtDlTitle').textContent = t.dlTitle;
+        document.getElementById('txtDlDesc').innerHTML = t.dlDesc.replace(/\n/g, '<br>');
 
         renderModelMenu();
         renderBuyGrid();
@@ -540,7 +539,6 @@ body {
         } catch (e) { console.error("Balance Error", e); }
     }
 
-    // --- Menus Logic ---
     function updateHeaderModelUI() {
         const m = MODELS.find(x => x.id === currentModel);
         const badge = `<span class="header-cost-badge">${m.cost}</span>`;
@@ -585,7 +583,6 @@ body {
         if(isHidden) document.getElementById('aspectMenu').style.display = 'none';
     }
 
-    // --- Aspect Logic ---
     function renderAspectMenu() {
         const menu = document.getElementById('aspectMenu');
         menu.innerHTML = '';
@@ -626,18 +623,14 @@ body {
         if(isHidden) document.getElementById('modelMenu').style.display = 'none';
     }
 
-    // --- Payments (Dynamic Calc) ---
     function openBuyModal() { renderBuyGrid(); document.getElementById('buyModal').style.display = 'flex'; }
 
     function renderBuyGrid() {
         const grid = document.getElementById('buyGrid');
         grid.innerHTML = '';
         const t = TRANSLATIONS[currentLang];
-        
         PACKAGES.forEach(pkg => {
-            // Calculate Pi Amount dynamically
             const piAmount = (pkg.usd / currentPiPrice).toFixed(4);
-            
             const div = document.createElement('div');
             div.className = 'buy-card';
             div.onclick = () => buyTokens(pkg, piAmount);
@@ -682,7 +675,6 @@ body {
         } catch (e) { console.error(e); alert("Payment Failed"); }
     }
 
-    // --- Core Generation ---
     function updateCooldownUI() {
         const now = Date.now();
         const btn = document.getElementById('sendBtn');
@@ -806,38 +798,39 @@ body {
         c.scrollTop = c.scrollHeight;
     }
 
-    // --- Robust Download ---
+    // --- Updated Download Logic (Copy & Show Modal) ---
     async function forceDownload(url, btn) {
-        if (!url) { alert(TRANSLATIONS[currentLang].noImage); return; }
-        const originalText = btn.innerText;
-        btn.innerText = "..."; 
-        const filename = `AI_Image_${Date.now()}.png`; 
+        // Prepare the download URL
+        // We append ?download= to prompt immediate download in Chrome
+        const downloadUrl = url + "?download=";
+        
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Net error");
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = blobUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => { window.URL.revokeObjectURL(blobUrl); document.body.removeChild(a); btn.innerText = originalText; }, 500);
-        } catch (e) {
-            showSaveHelpModal(url);
-            btn.innerText = originalText;
+            // Attempt 1: Modern Clipboard API
+            await navigator.clipboard.writeText(downloadUrl);
+            showInfoModal(downloadUrl);
+        } catch (err) {
+            // Attempt 2: Fallback for older WebViews
+            const textArea = document.createElement("textarea");
+            textArea.value = downloadUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showInfoModal(downloadUrl);
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                alert("Failed to copy link. Please manually open: " + downloadUrl);
+            }
+            document.body.removeChild(textArea);
         }
     }
 
-    function showSaveHelpModal(url) {
-        const modal = document.getElementById('saveHelpModal');
-        const img = document.getElementById('saveHelpImg');
-        img.src = url;
-        modal.style.display = 'flex';
+    function showInfoModal(link) {
+        document.getElementById('dlLinkBox').textContent = link;
+        document.getElementById('downloadInfoModal').style.display = 'flex';
     }
 
-    // --- Gallery Logic (Fixed with Permanent Buttons) ---
+    // --- Gallery ---
     async function openGallery() {
         const t = TRANSLATIONS[currentLang];
         if(!piUser) { alert("Login Required"); return; }
@@ -851,7 +844,6 @@ body {
             grid.innerHTML = '';
             if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
             
-            // Loop images and force render buttons for EACH
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
@@ -882,7 +874,6 @@ body {
         } catch(e) { console.error(e); }
     }
 
-    // Close logic
     document.addEventListener('click', (e) => {
         if(!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
             document.getElementById('modelMenu').style.display = 'none';
