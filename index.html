@@ -402,6 +402,49 @@ body {
 }
 .tag-img { background: rgba(245, 158, 11, 0.15); color: var(--pi-gold); }
 .tag-txt { background: rgba(124, 58, 237, 0.15); color: #a78bfa; }
+/* --- ستايل انتظار الشات (فقاعة صغيرة) --- */
+.chat-loading-bubble {
+    padding: 15px 20px;
+    background: #1e1e1e;
+    border-radius: 20px;
+    border-top-left-radius: 4px; /* لتمييز أنها من البوت */
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: fit-content;
+    border: 1px solid var(--border);
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--pi-gold);
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* تعديل بسيط للودر الصور ليكون مختلفاً */
+.image-loading-box {
+    width: 100%;
+    aspect-ratio: 1/1;
+    border-radius: 20px;
+    background: #111;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
 </style>
 </head>
 <body>
@@ -876,7 +919,10 @@ let chatHistory = [];
         // جلب الموديل المختار
         const m = MODELS.find(x => x.id === currentModel);
         
-        const loadingId = renderLoader(t?.generating || "Thinking...");
+        // 🟢 التعديل هنا: نحدد هل هو شات أم لا ونمرر المعلومة لدالة الـ Loader
+        const isChat = m.type === 'text';
+        const loadingId = renderLoader(isChat); 
+        
         triggerCooldown(5); 
 
         try {
@@ -887,7 +933,6 @@ let chatHistory = [];
                 model: currentModel
             };
 
-            // 🟢 التعديل هنا: دمج الرسالة الحالية مع الهيستوري 🟢
             if (m.type === 'text') {
                 // نرسل التاريخ القديم + الرسالة الجديدة فوراً
                 payload.messages = [...chatHistory, { role: "user", content: text }];
@@ -962,11 +1007,30 @@ function addBotText(markdown) {
     scrollToBottom();
 }
 
-    function renderLoader(text) {
+    function renderLoader(isChat) {
         const div = document.createElement('div');
         div.className = 'message bot';
         div.id = 'loading-' + Date.now();
-        div.innerHTML = `<div class="loading-box"><div class="blur-wave"></div><div class="loading-text">${text}</div></div>`;
+
+        if (isChat) {
+            // --- شكل الشات (نقاط متحركة في فقاعة) ---
+            div.innerHTML = `
+                <div class="chat-loading-bubble">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+        } else {
+            // --- شكل الصورة (مربع كبير) ---
+            div.innerHTML = `
+                <div class="image-loading-box">
+                    <div class="blur-wave"></div>
+                    <div class="loading-text">Generating...</div>
+                </div>
+            `;
+        }
+
         document.getElementById('chatContainer').appendChild(div);
         scrollToBottom();
         return div.id;
