@@ -130,20 +130,20 @@ exports.handler = async (event) => {
         const newBalance = userFinal.token_balance - cost;
         await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-        // 4. الحفظ والرد
+        // 4. الحفظ والرد (تم التعديل هنا لإصلاح مشكلة التسجيل)
         if (isChat) {
-            // ✅ استخدام try/catch داخلي لضمان إرسال الرد حتى لو فشل التسجيل في قاعدة البيانات
-            try {
-                const { error: insertError } = await supabase.from('user_images').insert([{ 
-                    pi_uid: pi_uid,
-                    pi_username: username, 
-                    prompt: prompt, 
-                    bot_response: botReply, 
-                    type: 'text' 
-                }]);
-                if (insertError) console.error("Chat DB Insert Warning:", insertError);
-            } catch (dbErr) {
-                console.error("Critical DB Insert Error:", dbErr);
+            // ✅ تم إضافة pi_uid وتمت إضافة فحص الخطأ (error check)
+            const { error: insertError } = await supabase.from('user_images').insert([{ 
+                pi_uid: pi_uid,          // هام جداً لربط السجل
+                pi_username: username, 
+                prompt: prompt, 
+                bot_response: botReply, 
+                type: 'text' 
+            }]);
+
+            if (insertError) {
+                console.error("Chat DB Insert Error:", insertError);
+                // لا نوقف العملية، لكن نسجل الخطأ في اللوج
             }
 
             return {
@@ -151,18 +151,15 @@ exports.handler = async (event) => {
                 body: JSON.stringify({ success: true, reply: botReply, newBalance, type: 'text' })
             };
         } else {
-            try {
-                const { error: insertError } = await supabase.from('user_images').insert([{ 
-                    pi_uid: pi_uid,
-                    pi_username: username, 
-                    prompt: prompt, 
-                    image_url: finalImageUrl, 
-                    type: 'image' 
-                }]);
-                if (insertError) console.error("Image DB Insert Warning:", insertError);
-            } catch (dbErr) {
-                console.error("Critical DB Insert Error:", dbErr);
-            }
+            const { error: insertError } = await supabase.from('user_images').insert([{ 
+                pi_uid: pi_uid,          // هام جداً
+                pi_username: username, 
+                prompt: prompt, 
+                image_url: finalImageUrl, 
+                type: 'image' 
+            }]);
+
+            if (insertError) console.error("Image DB Insert Error:", insertError);
 
             return {
                 statusCode: 200,
