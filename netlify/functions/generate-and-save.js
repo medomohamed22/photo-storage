@@ -1,9 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// ملاحظة: نعتمد على fetch المدمج في Node.js 18+ لتجنب مشاكل الروابط
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// إعدادات التكلفة
 const MODEL_COSTS = {
     'imagen-4': 1,
     'klein': 2,
@@ -25,20 +23,28 @@ exports.handler = async (event) => {
         const body = JSON.parse(event.body);
         let { prompt, username, pi_uid, model, width, height, messages } = body;
 
-        if (!prompt || !username || !pi_uid) {
+        // ✅ السماح بـ prompt أو messages
+        if ((!prompt && (!messages || messages.length === 0)) || !username || !pi_uid) {
             return { statusCode: 400, body: JSON.stringify({ error: "بيانات ناقصة" }) };
         }
 
-        const selectedModel = model ? model.trim() : 'imagen-4';
-        
-        // جلب مفتاح API من متغيرات البيئة
-        const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY || ""; 
+        // ✅ لو prompt مش موجود في الشات — استخرجه من messages
+        if (!prompt && Array.isArray(messages)) {
+            const lastUser = [...messages].reverse().find(m => m.role === 'user' && m.content);
+            prompt = lastUser?.content || "";
+        }
 
-        // تحديد نوع العملية
-        const isChat = selectedModel.includes('openai') || selectedModel.includes('gpt-5') || (messages && messages.length > 0);
+        const selectedModel = model ? model.trim() : 'imagen-4';
+        const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY || "";
+
+        const isChat =
+            selectedModel.includes('openai') ||
+            selectedModel.includes('gpt-5') ||
+            (messages && messages.length > 0);
+
         const cost = MODEL_COSTS[selectedModel] || 5;
 
-        // 1. التحقق من الرصيد
+        // 1️⃣ Check balance
         const { data: userCheck, error: checkError } = await supabase
             .from('users')
             .select('token_balance')
@@ -50,22 +56,22 @@ exports.handler = async (event) => {
         }
 
         if (userCheck.token_balance < cost) {
-            return { 
-                statusCode: 403, 
-                body: JSON.stringify({ error: 'INSUFFICIENT_TOKENS', currentBalance: userCheck.token_balance }) 
+            return {
+                statusCode: 403,
+                body: JSON.stringify({ error: 'INSUFFICIENT_TOKENS', currentBalance: userCheck.token_balance })
             };
         }
 
         let botReply = null;
         let finalImageUrl = null;
 
-        // 2. التنفيذ
+        // ===================== CHAT =====================
         if (isChat) {
-            console.log("Processing Chat Request:", selectedModel);
+            console.log("Processing Chat:", selectedModel);
 
-            let finalMessages = messages || [];
+            let finalMessages = Array.isArray(messages) ? [...messages] : [];
             const systemMsg = { role: "system", content: "You are a helpful assistant. Use Markdown for code." };
-            
+
             if (finalMessages.length === 0 || finalMessages[0].role !== 'system') {
                 finalMessages.unshift(systemMsg);
             }
@@ -76,90 +82,106 @@ exports.handler = async (event) => {
             const headers = { "Content-Type": "application/json" };
             if (POLLINATIONS_KEY) headers["Authorization"] = `Bearer ${POLLINATIONS_KEY}`;
 
-            const chatUrl = `https://gen.pollinations.ai/v1/chat/completions?key=${encodeURIComponent(POLLINATIONS_KEY)}`;
+            const chatUrl = POLLINATIONS_KEY
+                ? `https://gen.pollinations.ai/v1/chat/completions?key=${encodeURIComponent(POLLINATIONS_KEY)}`
+                : `https://gen.pollinations.ai/v1/chat/completions`;
 
             const chatResponse = await fetch(chatUrl, {
                 method: "POST",
-                headers: headers,
-                body: JSON.stringify({ 
-                    model: selectedModel, 
-                    messages: finalMessages 
+                headers,
+                body: JSON.stringify({
+                    model: selectedModel,
+                    messages: finalMessages
                 })
             });
 
             if (!chatResponse.ok) {
                 const errTxt = await chatResponse.text();
-                if (chatResponse.status === 401 && !POLLINATIONS_KEY) {
-                    throw new Error("Missing API Key in Server Env");
-                }
                 throw new Error(`Chat API Error: ${chatResponse.status} - ${errTxt}`);
             }
 
             const chatData = await chatResponse.json();
-            botReply = chatData.choices[0].message.content;
+            botReply = chatData?.choices?.[0]?.message?.content || "No response from AI";
+        }
 
-        } else {
-            // مسار الصور
-            console.log("Processing Image Request:", selectedModel);
+        // ===================== IMAGE =====================
+        else {
+            console.log("Processing Image:", selectedModel);
 
             const safeWidth = width || 1024;
             const safeHeight = height || 1024;
             const seed = Math.floor(Math.random() * 1000000);
-            
+
             let targetUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
             if (POLLINATIONS_KEY) targetUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
             const imageRes = await fetch(targetUrl);
             if (!imageRes.ok) throw new Error(`Image Gen Failed: ${imageRes.status}`);
-            
-            const arrayBuffer = await imageRes.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
 
-            uploadedFileName = `${username}_${Date.now()}.jpg`;
-            const { error: uploadError } = await supabase.storage.from('nano_images').upload(uploadedFileName, buffer, { contentType: 'image/jpeg' });
+            const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+            const ext = contentType.includes('png')
+                ? 'png'
+                : contentType.includes('webp')
+                ? 'webp'
+                : 'jpg';
+
+            const buffer = Buffer.from(await imageRes.arrayBuffer());
+
+            uploadedFileName = `${username}_${Date.now()}.${ext}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('nano_images')
+                .upload(uploadedFileName, buffer, { contentType });
+
             if (uploadError) throw uploadError;
 
-            const { data: publicUrlData } = supabase.storage.from('nano_images').getPublicUrl(uploadedFileName);
+            const { data: publicUrlData } = supabase.storage
+                .from('nano_images')
+                .getPublicUrl(uploadedFileName);
+
             finalImageUrl = publicUrlData.publicUrl;
         }
 
-        // 3. خصم الرصيد
-        const { data: userFinal } = await supabase.from('users').select('token_balance').eq('pi_uid', pi_uid).single();
-        if (!userFinal || userFinal.token_balance < cost) throw new Error("INSUFFICIENT_TOKENS_LATE");
-        
+        // 3️⃣ Deduct tokens
+        const { data: userFinal } = await supabase
+            .from('users')
+            .select('token_balance')
+            .eq('pi_uid', pi_uid)
+            .single();
+
+        if (!userFinal || userFinal.token_balance < cost) {
+            throw new Error("INSUFFICIENT_TOKENS_LATE");
+        }
+
         const newBalance = userFinal.token_balance - cost;
         await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-        // 4. الحفظ والرد (تم التعديل هنا لإصلاح مشكلة التسجيل)
+        // ===================== SAVE =====================
         if (isChat) {
-            // ✅ تم إضافة pi_uid وتمت إضافة فحص الخطأ (error check)
-            const { error: insertError } = await supabase.from('user_images').insert([{ 
-                pi_uid: pi_uid,          // هام جداً لربط السجل
-                pi_username: username, 
-                prompt: prompt, 
-                bot_response: botReply, 
-                type: 'text' 
+            const { error: insertError } = await supabase.from('user_images').insert([{
+                pi_uid: pi_uid,
+                pi_username: username,
+                prompt: prompt,
+                bot_response: botReply,
+                type: 'text'
             }]);
 
-            if (insertError) {
-                console.error("Chat DB Insert Error:", insertError);
-                // لا نوقف العملية، لكن نسجل الخطأ في اللوج
-            }
+            if (insertError) console.error("Chat Insert Error:", insertError);
 
             return {
                 statusCode: 200,
                 body: JSON.stringify({ success: true, reply: botReply, newBalance, type: 'text' })
             };
         } else {
-            const { error: insertError } = await supabase.from('user_images').insert([{ 
-                pi_uid: pi_uid,          // هام جداً
-                pi_username: username, 
-                prompt: prompt, 
-                image_url: finalImageUrl, 
-                type: 'image' 
+            const { error: insertError } = await supabase.from('user_images').insert([{
+                pi_uid: pi_uid,
+                pi_username: username,
+                prompt: prompt,
+                image_url: finalImageUrl,
+                type: 'image'
             }]);
 
-            if (insertError) console.error("Image DB Insert Error:", insertError);
+            if (insertError) console.error("Image Insert Error:", insertError);
 
             return {
                 statusCode: 200,
@@ -169,12 +191,15 @@ exports.handler = async (event) => {
 
     } catch (error) {
         console.error("Handler Error:", error);
-        if (uploadedFileName) await supabase.storage.from('nano_images').remove([uploadedFileName]);
-        
+
+        if (uploadedFileName) {
+            await supabase.storage.from('nano_images').remove([uploadedFileName]);
+        }
+
         if (error.message === "INSUFFICIENT_TOKENS_LATE") {
             return { statusCode: 403, body: JSON.stringify({ error: 'INSUFFICIENT_TOKENS' }) };
         }
-        
+
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };
