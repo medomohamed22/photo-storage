@@ -20,6 +20,9 @@ const json = (statusCode, data) => ({
     body: JSON.stringify(data)
 });
 
+// دالة انتظار (Sleep)
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') return json(204, { ok: true });
     if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
@@ -36,7 +39,8 @@ exports.handler = async (event) => {
 
         const selectedModel = model ? model.trim() : 'imagen-4';
         
-        // كشف نوع العملية (شات أم صورة)
+        // كشف نوع العملية: شات أم صورة
+        // ⚠️ هام: نستثني gptimage من كونه شات
         const isChat = (
             (selectedModel.includes('openai') || 
             (selectedModel.includes('gpt') && !selectedModel.includes('gptimage'))) || 
@@ -71,18 +75,52 @@ exports.handler = async (event) => {
 
             const chatUrl = `https://gen.pollinations.ai/v1/chat/completions?key=${encodeURIComponent(POLLINATIONS_KEY)}`;
             
-            const res = await fetch(chatUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ model: selectedModel, messages: finalMessages })
-            });
+            // 🟢 نظام إعادة المحاولة للشات (Fix 429)
+            // سيحاول 3 مرات في حال وجود ضغط
+            let chatRes;
+            let success = false;
+            
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    chatRes = await fetch(chatUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ model: selectedModel, messages: finalMessages })
+                    });
 
-            if (!res.ok) throw new Error(`Chat API Error: ${res.status}`);
-            const data = await res.json();
-            botReply = data.choices?.[0]?.message?.content || "";
+                    // إذا نجح الطلب (200 OK) نخرج من الحلقة
+                    if (chatRes.ok) {
+                        success = true;
+                        break;
+                    }
+
+                    // إذا كان الخطأ 429 (Too Many Requests) أو 5xx (Server Error)
+                    if (chatRes.status === 429 || chatRes.status >= 500) {
+                        console.log(`Chat Attempt ${attempt} failed: ${chatRes.status}. Retrying...`);
+                        // انتظار تصاعدي: 1.5 ثانية، ثم 3 ثواني
+                        if (attempt < 3) await sleep(1500 * attempt);
+                        continue;
+                    }
+                    
+                    // أخطاء أخرى لا تستحق المحاولة
+                    break; 
+
+                } catch (err) {
+                    console.log(`Chat Network Error Attempt ${attempt}: ${err.message}`);
+                    if (attempt < 3) await sleep(1500);
+                }
+            }
+
+            if (!success || !chatRes || !chatRes.ok) {
+                const status = chatRes ? chatRes.status : "Unknown";
+                throw new Error(`Chat API Failed after retries: ${status}`);
+            }
+
+            const data = await chatRes.json();
+            botReply = data.choices?.[0]?.message?.content || "No response content";
 
         } else {
-            console.log("Starting Image (One Shot):", selectedModel);
+            console.log("Starting Image (Long Wait):", selectedModel);
 
             const safeWidth = width || 1024;
             const safeHeight = height || 1024;
@@ -91,8 +129,7 @@ exports.handler = async (event) => {
             let imgUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
             if (POLLINATIONS_KEY) imgUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-            // ⚠️ التغيير الجذري هنا: محاولة واحدة طويلة جداً (28 ثانية)
-            // هذا يعطي أقصى فرصة للموديلات البطيئة لكي تكتمل
+            // محاولة واحدة طويلة للصور (28 ثانية) لتجنب انقطاع الاتصال
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 28000); 
 
@@ -102,7 +139,7 @@ exports.handler = async (event) => {
 
                 if (!imgRes.ok) {
                     const errTxt = await imgRes.text();
-                    throw new Error(`Image Gen Failed: ${imgRes.status} - ${errTxt.substring(0, 50)}`);
+                    throw new Error(`Image Gen Failed: ${imgRes.status}`);
                 }
                 
                 const buffer = Buffer.from(await imgRes.arrayBuffer());
@@ -121,7 +158,7 @@ exports.handler = async (event) => {
                 finalImageUrl = publicUrlData.publicUrl;
 
             } catch (err) {
-                if (err.name === 'AbortError') throw new Error("Server Timeout (Image took too long)");
+                if (err.name === 'AbortError') throw new Error("Image Timeout (Server Busy)");
                 throw err;
             }
         }
@@ -137,13 +174,13 @@ exports.handler = async (event) => {
         const dbPayload = {
             pi_uid,
             pi_username: username,
-            prompt: prompt || (messages ? messages[messages.length-1].content : "No Prompt"),
+            prompt: prompt || (messages && messages.length > 0 ? messages[messages.length-1].content : "No Prompt"),
             type: isChat ? 'text' : 'image',
             bot_response: botReply,
             image_url: finalImageUrl
         };
 
-        try { await supabase.from('user_images').insert([dbPayload]); } catch (dbErr) { console.error("DB Insert Error:", dbErr); }
+        try { await supabase.from('user_images').insert([dbPayload]); } catch (dbErr) { console.error("DB Insert Warning:", dbErr); }
 
         return json(200, {
             success: true,
@@ -157,6 +194,12 @@ exports.handler = async (event) => {
         console.error("Handler Error:", error);
         if (uploadedFileName) await supabase.storage.from('nano_images').remove([uploadedFileName]);
         
-        return json(500, { error: error.message || "Server Error" });
+        const errMsg = error.message || "Server Error";
+        // إذا كان الخطأ 429، نرسله للفرونت ليتم التعامل معه
+        if (errMsg.includes("429")) {
+            return json(429, { error: "High Traffic, Please wait..." });
+        }
+        
+        return json(500, { error: errMsg });
     }
 };
