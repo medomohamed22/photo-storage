@@ -861,26 +861,25 @@ let chatHistory = [];
         updateCooldownUI();
     }
 
-    async function sendPrompt() {
+   async function sendPrompt() {
         if (Date.now() < cooldownEndTime) return;
         
         const input = document.getElementById('promptInput');
         const text = input.value.trim();
-        const t = TRANSLATIONS[currentLang]; // تأكد أن لديك كائن الترجمة
+        const t = TRANSLATIONS[currentLang];
         
         if (!text || !piUser) return;
 
         input.value = '';
         addMessage(text, 'user');
         
-        // جلب بيانات الموديل المختار حالياً
+        // جلب الموديل المختار
         const m = MODELS.find(x => x.id === currentModel);
         
-        const loadingId = renderLoader(t?.generating || "Thinking..."); // استخدام نص احتياطي
+        const loadingId = renderLoader(t?.generating || "Thinking...");
         triggerCooldown(5); 
 
         try {
-            // 1. تجهيز البيانات الأساسية
             let payload = {
                 prompt: text, 
                 username: piUser.username, 
@@ -888,15 +887,14 @@ let chatHistory = [];
                 model: currentModel
             };
 
-            // 2. تعديل البيانات حسب نوع الموديل (هذا هو الحل للمشكلة)
+            // 🟢 التعديل هنا: دمج الرسالة الحالية مع الهيستوري 🟢
             if (m.type === 'text') {
-                // --- إعدادات الشات ---
-                payload.messages = chatHistory; // نرسل تاريخ المحادثة
-                // نحذف الأبعاد لأنها تخص الصور فقط وتسبب مشاكل في الباك إند
+                // نرسل التاريخ القديم + الرسالة الجديدة فوراً
+                payload.messages = [...chatHistory, { role: "user", content: text }];
+                
                 delete payload.width;
                 delete payload.height;
             } else {
-                // --- إعدادات الصور ---
                 payload.width = currentWidth;
                 payload.height = currentHeight;
             }
@@ -920,9 +918,9 @@ let chatHistory = [];
             
             if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
 
-            // 3. معالجة الرد (نص أم صورة؟)
-            // نتأكد هل الرد يحتوي على نص (reply) أو أننا أصلاً في موديل شات
+            // معالجة الرد
             if (data.type === 'text' || (m.type === 'text' && data.reply)) {
+                // نضيف الرسالة والرد للسجل المحلي ليتم استخدامه في المرة القادمة
                 chatHistory.push({ role: "user", content: text });
                 chatHistory.push({ role: "assistant", content: data.reply });
                 addBotText(data.reply);
