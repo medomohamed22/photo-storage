@@ -1,6 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 const MODEL_COSTS = {
   'imagen-4': 1,
@@ -20,7 +23,11 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 24000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...options, signal: controller.signal, redirect: 'follow' });
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      redirect: 'follow'
+    });
   } finally {
     clearTimeout(id);
   }
@@ -33,7 +40,7 @@ async function fetchWithRetryTimeout(url, options = {}, timeoutMs = 24000, retri
       const res = await fetchWithTimeout(url, options, timeoutMs);
       if (res.ok) return res;
 
-      // لو مزود الخدمة بيرجع 5xx نجرب تاني
+      // 5xx نجرب تاني
       if (res.status >= 500 && res.status <= 599) {
         lastErr = new Error(`Upstream Error: ${res.status} - ${await res.text().catch(() => '')}`);
         await sleep(800 + i * 600);
@@ -44,11 +51,14 @@ async function fetchWithRetryTimeout(url, options = {}, timeoutMs = 24000, retri
       throw new Error(`Request Failed: ${res.status} - ${await res.text().catch(() => '')}`);
     } catch (e) {
       lastErr = e;
-      // AbortError = Timeout
+
+      // Timeout
       if (e?.name === 'AbortError') {
         await sleep(800 + i * 600);
         continue;
       }
+
+      // أي خطأ تاني نجرب مرة كمان برضه
       await sleep(800 + i * 600);
     }
   }
@@ -59,8 +69,6 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
-
-  let uploadedFileName = null;
 
   try {
     const body = JSON.parse(event.body || "{}");
@@ -147,7 +155,7 @@ exports.handler = async (event) => {
       botReply = chatData?.choices?.[0]?.message?.content || "No response from AI";
     }
 
-    // ===================== IMAGE =====================
+    // ===================== IMAGE (✅ FIXED) =====================
     else {
       console.log("Processing Image:", selectedModel);
 
@@ -165,8 +173,18 @@ exports.handler = async (event) => {
 
       let imageRes;
       try {
-        // ✅ timeout + retry (ده أهم تعديل لتقليل 504)
-        imageRes = await fetchWithRetryTimeout(targetUrl, { method: "GET" }, 24000, 2);
+        imageRes = await fetchWithRetryTimeout(
+          targetUrl,
+          {
+            method: "GET",
+            headers: {
+              "Accept": "image/*",
+              "User-Agent": "Mozilla/5.0"
+            }
+          },
+          24000,
+          2
+        );
       } catch (e) {
         if (e?.name === "AbortError") {
           return {
@@ -185,30 +203,11 @@ exports.handler = async (event) => {
         throw new Error(`Image Gen Failed: ${imageRes.status} - ${txt}`);
       }
 
-      const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
-      const ext = contentType.includes('png')
-        ? 'png'
-        : contentType.includes('webp')
-          ? 'webp'
-          : 'jpg';
+      // ✅ أهم سطر: خُد الرابط النهائي بعد الـ redirects
+      finalImageUrl = imageRes.url || targetUrl;
 
-      const buffer = Buffer.from(await imageRes.arrayBuffer());
-
-      uploadedFileName = `${username}_${Date.now()}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('nano_images')
-        .upload(uploadedFileName, buffer, { contentType, upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('nano_images')
-        .getPublicUrl(uploadedFileName);
-
-      finalImageUrl = publicUrlData?.publicUrl || null;
-
-      if (!finalImageUrl) throw new Error("Failed to get public URL");
+      // ✅ اقفل الـ stream عشان ما ينزّليش الصورة bytes
+      try { imageRes.body?.cancel(); } catch {}
     }
 
     // 3️⃣ Deduct tokens
@@ -228,9 +227,9 @@ exports.handler = async (event) => {
     // ===================== SAVE =====================
     if (isChat) {
       const { error: insertError } = await supabase.from('user_images').insert([{
-        pi_uid: pi_uid,
+        pi_uid,
         pi_username: username,
-        prompt: prompt,
+        prompt,
         bot_response: botReply,
         type: 'text'
       }]);
@@ -243,11 +242,14 @@ exports.handler = async (event) => {
       };
     } else {
       const { error: insertError } = await supabase.from('user_images').insert([{
-        pi_uid: pi_uid,
+        pi_uid,
         pi_username: username,
-        prompt: prompt,
+        prompt,
         image_url: finalImageUrl,
-        type: 'image'
+        type: 'image',
+        width: Number(width) || 1024,
+        height: Number(height) || 1024,
+        model: selectedModel
       }]);
 
       if (insertError) console.error("Image Insert Error:", insertError);
@@ -260,10 +262,6 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error("Handler Error:", error);
-
-    if (uploadedFileName) {
-      await supabase.storage.from('nano_images').remove([uploadedFileName]);
-    }
 
     if (error.message === "INSUFFICIENT_TOKENS_LATE") {
       return { statusCode: 403, body: JSON.stringify({ error: 'INSUFFICIENT_TOKENS' }) };
