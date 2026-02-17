@@ -612,7 +612,7 @@ let chatHistory = [];
         renderBuyGrid();
     }
 
-    async function authenticatePi() {
+   async function authenticatePi() {
         try {
             const scopes = ['username', 'payments'];
             const auth = await Pi.authenticate(scopes, onIncompletePayment);
@@ -620,6 +620,10 @@ let chatHistory = [];
                 piUser = auth.user;
                 document.getElementById('landingPage').style.display = 'none';
                 fetchBalance();
+                
+                // --- الإضافة الجديدة هنا ---
+                loadChatHistory(); // استدعاء دالة تحميل الشات
+                // --------------------------
             }
         } catch (err) { console.error(err); alert("Auth Failed"); }
     }
