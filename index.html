@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
 <title>AIWay</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
 /* --- Design System & New Colors --- */
 :root {
@@ -362,6 +365,18 @@ body {
 }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+/* أضف هذا في الـ CSS */
+.markdown-body pre {
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid #333;
+}
+.markdown-body code {
+    font-family: monospace;
+}
+.markdown-body p { margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -477,12 +492,19 @@ body {
 
 <script>
     // --- Config ---
-    const MODELS = [
-        { id: 'imagen-4', name: 'Imagen 4', desc: 'Powered by Google', cost: 1 },
-        { id: 'gptimage', name: 'Chat GPT Image', desc: 'High Quality', cost: 5 },
-        { id: 'klein', name: 'FLUX.2 Klein 4B', desc: 'Fast', cost: 2 },
-        { id: 'klein-large', name: 'FLUX.2 Klein 9B', desc: 'Detailed', cost: 4 }
-    ];
+    // استبدل const MODELS القديمة بهذه:
+const MODELS = [
+    // موديلات الصور
+    { id: 'imagen-4', name: 'Imagen 4', type: 'image', cost: 1, desc: 'Powered by Google' },
+    { id: 'klein', name: 'FLUX.2 Klein 4B', type: 'image', cost: 2, desc: 'Fast' },
+    { id: 'klein-large', name: 'FLUX.2 Klein 9B', type: 'image', cost: 4, desc: 'Detailed' },
+    { id: 'gptimage', name: 'Chat GPT Image', type: 'image', cost: 5, desc: 'High Quality' },
+
+    // موديلات الشات (يجب أن تتطابق الـ id مع الباك إند)
+    { id: 'openai-large', name: 'GPT-5.2', type: 'text', cost: 3, desc: 'Smartest Model' },
+    { id: 'openai-fast', name: 'GPT-5 Nano', type: 'text', cost: 1, desc: 'Super Fast' },
+    { id: 'openai', name: 'GPT-5 Mini', type: 'text', cost: 1, desc: 'Balanced' }
+];
 
     const RATIOS = [
         { id: 'square', label: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
@@ -533,6 +555,8 @@ body {
     let currentHeight = 1024;
     let currentRatioId = 'square';
     let piUser = null;
+    // أضف هذا المتغير مع باقي المتغيرات في الأعلى
+let chatHistory = [];
     let cooldownEndTime = 0;
     let currentPiPrice = 40.0; 
 
@@ -610,11 +634,21 @@ body {
         } catch (e) { console.error("Balance Error", e); }
     }
 
-    function updateHeaderModelUI() {
-        const m = MODELS.find(x => x.id === currentModel);
-        const badge = `<span class="header-cost-badge">${m.cost}</span>`;
-        document.getElementById('headerModelName').innerHTML = `${m.name} ${badge}`;
+   function updateHeaderModelUI() {
+    const m = MODELS.find(x => x.id === currentModel);
+    const badge = `<span class="header-cost-badge">${m.cost}</span>`;
+    document.getElementById('headerModelName').innerHTML = `${m.name} ${badge}`;
+
+    // إخفاء زر الأبعاد إذا كان شات
+    const aspectBtn = document.getElementById('aspectTriggerBtn');
+    if (m.type === 'text') {
+        aspectBtn.style.display = 'none';
+        document.getElementById('promptInput').placeholder = "Ask me anything...";
+    } else {
+        aspectBtn.style.display = 'flex';
+        document.getElementById('promptInput').placeholder = "Imagine anything...";
     }
+}
 
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
@@ -777,53 +811,106 @@ body {
     }
 
     async function sendPrompt() {
-        if (Date.now() < cooldownEndTime) return;
-        const input = document.getElementById('promptInput');
-        const text = input.value.trim();
-        const t = TRANSLATIONS[currentLang];
-        if (!text || !piUser) return;
+    if (Date.now() < cooldownEndTime) return;
+    const input = document.getElementById('promptInput');
+    const text = input.value.trim();
+    const t = TRANSLATIONS[currentLang];
+    
+    if (!text || !piUser) return;
 
-        addMessage(text, 'user');
-        input.value = '';
-        const loadingId = renderLoader(t.generating);
-        triggerCooldown(5); 
+    // تفريغ الإدخال وعرض رسالة المستخدم
+    input.value = '';
+    addMessage(text, 'user');
+    
+    // جلب الموديل المختار
+    const m = MODELS.find(x => x.id === currentModel);
+    
+    // إظهار التحميل
+    const loadingId = renderLoader(t.generating);
+    triggerCooldown(5); 
 
-        try {
-            const response = await fetch('/.netlify/functions/generate-and-save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: text, username: piUser.username, pi_uid: piUser.uid,
-                    model: currentModel, width: currentWidth, height: currentHeight
-                })
-            });
+    try {
+        // تجهيز البيانات
+        let payload = {
+            prompt: text, 
+            username: piUser.username, 
+            pi_uid: piUser.uid,
+            model: currentModel
+        };
 
-            if (response.status === 403) {
-                document.getElementById(loadingId).remove();
-                addNoTokenCard();
-                return;
-            }
-
-            if (!response.ok) { 
-                // Error Trigger for high load
-                throw new Error('Server Error');
-            }
-
-            const data = await response.json();
-            document.getElementById(loadingId).remove();
-            
-            if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
-
-            if(data.imageUrl) addBotImage(data.imageUrl);
-            else addMessage(t.error, 'bot');
-
-        } catch (error) {
-            // Updated Error Handling with 25s cooldown
-            triggerCooldown(25);
-            const errorMsg = t.rateLimit;
-            document.getElementById(loadingId).innerHTML = `<div style="color:#f59e0b; padding:10px; font-weight:bold;">⚠️ ${errorMsg}</div>`;
+        // إذا كان موديل شات، نرسل تاريخ المحادثة
+        if (m.type === 'text') {
+            payload.messages = chatHistory; // نرسل الهيستوري للباك إند
+        } else {
+            // إذا صورة، نرسل الأبعاد
+            payload.width = currentWidth;
+            payload.height = currentHeight;
         }
+
+        const response = await fetch('/.netlify/functions/generate-and-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.status === 403) {
+            document.getElementById(loadingId).remove();
+            addNoTokenCard();
+            return;
+        }
+
+        if (!response.ok) throw new Error('Server Error');
+
+        const data = await response.json();
+        document.getElementById(loadingId).remove();
+        
+        // تحديث الرصيد
+        if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
+
+        // --- التعامل مع الرد (نص أو صورة) ---
+        if (data.type === 'text' || (m.type === 'text' && data.reply)) {
+            // إضافة رد البوت للهيستوري
+            chatHistory.push({ role: "user", content: text });
+            chatHistory.push({ role: "assistant", content: data.reply });
+            // عرض النص
+            addBotText(data.reply);
+        } 
+        else if (data.imageUrl) {
+            // عرض الصورة
+            addBotImage(data.imageUrl);
+        } 
+        else {
+            addMessage(t.error, 'bot');
+        }
+
+    } catch (error) {
+        console.error(error);
+        triggerCooldown(25);
+        document.getElementById(loadingId).innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ ${t.rateLimit}</div>`;
     }
+}
+function addBotText(markdown) {
+    const div = document.createElement('div');
+    div.className = 'message bot';
+    
+    // تحويل الماركداون إلى HTML
+    const htmlContent = marked.parse(markdown);
+
+    div.innerHTML = `
+        <div class="msg-bubble" style="background:#111; color:#eee; border:1px solid #333; padding:15px; width:100%;">
+            <div class="markdown-body">${htmlContent}</div>
+        </div>
+    `;
+    
+    document.getElementById('chatContainer').appendChild(div);
+    
+    // تلوين الأكواد
+    div.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+    });
+    
+    scrollToBottom();
+}
 
     function renderLoader(text) {
         const div = document.createElement('div');
@@ -974,6 +1061,48 @@ body {
             document.getElementById('aspectMenu').style.display = 'none';
         }
     });
+    // --- دالة تحميل السجل القديم ---
+    async function loadChatHistory() {
+        if (!piUser) return;
+
+        // إظهار رسالة تحميل صغيرة
+        const loadingDiv = document.createElement('div');
+        loadingDiv.innerHTML = '<div style="text-align:center; color:#555; font-size:12px; margin:10px;">Loading history...</div>';
+        document.getElementById('chatContainer').appendChild(loadingDiv);
+
+        try {
+            const res = await fetch(`/.netlify/functions/get-chat-history?username=${piUser.username}`);
+            const historyData = await res.json();
+            
+            // إزالة رسالة الترحيب والتحميل
+            document.getElementById('emptyMsg').style.display = 'none';
+            loadingDiv.remove();
+
+            historyData.forEach(item => {
+                // 1. عرض رسالة المستخدم
+                addMessage(item.prompt, 'user');
+
+                // 2. تحديث سياق المحادثة (عشان الذكاء الاصطناعي يفتكر الكلام القديم)
+                chatHistory.push({ role: "user", content: item.prompt });
+
+                // 3. عرض رد البوت (سواء نص أو صورة)
+                if (item.type === 'text' && item.bot_response) {
+                    addBotText(item.bot_response);
+                    chatHistory.push({ role: "assistant", content: item.bot_response });
+                } 
+                else if (item.image_url) { // يدعم الصور القديمة والجديدة
+                    addBotImage(item.image_url);
+                }
+            });
+            
+            // النزول لآخر الشات
+            scrollToBottom();
+
+        } catch (e) {
+            console.error("Error loading history:", e);
+            loadingDiv.innerHTML = '<div style="text-align:center; color:red; font-size:12px;">Failed to load history</div>';
+        }
+    }
 </script>
 </body>
 </html>
