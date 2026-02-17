@@ -625,6 +625,38 @@ body {
     </div>
 
 <script>
+// دالة النسخ الذكية (تقرأ من الصفحة مباشرة)
+function copyCodeFromBlock(btn) {
+    // 1. العثور على الحاوية الأب (code-wrapper)
+    const wrapper = btn.closest('.code-wrapper');
+    if (!wrapper) return;
+
+    // 2. العثور على عنصر الكود داخل الحاوية
+    const codeElement = wrapper.querySelector('code');
+    if (!codeElement) return;
+
+    // 3. جلب النص كما هو مكتوب
+    const textToCopy = codeElement.innerText || codeElement.textContent;
+
+    // 4. النسخ للحافظة
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '✅ Copied!';
+        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        // Fallback للأجهزة القديمة
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        btn.innerHTML = '✅ Copied!';
+    });
+}
+
+
 /* =========================
    CONFIG
    ========================= */
@@ -731,39 +763,32 @@ function renderMarkdownSafe(markdown) {
 }
 
 /* =========================
-   MARKED + COPY
-   ========================= */
-/* =========================
-   MARKED + COPY (UPDATED)
+   MARKED CONFIG (CLEAN)
    ========================= */
 const renderer = new marked.Renderer();
 renderer.code = function(code, language) {
     const validLang = language || 'plaintext';
-    
-    // 1. تجهيز الكود للعرض (تغيير العلامات لتظهر كنص html)
-    const displayCode = String(code || "")
+    // تنظيف الكود للعرض فقط
+    const escapedCode = String(code || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/>/g, "&gt;");
 
-    // 2. تجهيز الكود للنسخ (تشفيره بالكامل ليوضع داخل الزر بأمان)
-    const safeCodeToCopy = encodeURIComponent(String(code || ""));
-
+    // نضع الكود داخل <pre><code> بشكل طبيعي
+    // الزر الآن يستدعي دالة تبحث عن الكود المجاور
     return `
     <div class="code-wrapper">
         <div class="code-header">
             <span class="code-lang">${validLang}</span>
-            <button class="copy-code-btn" data-code="${safeCodeToCopy}" onclick="copyCodeBlock(this)">
+            <button class="copy-code-btn" type="button" onclick="copyCodeFromBlock(this)">
                 📋 Copy Code
             </button>
         </div>
-        <pre><code class="language-${validLang}">${displayCode}</code></pre>
+        <pre><code class="language-${validLang}">${escapedCode}</code></pre>
     </div>`;
 };
 marked.setOptions({ renderer: renderer });
-// دالة جديدة مخصصة لفك تشفير الكود من الزر ونسخه
+
 function copyCodeBlock(btn) {
     // جلب الكود المشفر من خاصية data-code
     const encodedData = btn.getAttribute('data-code');
