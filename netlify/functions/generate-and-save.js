@@ -32,7 +32,6 @@ exports.handler = async (event) => {
         const selectedModel = model ? model.trim() : 'imagen-4';
         
         // جلب مفتاح API من متغيرات البيئة
-        // ⚠️ تأكد من إضافة POLLINATIONS_API_KEY في إعدادات Netlify
         const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY || ""; 
 
         // تحديد نوع العملية
@@ -74,17 +73,9 @@ exports.handler = async (event) => {
                 finalMessages.push({ role: "user", content: prompt });
             }
 
-            // إعداد الهيدر (Headers) ليشمل المفتاح
-            const headers = { 
-                "Content-Type": "application/json" 
-            };
-            
-            // 🔴 إضافة المفتاح هنا لحل مشكلة 401 🔴
-            if (POLLINATIONS_KEY) {
-                headers["Authorization"] = `Bearer ${POLLINATIONS_KEY}`;
-            }
+            const headers = { "Content-Type": "application/json" };
+            if (POLLINATIONS_KEY) headers["Authorization"] = `Bearer ${POLLINATIONS_KEY}`;
 
-            // يمكن تمرير المفتاح أيضًا عبر الرابط كاحتياط
             const chatUrl = `https://gen.pollinations.ai/v1/chat/completions?key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
             const chatResponse = await fetch(chatUrl, {
@@ -98,7 +89,6 @@ exports.handler = async (event) => {
 
             if (!chatResponse.ok) {
                 const errTxt = await chatResponse.text();
-                // إذا كان الخطأ 401 والمفتاح غير موجود، نرسل تنبيه واضح
                 if (chatResponse.status === 401 && !POLLINATIONS_KEY) {
                     throw new Error("Missing API Key in Server Env");
                 }
@@ -120,7 +110,6 @@ exports.handler = async (event) => {
             if (POLLINATIONS_KEY) targetUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
             const imageRes = await fetch(targetUrl);
-            
             if (!imageRes.ok) throw new Error(`Image Gen Failed: ${imageRes.status}`);
             
             const arrayBuffer = await imageRes.arrayBuffer();
@@ -141,26 +130,36 @@ exports.handler = async (event) => {
         const newBalance = userFinal.token_balance - cost;
         await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-        // 4. الحفظ والرد
+        // 4. الحفظ والرد (تم التعديل هنا لإصلاح مشكلة التسجيل)
         if (isChat) {
-            await supabase.from('user_images').insert([{ 
+            // ✅ تم إضافة pi_uid وتمت إضافة فحص الخطأ (error check)
+            const { error: insertError } = await supabase.from('user_images').insert([{ 
+                pi_uid: pi_uid,          // هام جداً لربط السجل
                 pi_username: username, 
                 prompt: prompt, 
                 bot_response: botReply, 
                 type: 'text' 
             }]);
 
+            if (insertError) {
+                console.error("Chat DB Insert Error:", insertError);
+                // لا نوقف العملية، لكن نسجل الخطأ في اللوج
+            }
+
             return {
                 statusCode: 200,
                 body: JSON.stringify({ success: true, reply: botReply, newBalance, type: 'text' })
             };
         } else {
-            await supabase.from('user_images').insert([{ 
+            const { error: insertError } = await supabase.from('user_images').insert([{ 
+                pi_uid: pi_uid,          // هام جداً
                 pi_username: username, 
                 prompt: prompt, 
                 image_url: finalImageUrl, 
                 type: 'image' 
             }]);
+
+            if (insertError) console.error("Image DB Insert Error:", insertError);
 
             return {
                 statusCode: 200,
