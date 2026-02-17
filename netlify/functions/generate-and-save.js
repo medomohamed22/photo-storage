@@ -90,24 +90,27 @@ function detectIsChat(selectedModel, messages) {
   );
 }
 
+/**
+ * ✅ FIX: Atomic token deduction بدون supabase.raw
+ * - لازم تكون عامل في Supabase function:
+ *   public.atomic_deduct_tokens(p_pi_uid text, p_cost int) returns int
+ */
 async function atomicDeductTokens(pi_uid, cost) {
-  // ✅ خصم آمن: update بشرط الرصيد >= cost
-  // لازم يكون عندك PostgREST يدعم gte (موجود في supabase-js)
-  const { data, error } = await supabase
-    .from('users')
-    .update({ token_balance: supabase.raw(`token_balance - ${Number(cost)}`) })
-    .eq('pi_uid', pi_uid)
-    .gte('token_balance', cost)
-    .select('token_balance')
-    .single();
+  const { data, error } = await supabase.rpc('atomic_deduct_tokens', {
+    p_pi_uid: pi_uid,
+    p_cost: Number(cost)
+  });
 
-  if (error || !data) {
-    // لو فشل غالبًا الرصيد مش كفاية أو user مش موجود
-    return { ok: false };
+  if (error) {
+    const msg = String(error.message || "").toUpperCase();
+    if (msg.includes("INSUFFICIENT_TOKENS")) {
+      return { ok: false };
+    }
+    // أي خطأ آخر
+    throw error;
   }
 
-  // token_balance هنا بعد التحديث
-  return { ok: true, newBalance: Number(data.token_balance || 0) };
+  return { ok: true, newBalance: Number(data || 0) };
 }
 
 exports.handler = async (event) => {
@@ -335,6 +338,11 @@ exports.handler = async (event) => {
     }
 
     const msg = String(error?.message || "");
+
+    // لو RPC رمت exception
+    if (msg.toUpperCase().includes("INSUFFICIENT_TOKENS")) {
+      return json(403, { error: "INSUFFICIENT_TOKENS" });
+    }
 
     // upstream errors
     if (msg.toLowerCase().includes("upstream") || msg.includes("Image") || msg.includes("Chat API Error")) {
