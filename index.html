@@ -377,6 +377,31 @@ body {
     font-family: monospace;
 }
 .markdown-body p { margin-bottom: 8px; }
+/* --- أضف هذا الكود في نهاية قسم <style> --- */
+
+/* تنسيق عناوين الأقسام في القائمة */
+.menu-category-title {
+    color: var(--pi-gold); 
+    font-size: 11px; 
+    font-weight: 800; 
+    margin: 10px 5px 5px 5px;
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+}
+
+/* تنسيق التاج الصغير بجانب اسم الموديل */
+.model-tag { 
+    font-size: 9px; 
+    padding: 2px 5px; 
+    border-radius: 4px; 
+    font-weight: 700; 
+    margin-inline-end: 6px; 
+    display: inline-block;
+}
+.tag-img { background: rgba(245, 158, 11, 0.15); color: var(--pi-gold); }
+.tag-txt { background: rgba(124, 58, 237, 0.15); color: #a78bfa; }
 </style>
 </head>
 <body>
@@ -494,16 +519,16 @@ body {
     // --- Config ---
     // استبدل const MODELS القديمة بهذه:
 const MODELS = [
-    // موديلات الصور
-    { id: 'imagen-4', name: 'Imagen 4', type: 'image', cost: 1, desc: 'Powered by Google' },
-    { id: 'klein', name: 'FLUX.2 Klein 4B', type: 'image', cost: 2, desc: 'Fast' },
-    { id: 'klein-large', name: 'FLUX.2 Klein 9B', type: 'image', cost: 4, desc: 'Detailed' },
-    { id: 'gptimage', name: 'Chat GPT Image', type: 'image', cost: 5, desc: 'High Quality' },
+    // --- قسم Chat & Vision ---
+    { id: 'openai-large', category: 'Chat & Vision', name: 'GPT-5.2', type: 'text', cost: 3, desc: 'Deep Reasoning' },
+    { id: 'openai-fast', category: 'Chat & Vision', name: 'GPT-5 Nano', type: 'text', cost: 1, desc: 'Fast Chat' },
+    { id: 'openai', category: 'Chat & Vision', name: 'GPT-5 Mini', type: 'text', cost: 1, desc: 'Balanced' },
 
-    // موديلات الشات (يجب أن تتطابق الـ id مع الباك إند)
-    { id: 'openai-large', name: 'GPT-5.2', type: 'text', cost: 3, desc: 'Smartest Model' },
-    { id: 'openai-fast', name: 'GPT-5 Nano', type: 'text', cost: 1, desc: 'Super Fast' },
-    { id: 'openai', name: 'GPT-5 Mini', type: 'text', cost: 1, desc: 'Balanced' }
+    // --- قسم Image Generation ---
+    { id: 'imagen-4', category: 'Image Generation', name: 'Imagen 4', type: 'image', cost: 1, desc: 'High Quality' },
+    { id: 'gptimage', category: 'Image Generation', name: 'Chat GPT Image', type: 'image', cost: 5, desc: 'Creative' },
+    { id: 'klein', category: 'Image Generation', name: 'FLUX.2 Klein 4B', type: 'image', cost: 2, desc: 'Fast Gen' },
+    { id: 'klein-large', category: 'Image Generation', name: 'FLUX.2 Klein 9B', type: 'image', cost: 4, desc: 'Detailed' }
 ];
 
     const RATIOS = [
@@ -657,22 +682,44 @@ let chatHistory = [];
     function renderModelMenu() {
         const menu = document.getElementById('modelMenu');
         menu.innerHTML = '';
-        const t = TRANSLATIONS[currentLang];
-        MODELS.forEach(m => {
-            const div = document.createElement('div');
-            div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
-            div.onclick = () => selectModel(m);
-            div.innerHTML = `
-                <div>
-                    <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center; gap:8px;">
-                        ${m.name}
-                        <span class="cost-badge-menu">${m.cost} ${t.cost}</span>
+        
+        // 1. استخراج الفئات الموجودة بدون تكرار
+        const categories = [...new Set(MODELS.map(m => m.category))];
+
+        categories.forEach(cat => {
+            // 2. إضافة عنوان الفئة
+            const title = document.createElement('div');
+            title.className = 'menu-category-title';
+            title.innerText = cat;
+            menu.appendChild(title);
+
+            // 3. عرض الموديلات الخاصة بهذه الفئة فقط
+            const catModels = MODELS.filter(m => m.category === cat);
+            
+            catModels.forEach(m => {
+                const div = document.createElement('div');
+                div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
+                div.onclick = () => selectModel(m);
+                
+                // تحديد شكل التاج (IMG أو CHAT)
+                const tagType = m.type === 'image' ? 'tag-img' : 'tag-txt';
+                const tagLabel = m.type === 'image' ? 'IMG' : 'CHAT';
+
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center;">
+                            ${m.name}
+                        </div>
+                        <div style="font-size:11px; color:#888; margin-top:3px;">
+                            <span class="model-tag ${tagType}">${tagLabel}</span> ${m.desc}
+                        </div>
                     </div>
-                    <div style="font-size:11px; color:#888;">${m.desc}</div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" style="fill:var(--accent); opacity:${m.id === currentModel?1:0}"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            `;
-            menu.appendChild(div);
+                    <div style="font-size:11px; font-weight:bold; color:var(--pi-gold); background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">
+                        ${m.cost} π
+                    </div>
+                `;
+                menu.appendChild(div);
+            });
         });
     }
 
@@ -815,84 +862,85 @@ let chatHistory = [];
     }
 
     async function sendPrompt() {
-    if (Date.now() < cooldownEndTime) return;
-    const input = document.getElementById('promptInput');
-    const text = input.value.trim();
-    const t = TRANSLATIONS[currentLang];
-    
-    if (!text || !piUser) return;
-
-    // تفريغ الإدخال وعرض رسالة المستخدم
-    input.value = '';
-    addMessage(text, 'user');
-    
-    // جلب الموديل المختار
-    const m = MODELS.find(x => x.id === currentModel);
-    
-    // إظهار التحميل
-    const loadingId = renderLoader(t.generating);
-    triggerCooldown(5); 
-
-    try {
-        // تجهيز البيانات
-        let payload = {
-            prompt: text, 
-            username: piUser.username, 
-            pi_uid: piUser.uid,
-            model: currentModel
-        };
-
-        // إذا كان موديل شات، نرسل تاريخ المحادثة
-        if (m.type === 'text') {
-            payload.messages = chatHistory; // نرسل الهيستوري للباك إند
-        } else {
-            // إذا صورة، نرسل الأبعاد
-            payload.width = currentWidth;
-            payload.height = currentHeight;
-        }
-
-        const response = await fetch('/.netlify/functions/generate-and-save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.status === 403) {
-            document.getElementById(loadingId).remove();
-            addNoTokenCard();
-            return;
-        }
-
-        if (!response.ok) throw new Error('Server Error');
-
-        const data = await response.json();
-        document.getElementById(loadingId).remove();
+        if (Date.now() < cooldownEndTime) return;
         
-        // تحديث الرصيد
-        if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
+        const input = document.getElementById('promptInput');
+        const text = input.value.trim();
+        const t = TRANSLATIONS[currentLang]; // تأكد أن لديك كائن الترجمة
+        
+        if (!text || !piUser) return;
 
-        // --- التعامل مع الرد (نص أو صورة) ---
-        if (data.type === 'text' || (m.type === 'text' && data.reply)) {
-            // إضافة رد البوت للهيستوري
-            chatHistory.push({ role: "user", content: text });
-            chatHistory.push({ role: "assistant", content: data.reply });
-            // عرض النص
-            addBotText(data.reply);
-        } 
-        else if (data.imageUrl) {
-            // عرض الصورة
-            addBotImage(data.imageUrl);
-        } 
-        else {
-            addMessage(t.error, 'bot');
+        input.value = '';
+        addMessage(text, 'user');
+        
+        // جلب بيانات الموديل المختار حالياً
+        const m = MODELS.find(x => x.id === currentModel);
+        
+        const loadingId = renderLoader(t?.generating || "Thinking..."); // استخدام نص احتياطي
+        triggerCooldown(5); 
+
+        try {
+            // 1. تجهيز البيانات الأساسية
+            let payload = {
+                prompt: text, 
+                username: piUser.username, 
+                pi_uid: piUser.uid,
+                model: currentModel
+            };
+
+            // 2. تعديل البيانات حسب نوع الموديل (هذا هو الحل للمشكلة)
+            if (m.type === 'text') {
+                // --- إعدادات الشات ---
+                payload.messages = chatHistory; // نرسل تاريخ المحادثة
+                // نحذف الأبعاد لأنها تخص الصور فقط وتسبب مشاكل في الباك إند
+                delete payload.width;
+                delete payload.height;
+            } else {
+                // --- إعدادات الصور ---
+                payload.width = currentWidth;
+                payload.height = currentHeight;
+            }
+
+            const response = await fetch('/.netlify/functions/generate-and-save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 403) {
+                document.getElementById(loadingId).remove();
+                addNoTokenCard();
+                return;
+            }
+
+            if (!response.ok) throw new Error('Server Error');
+
+            const data = await response.json();
+            document.getElementById(loadingId).remove();
+            
+            if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
+
+            // 3. معالجة الرد (نص أم صورة؟)
+            // نتأكد هل الرد يحتوي على نص (reply) أو أننا أصلاً في موديل شات
+            if (data.type === 'text' || (m.type === 'text' && data.reply)) {
+                chatHistory.push({ role: "user", content: text });
+                chatHistory.push({ role: "assistant", content: data.reply });
+                addBotText(data.reply);
+            } 
+            else if (data.imageUrl) {
+                addBotImage(data.imageUrl);
+            } 
+            else {
+                addMessage("Error: Unknown response format", 'bot');
+            }
+
+        } catch (error) {
+            console.error(error);
+            triggerCooldown(15);
+            const errDiv = document.getElementById(loadingId);
+            if(errDiv) errDiv.innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ Error: ${error.message}</div>`;
         }
-
-    } catch (error) {
-        console.error(error);
-        triggerCooldown(25);
-        document.getElementById(loadingId).innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ ${t.rateLimit}</div>`;
     }
-}
 function addBotText(markdown) {
     const div = document.createElement('div');
     div.className = 'message bot';
