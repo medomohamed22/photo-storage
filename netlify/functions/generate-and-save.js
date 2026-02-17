@@ -1,18 +1,15 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// إعداد Supabase
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// إعدادات التكلفة
 const MODEL_COSTS = {
     'imagen-4': 1, 'klein': 2, 'klein-large': 4, 'gptimage': 5,
     'openai-large': 3, 'openai-fast': 1, 'openai': 1
 };
 
-// دالة مساعدة للرد
 const json = (statusCode, data) => ({
     statusCode,
     headers: {
@@ -23,8 +20,10 @@ const json = (statusCode, data) => ({
     body: JSON.stringify(data)
 });
 
+// دالة مساعدة للانتظار
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 exports.handler = async (event) => {
-    // 1. التعامل مع CORS والطلبات غير الصحيحة
     if (event.httpMethod === 'OPTIONS') return json(204, { ok: true });
     if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
@@ -39,13 +38,11 @@ exports.handler = async (event) => {
         }
 
         const selectedModel = model ? model.trim() : 'imagen-4';
-        
-        // الكشف عن الشات
         const isChat = selectedModel.includes('openai') || selectedModel.includes('gpt') || (messages && messages.length > 0);
         const cost = MODEL_COSTS[selectedModel] || 5;
         const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY || "";
 
-        // 2. التحقق من الرصيد
+        // التحقق من الرصيد
         const { data: user, error: userErr } = await supabase
             .from('users')
             .select('token_balance')
@@ -58,7 +55,7 @@ exports.handler = async (event) => {
         let botReply = null;
         let finalImageUrl = null;
 
-        // 3. التنفيذ (شات أو صورة)
+        // --- التنفيذ ---
         if (isChat) {
             console.log("Starting Chat:", selectedModel);
             
@@ -70,7 +67,6 @@ exports.handler = async (event) => {
 
             const chatUrl = `https://gen.pollinations.ai/v1/chat/completions?key=${encodeURIComponent(POLLINATIONS_KEY)}`;
             
-            // استخدام fetch الأصلي (بدون مكتبات خارجية)
             const res = await fetch(chatUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -88,50 +84,67 @@ exports.handler = async (event) => {
             const safeHeight = height || 1024;
             const seed = Math.floor(Math.random() * 1000000);
             
-            // بناء الرابط
             let imgUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
             if (POLLINATIONS_KEY) imgUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-            // جلب الصورة (نضع timeout يدوي لتجنب تعليق السيرفر)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 ثانية حد أقصى
+            // 🔄 نظام إعادة المحاولة (Retry Logic) لحل مشكلة 500
+            let imgRes;
+            let lastError;
+            
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 ثانية لكل محاولة
 
-            try {
-                const imgRes = await fetch(imgUrl, { signal: controller.signal });
-                clearTimeout(timeoutId);
+                    console.log(`Image Attempt ${attempt}...`);
+                    imgRes = await fetch(imgUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
 
-                if (!imgRes.ok) throw new Error(`Image Gen Failed: ${imgRes.status}`);
-                
-                const buffer = Buffer.from(await imgRes.arrayBuffer());
-                
-                // رفع الصورة
-                uploadedFileName = `${username}_${Date.now()}.jpg`;
-                const { error: uploadError } = await supabase.storage
-                    .from('nano_images')
-                    .upload(uploadedFileName, buffer, { contentType: 'image/jpeg' });
+                    if (imgRes.ok) break; // نجحنا! اخرج من الحلقة
+                    
+                    // إذا كان الخطأ 500 أو 502 أو 503 (مشاكل سيرفر)، ننتظر ونحاول مرة أخرى
+                    if ([500, 502, 503, 504].includes(imgRes.status)) {
+                        console.log(`Server Error ${imgRes.status}, retrying...`);
+                        await sleep(2000); // انتظر ثانيتين
+                        continue;
+                    }
+                    
+                    // أخطاء أخرى لا تستدعي إعادة المحاولة (مثل 400 Bad Request)
+                    throw new Error(`Image Gen Failed: ${imgRes.status}`);
 
-                if (uploadError) throw uploadError;
-
-                const { data: publicUrlData } = supabase.storage
-                    .from('nano_images')
-                    .getPublicUrl(uploadedFileName);
-                
-                finalImageUrl = publicUrlData.publicUrl;
-
-            } catch (err) {
-                if (err.name === 'AbortError') throw new Error("Image Generation Timed Out (25s)");
-                throw err;
+                } catch (err) {
+                    lastError = err;
+                    console.log(`Attempt ${attempt} failed: ${err.message}`);
+                    if (attempt === 3) throw new Error(`Failed after 3 attempts: ${err.message}`);
+                    await sleep(2000);
+                }
             }
+
+            // معالجة الصورة بعد النجاح
+            const buffer = Buffer.from(await imgRes.arrayBuffer());
+            uploadedFileName = `${username}_${Date.now()}.jpg`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from('nano_images')
+                .upload(uploadedFileName, buffer, { contentType: 'image/jpeg' });
+
+            if (uploadError) throw uploadError;
+
+            const { data: publicUrlData } = supabase.storage
+                .from('nano_images')
+                .getPublicUrl(uploadedFileName);
+            
+            finalImageUrl = publicUrlData.publicUrl;
         }
 
-        // 4. خصم الرصيد
+        // خصم الرصيد
         const { data: userFinal } = await supabase.from('users').select('token_balance').eq('pi_uid', pi_uid).single();
         if (!userFinal || userFinal.token_balance < cost) throw new Error("INSUFFICIENT_TOKENS_LATE");
         
         const newBalance = userFinal.token_balance - cost;
         await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-        // 5. حفظ السجل
+        // حفظ السجل
         const dbPayload = {
             pi_uid,
             pi_username: username,
@@ -141,12 +154,7 @@ exports.handler = async (event) => {
             image_url: finalImageUrl
         };
 
-        // محاولة الحفظ (دون إيقاف الرد في حال الفشل البسيط)
-        try {
-            await supabase.from('user_images').insert([dbPayload]);
-        } catch (dbErr) {
-            console.error("DB Insert Error:", dbErr);
-        }
+        try { await supabase.from('user_images').insert([dbPayload]); } catch (dbErr) { console.error("DB Insert Error:", dbErr); }
 
         return json(200, {
             success: true,
@@ -158,9 +166,7 @@ exports.handler = async (event) => {
 
     } catch (error) {
         console.error("Handler Error:", error);
-        // تنظيف الصورة إذا فشلت العملية
         if (uploadedFileName) await supabase.storage.from('nano_images').remove([uploadedFileName]);
-        
         return json(500, { error: error.message || "Server Error" });
     }
 };
