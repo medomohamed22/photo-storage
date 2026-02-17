@@ -20,8 +20,6 @@ const json = (statusCode, data) => ({
     body: JSON.stringify(data)
 });
 
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
 exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') return json(204, { ok: true });
     if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
@@ -38,8 +36,7 @@ exports.handler = async (event) => {
 
         const selectedModel = model ? model.trim() : 'imagen-4';
         
-        // 🛠️ الإصلاح هنا: استثناء gptimage من الشات
-        // نتأكد أن الموديل ليس gptimage حتى لو أرسل الفرونت رسائل (messages)
+        // كشف نوع العملية (شات أم صورة)
         const isChat = (
             (selectedModel.includes('openai') || 
             (selectedModel.includes('gpt') && !selectedModel.includes('gptimage'))) || 
@@ -85,7 +82,7 @@ exports.handler = async (event) => {
             botReply = data.choices?.[0]?.message?.content || "";
 
         } else {
-            console.log("Starting Image:", selectedModel);
+            console.log("Starting Image (One Shot):", selectedModel);
 
             const safeWidth = width || 1024;
             const safeHeight = height || 1024;
@@ -94,49 +91,39 @@ exports.handler = async (event) => {
             let imgUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
             if (POLLINATIONS_KEY) imgUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-            // 🔄 نظام Retry (المحسّن للوقت القصير)
-            let imgRes;
-            
-            // نحاول مرتين فقط، كل مرة 12 ثانية كحد أقصى لتفادي خطأ 30 ثانية
-            for (let attempt = 1; attempt <= 2; attempt++) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000); 
+            // ⚠️ التغيير الجذري هنا: محاولة واحدة طويلة جداً (28 ثانية)
+            // هذا يعطي أقصى فرصة للموديلات البطيئة لكي تكتمل
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 28000); 
 
-                    console.log(`Image Attempt ${attempt} (${selectedModel})...`);
-                    imgRes = await fetch(imgUrl, { signal: controller.signal });
-                    clearTimeout(timeoutId);
+            try {
+                const imgRes = await fetch(imgUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
 
-                    if (imgRes.ok) break; 
-                    
-                    if ([500, 502, 503, 504].includes(imgRes.status)) {
-                        console.log(`Server Error ${imgRes.status}, retrying...`);
-                        if (attempt < 2) await sleep(1000);
-                        continue;
-                    }
-                    throw new Error(`Image Gen Failed: ${imgRes.status}`);
-
-                } catch (err) {
-                    console.log(`Attempt ${attempt} failed: ${err.message}`);
-                    if (attempt === 2) throw new Error("Image Generation Timed Out or Failed");
-                    await sleep(1000);
+                if (!imgRes.ok) {
+                    const errTxt = await imgRes.text();
+                    throw new Error(`Image Gen Failed: ${imgRes.status} - ${errTxt.substring(0, 50)}`);
                 }
+                
+                const buffer = Buffer.from(await imgRes.arrayBuffer());
+                uploadedFileName = `${username}_${Date.now()}.jpg`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('nano_images')
+                    .upload(uploadedFileName, buffer, { contentType: 'image/jpeg' });
+
+                if (uploadError) throw uploadError;
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('nano_images')
+                    .getPublicUrl(uploadedFileName);
+                
+                finalImageUrl = publicUrlData.publicUrl;
+
+            } catch (err) {
+                if (err.name === 'AbortError') throw new Error("Server Timeout (Image took too long)");
+                throw err;
             }
-
-            const buffer = Buffer.from(await imgRes.arrayBuffer());
-            uploadedFileName = `${username}_${Date.now()}.jpg`;
-            
-            const { error: uploadError } = await supabase.storage
-                .from('nano_images')
-                .upload(uploadedFileName, buffer, { contentType: 'image/jpeg' });
-
-            if (uploadError) throw uploadError;
-
-            const { data: publicUrlData } = supabase.storage
-                .from('nano_images')
-                .getPublicUrl(uploadedFileName);
-            
-            finalImageUrl = publicUrlData.publicUrl;
         }
 
         // 3. خصم الرصيد
@@ -150,7 +137,7 @@ exports.handler = async (event) => {
         const dbPayload = {
             pi_uid,
             pi_username: username,
-            prompt: prompt || (messages && messages.length > 0 ? messages[messages.length-1].content : "No Prompt"),
+            prompt: prompt || (messages ? messages[messages.length-1].content : "No Prompt"),
             type: isChat ? 'text' : 'image',
             bot_response: botReply,
             image_url: finalImageUrl
@@ -169,6 +156,7 @@ exports.handler = async (event) => {
     } catch (error) {
         console.error("Handler Error:", error);
         if (uploadedFileName) await supabase.storage.from('nano_images').remove([uploadedFileName]);
+        
         return json(500, { error: error.message || "Server Error" });
     }
 };
