@@ -36,13 +36,15 @@ async function fetchWithRetryTimeout(url, options = {}, timeoutMs = 24000, retri
       const res = await fetchWithTimeout(url, options, timeoutMs);
       if (res.ok) return res;
 
-      if (res.status >= 500 && res.status <= 599) {
+      // Retry على 5xx بس
+      if (res.status >= 500) {
         const txt = await res.text().catch(() => '');
         lastErr = new Error(`Upstream Error: ${res.status} - ${txt}`);
         await sleep(900 + i * 700);
         continue;
       }
 
+      // 4xx غالبًا مش هتفيد retry
       const txt = await res.text().catch(() => '');
       throw new Error(`Request Failed: ${res.status} - ${txt}`);
     } catch (e) {
@@ -66,6 +68,7 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
+
     let { prompt, username, pi_uid, model, width, height, messages } = body;
 
     // ✅ السماح بـ prompt أو messages
@@ -89,7 +92,7 @@ exports.handler = async (event) => {
 
     const cost = MODEL_COSTS[selectedModel] || 5;
 
-    // 1️⃣ Check balance
+    // ===================== 1) CHECK BALANCE =====================
     const { data: userCheck, error: checkError } = await supabase
       .from('users')
       .select('token_balance')
@@ -103,14 +106,18 @@ exports.handler = async (event) => {
     if ((userCheck.token_balance || 0) < cost) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: 'INSUFFICIENT_TOKENS', currentBalance: userCheck.token_balance || 0 })
+        body: JSON.stringify({
+          error: 'INSUFFICIENT_TOKENS',
+          required: cost,
+          currentBalance: userCheck.token_balance || 0
+        })
       };
     }
 
     let botReply = null;
     let finalImageUrl = null;
 
-    // ===================== CHAT =====================
+    // ===================== 2) CHAT =====================
     if (isChat) {
       console.log("Processing Chat:", selectedModel);
 
@@ -149,10 +156,11 @@ exports.handler = async (event) => {
       botReply = chatData?.choices?.[0]?.message?.content || "No response from AI";
     }
 
-    // ===================== IMAGE (✅ توليد + رفع + حفظ) =====================
+    // ===================== 2) IMAGE =====================
     else {
       console.log("Processing Image:", selectedModel);
 
+      // ✅ نفس فكرة القديم (width/height موجودين في الطلب) بس بدون تخزينهم في DB
       const safeWidth = Math.max(256, Math.min(2048, Number(width) || 1024));
       const safeHeight = Math.max(256, Math.min(2048, Number(height) || 1024));
       const seed = Math.floor(Math.random() * 1000000);
@@ -165,15 +173,12 @@ exports.handler = async (event) => {
 
       if (POLLINATIONS_KEY) genUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-      // ✅ (A) أول طلب: ناخد الرابط النهائي بعد redirect
+      // ✅ (A) أول طلب عشان ناخد url النهائي بعد redirect (ده يقلل image_upstream_failed)
       let firstRes;
       try {
         firstRes = await fetchWithRetryTimeout(genUrl, {
           method: "GET",
-          headers: {
-            "Accept": "image/*",
-            "User-Agent": "Mozilla/5.0"
-          }
+          headers: { "Accept": "image/*", "User-Agent": "Mozilla/5.0" }
         }, 24000, 2);
       } catch (e) {
         if (e?.name === "AbortError") {
@@ -188,11 +193,9 @@ exports.handler = async (event) => {
       }
 
       const providerFinalUrl = firstRes.url || genUrl;
-
-      // اقفل body بتاع أول استجابة
       try { firstRes.body?.cancel(); } catch {}
 
-      // ✅ (B) حمّل bytes من الرابط النهائي
+      // ✅ (B) تحميل bytes من الرابط النهائي
       const imgRes = await fetchWithRetryTimeout(providerFinalUrl, {
         method: "GET",
         headers: {
@@ -207,6 +210,7 @@ exports.handler = async (event) => {
         throw new Error(`Image Download Failed: ${imgRes.status} - ${txt}`);
       }
 
+      // ✅ زي القديم: ارفع الصورة (بس هنا بنحترم النوع الحقيقي)
       const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
       const ext = contentType.includes('png')
         ? 'png'
@@ -232,7 +236,7 @@ exports.handler = async (event) => {
       if (!finalImageUrl) throw new Error("Failed to get public URL");
     }
 
-    // 3️⃣ Deduct tokens
+    // ===================== 3) DEDUCT TOKENS (زي القديم: بعد النجاح) =====================
     const { data: userFinal } = await supabase
       .from('users')
       .select('token_balance')
@@ -246,7 +250,7 @@ exports.handler = async (event) => {
     const newBalance = (userFinal.token_balance || 0) - cost;
     await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-    // ===================== SAVE =====================
+    // ===================== 4) SAVE TO user_images (بدون أعمدة مش موجودة) =====================
     if (isChat) {
       const { error: insertError } = await supabase.from('user_images').insert([{
         pi_uid,
@@ -263,7 +267,6 @@ exports.handler = async (event) => {
         body: JSON.stringify({ success: true, reply: botReply, newBalance, type: 'text' })
       };
     } else {
-      // ✅ حفظ الصورة فقط بالأعمدة الموجودة عندك
       const { error: insertError } = await supabase.from('user_images').insert([{
         pi_uid,
         pi_username: username,
@@ -283,12 +286,18 @@ exports.handler = async (event) => {
   } catch (error) {
     console.error("Handler Error:", error);
 
+    // ✅ لو رفعنا ملف وفشلنا بعده، نمسحه
     if (uploadedFileName) {
       try { await supabase.storage.from('nano_images').remove([uploadedFileName]); } catch {}
     }
 
     if (error.message === "INSUFFICIENT_TOKENS_LATE") {
       return { statusCode: 403, body: JSON.stringify({ error: 'INSUFFICIENT_TOKENS' }) };
+    }
+
+    // ✅ رجّع 502 لو upstream fail لتفهمه في الفرونت
+    if ((error.message || "").toLowerCase().includes("upstream") || (error.message || "").includes("Image")) {
+      return { statusCode: 502, body: JSON.stringify({ error: "IMAGE_UPSTREAM_FAILED", message: error.message }) };
     }
 
     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
