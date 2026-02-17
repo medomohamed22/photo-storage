@@ -1014,13 +1014,22 @@ function triggerCooldown(seconds) {
     updateCooldownUI();
 }
 
+async function fetchWithRetry(url, options, retries = 2) {
+    for (let i = 0; i <= retries; i++) {
+        try {
+            const res = await fetch(url, options);
+            if (res.ok) return res;
+        } catch {}
+        await new Promise(r => setTimeout(r, 1200));
+    }
+    throw new Error("Request failed after retries");
+}
+
 async function sendPrompt() {
     if (Date.now() < cooldownEndTime) return;
 
     const input = document.getElementById('promptInput');
     const text = input.value.trim();
-    const t = TRANSLATIONS[currentLang];
-
     if (!text || !piUser) return;
 
     input.value = '';
@@ -1041,56 +1050,65 @@ async function sendPrompt() {
         };
 
         if (isChat) {
-            payload.messages = [...chatHistory, { role: "user", content: text }];
+            const trimmedHistory = chatHistory.slice(-12);
+            payload.messages = [...trimmedHistory, { role: "user", content: text }];
             delete payload.prompt;
         } else {
             payload.width = currentWidth;
             payload.height = currentHeight;
         }
 
-        const response = await fetch('/.netlify/functions/generate-and-save', {
+        const response = await fetchWithRetry('/.netlify/functions/generate-and-save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        // ✅ FIX: 403 مش دايمًا معناها No Tokens
         if (response.status === 403) {
             const maybe = await response.json().catch(() => ({}));
             document.getElementById(loadingId).remove();
 
-            if (maybe?.error === 'INSUFFICIENT_TOKENS') {
-                addNoTokenCard();
-            } else {
-                addBotText(`⚠️ ${maybe?.error || "Forbidden / Access denied"}`);
-            }
+            if (maybe?.error === 'INSUFFICIENT_TOKENS') addNoTokenCard();
+            else addBotText(`⚠️ ${maybe?.error || "Forbidden"}`);
             return;
         }
 
         const data = await response.json();
         document.getElementById(loadingId).remove();
 
-        if (data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
+        if (!data || (!data.reply && !data.imageUrl)) {
+            addBotText("⚠️ AI returned no content");
+            return;
+        }
 
-        if (data.type === 'text' || data.reply) {
+        if (data.newBalance !== undefined)
+            document.getElementById('tokenBalance').textContent = data.newBalance;
+
+        if (data.reply && data.reply.trim() !== "") {
             chatHistory.push({ role: "user", content: text });
-            chatHistory.push({ role: "assistant", content: data.reply || "" });
-            addBotText(data.reply || "");
+            chatHistory.push({ role: "assistant", content: data.reply });
+
+            if (chatHistory.length > 24)
+                chatHistory = chatHistory.slice(-24);
+
+            addBotText(data.reply);
         }
         else if (data.imageUrl) {
             addBotImage(data.imageUrl);
         }
         else {
-            addMessage("No response from AI", 'bot');
+            addBotText("⚠️ Empty AI response");
         }
 
     } catch (error) {
         console.error("Frontend Error:", error);
-        triggerCooldown(15);
+        triggerCooldown(12);
         const errDiv = document.getElementById(loadingId);
-        if (errDiv) errDiv.innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ Error: Connection failed</div>`;
+        if (errDiv)
+            errDiv.innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ Network / AI overload</div>`;
     }
 }
+
 
 function addBotText(markdown) {
     const div = document.createElement('div');
