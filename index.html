@@ -1079,102 +1079,99 @@ async function fetchWithRetry(url, options, retries = 2) {
 }
 
 async function sendPrompt() {
-    if (Date.now() < cooldownEndTime) return;
-
-    const input = document.getElementById('promptInput');
-    const text = input.value.trim();
-    if (!text || !piUser) return;
-
-    input.value = '';
-    addMessage(text, 'user');
-
-    const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
-    const isChat = m.type === 'text';
-    const loadingId = renderLoader(isChat);
-
-    triggerCooldown(5);
-
-    try {
-        let payload = {
-            prompt: text,
-            username: piUser.username,
-            pi_uid: piUser.uid,
-            model: currentModel
-        };
-
-        if (isChat) {
-            // ✅ FIX: فلترة + قص الهيستوري + enforce strings
-            payload.messages = [...normalizeMessages(chatHistory), { role: "user", content: String(text) }];
-            delete payload.prompt;
-        } else {
-            payload.width = currentWidth;
-            payload.height = currentHeight;
-        }
-
-        const response = await fetchWithRetry('/.netlify/functions/generate-and-save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        // ✅ FIX: remove loader safely
-        const status = response.status;
-        let data = null;
-
-        // ✅ FIX: حاول تقرأ JSON حتى لو status مش 200
-        try { data = await response.json(); } catch { data = {}; }
-
-        safeRemove(loadingId);
-
-        if (status === 403) {
-            if (data?.error === 'INSUFFICIENT_TOKENS') addNoTokenCard();
-            else addBotText(`⚠️ ${data?.error || "Forbidden"}`);
-            return;
-        }
-
-        // ✅ FIX: Rate limit / overload من السيرفر
-        if (status === 429) {
-            addBotText(`⚠️ ${TRANSLATIONS[currentLang].rateLimit}`);
-            triggerCooldown(25);
-            return;
-        }
-
-        if (!response.ok) {
-            addBotText(`⚠️ Error (${status}): ${data?.error || data?.message || "Server error"}`);
-            return;
-        }
-
-        if (data?.newBalance !== undefined)
-            document.getElementById('tokenBalance').textContent = data.newBalance;
-
-        // ✅ FIX: دعم أكتر من اسم للحقول (reply / text / imageUrl / image_url)
-        const reply = (typeof data?.reply === "string") ? data.reply : (typeof data?.text === "string" ? data.text : "");
-        const imgUrl = data?.imageUrl || data?.image_url || data?.url || "";
-
-        if (reply && reply.trim() !== "") {
-            chatHistory.push({ role: "user", content: String(text) });
-            chatHistory.push({ role: "assistant", content: String(reply) });
-            if (chatHistory.length > 24) chatHistory = chatHistory.slice(-24);
-            addBotText(reply);
-            return;
-        }
-
-        if (imgUrl) {
-            addBotImage(imgUrl, data?.width, data?.height);
-            return;
-        }
-
-        addBotText("⚠️ AI returned no content");
-
-    } catch (error) {
-        console.error("Frontend Error:", error);
-        triggerCooldown(12);
-
-        // ✅ FIX: بدل ما نسيب loader “معلق”
-        safeRemove(loadingId);
-
-        addBotText("⚠️ Network / AI overload");
+  if (Date.now() < cooldownEndTime) return;
+  
+  const input = document.getElementById('promptInput');
+  const text = input.value.trim();
+  if (!text || !piUser) return;
+  
+  input.value = '';
+  addMessage(text, 'user');
+  
+  const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
+  const isChat = m.type === 'text';
+  const loadingId = renderLoader(isChat);
+  
+  triggerCooldown(5);
+  
+  try {
+    let payload = {
+      username: piUser.username,
+      pi_uid: piUser.uid,
+      model: currentModel
+    };
+    
+    if (isChat) {
+      // ✅ CHAT
+      payload.messages = [...normalizeMessages(chatHistory), { role: "user", content: String(text) }];
+    } else {
+      // ✅ IMAGE
+      payload.prompt = String(text);
+      payload.width = currentWidth;
+      payload.height = currentHeight;
     }
+    
+    // ✅ IMPORTANT: اسم الفانكشن generate-and-save.js
+    const response = await fetchWithRetry('/.netlify/functions/generate-and-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const status = response.status;
+    let data = null;
+    
+    try { data = await response.json(); } catch { data = {}; }
+    
+    safeRemove(loadingId);
+    
+    if (status === 403) {
+      if (data?.error === 'INSUFFICIENT_TOKENS') addNoTokenCard();
+      else addBotText(`⚠️ ${data?.error || "Forbidden"}`);
+      return;
+    }
+    
+    if (status === 429) {
+      addBotText(`⚠️ ${TRANSLATIONS[currentLang].rateLimit}`);
+      triggerCooldown(25);
+      return;
+    }
+    
+    if (!response.ok) {
+      addBotText(`⚠️ Error (${status}): ${data?.error || data?.message || "Server error"}`);
+      return;
+    }
+    
+    // ✅ تحديث الرصيد لو رجع من السيرفر
+    if (data?.newBalance !== undefined) {
+      document.getElementById('tokenBalance').textContent = data.newBalance;
+    }
+    
+    // ✅ استقبال رد CHAT أو رابط IMAGE
+    const reply = (typeof data?.reply === "string") ? data.reply : (typeof data?.text === "string" ? data.text : "");
+    const imgUrl = data?.imageUrl || data?.image_url || data?.url || "";
+    
+    if (reply && reply.trim() !== "") {
+      chatHistory.push({ role: "user", content: String(text) });
+      chatHistory.push({ role: "assistant", content: String(reply) });
+      if (chatHistory.length > 24) chatHistory = chatHistory.slice(-24);
+      addBotText(reply);
+      return;
+    }
+    
+    if (imgUrl) {
+      addBotImage(imgUrl, data?.width, data?.height);
+      return;
+    }
+    
+    addBotText("⚠️ AI returned no content");
+    
+  } catch (error) {
+    console.error("Frontend Error:", error);
+    triggerCooldown(12);
+    safeRemove(loadingId);
+    addBotText("⚠️ Network / AI overload");
+  }
 }
 
 function addBotText(markdown) {
