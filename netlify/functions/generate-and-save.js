@@ -91,7 +91,7 @@ function detectIsChat(selectedModel, messages) {
 }
 
 /**
- * ✅ FIX: Atomic token deduction بدون supabase.raw
+ * ✅ Atomic token deduction بدون supabase.raw
  * - لازم تكون عامل في Supabase function:
  *   public.atomic_deduct_tokens(p_pi_uid text, p_cost int) returns int
  */
@@ -106,7 +106,6 @@ async function atomicDeductTokens(pi_uid, cost) {
     if (msg.includes("INSUFFICIENT_TOKENS")) {
       return { ok: false };
     }
-    // أي خطأ آخر
     throw error;
   }
 
@@ -133,7 +132,6 @@ exports.handler = async (event) => {
     pi_uid = safeTrim(pi_uid);
     model = safeTrim(model);
 
-    // ✅ السماح بـ prompt أو messages
     const hasMessages = Array.isArray(messages) && messages.length > 0;
     prompt = safeTrim(prompt);
 
@@ -182,12 +180,10 @@ exports.handler = async (event) => {
       let finalMessages = hasMessages ? [...messages] : [];
       const systemMsg = { role: "system", content: "You are a helpful assistant. Use Markdown for code." };
 
-      // ✅ حط system مرة واحدة
       if (finalMessages.length === 0 || finalMessages[0]?.role !== 'system') {
         finalMessages.unshift(systemMsg);
       }
 
-      // ✅ لو مفيش messages أصلاً بس عندنا prompt
       if (finalMessages.length === 1 && prompt) {
         finalMessages.push({ role: "user", content: prompt });
       }
@@ -212,7 +208,7 @@ exports.handler = async (event) => {
       botReply = chatData?.choices?.[0]?.message?.content || "No response from AI";
     }
 
-    // ===================== 2) IMAGE =====================
+    // ===================== 2) IMAGE (✅ UPDATED) =====================
     else {
       console.log("Processing Image:", selectedModel);
 
@@ -220,55 +216,95 @@ exports.handler = async (event) => {
       const safeHeight = Math.max(256, Math.min(2048, Number(height) || 1024));
       const seed = Math.floor(Math.random() * 1000000);
 
+      // ✅ قلّل احتمالية كسر الـ URL لو prompt طويل جدًا
+      const promptSafe = String(prompt || "").slice(0, 800);
+
       let genUrl =
-        `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}` +
+        `https://gen.pollinations.ai/image/${encodeURIComponent(promptSafe)}` +
         `?model=${encodeURIComponent(selectedModel)}` +
         `&width=${safeWidth}&height=${safeHeight}` +
         `&seed=${seed}&nologo=true`;
 
       if (POLLINATIONS_KEY) genUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-      // (A) خد الـ final url بعد redirect
+      const reqHeaders = {
+        "Accept": "image/*",
+        "User-Agent": "Mozilla/5.0",
+        "Cache-Control": "no-cache"
+      };
+
+      // ✅ Timeout أكبر للصورة (خصوصًا وقت الضغط)
+      const IMG_TIMEOUT = 60000;
+
+      // (A) أول محاولة
       let firstRes;
       try {
         firstRes = await fetchWithRetryTimeout(genUrl, {
           method: "GET",
-          headers: { "Accept": "image/*", "User-Agent": "Mozilla/5.0" }
-        }, 24000, 2);
+          headers: reqHeaders
+        }, IMG_TIMEOUT, 3);
       } catch (e) {
         if (e?.name === "AbortError") {
           return json(504, { error: "IMAGE_TIMEOUT" });
         }
-        return json(502, { error: "IMAGE_UPSTREAM_FAILED", message: e?.message });
+        return json(502, { error: "IMAGE_UPSTREAM_FAILED", message: e?.message || "Pollinations failed" });
       }
 
       if (!firstRes.ok) {
         const txt = await firstRes.text().catch(() => "");
-        throw new Error(`Image Gen Failed: ${firstRes.status} - ${txt}`);
+        return json(502, {
+          error: "IMAGE_UPSTREAM_FAILED",
+          message: `Gen failed: ${firstRes.status}`,
+          details: txt.slice(0, 300)
+        });
       }
 
-      const providerFinalUrl = firstRes.url || genUrl;
-      try { firstRes.body?.cancel(); } catch {}
+      // ✅ لو الـ response نفسه صورة، خدها مباشرة بدل طلب تاني
+      const ct1 = (firstRes.headers.get("content-type") || "").toLowerCase();
+      const isImageDirect = ct1.startsWith("image/");
 
-      // (B) حمّل bytes
-      const imgRes = await fetchWithRetryTimeout(providerFinalUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "image/*",
-          "User-Agent": "Mozilla/5.0",
-          "Cache-Control": "no-cache"
+      let imgRes = firstRes;
+
+      // ✅ لو مش صورة مباشرة (أحيانًا redirect/html)، اعمل fetch تاني على الرابط النهائي
+      if (!isImageDirect) {
+        const providerFinalUrl = firstRes.url || genUrl;
+
+        try {
+          imgRes = await fetchWithRetryTimeout(providerFinalUrl, {
+            method: "GET",
+            headers: reqHeaders
+          }, IMG_TIMEOUT, 3);
+        } catch (e) {
+          if (e?.name === "AbortError") return json(504, { error: "IMAGE_TIMEOUT" });
+          return json(502, { error: "IMAGE_UPSTREAM_FAILED", message: e?.message || "Download failed" });
         }
-      }, 24000, 2);
 
-      if (!imgRes.ok) {
-        const txt = await imgRes.text().catch(() => "");
-        throw new Error(`Image Download Failed: ${imgRes.status} - ${txt}`);
+        if (!imgRes.ok) {
+          const txt = await imgRes.text().catch(() => "");
+          return json(502, {
+            error: "IMAGE_UPSTREAM_FAILED",
+            message: `Download failed: ${imgRes.status}`,
+            details: txt.slice(0, 300)
+          });
+        }
       }
 
       const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
-      const ext = contentType.includes('png')
+      const lowerCT = String(contentType).toLowerCase();
+
+      // ✅ تأكيد إن ده فعلاً صورة
+      if (!lowerCT.startsWith("image/")) {
+        const txt = await imgRes.text().catch(() => "");
+        return json(502, {
+          error: "IMAGE_UPSTREAM_FAILED",
+          message: `Not an image response`,
+          details: txt.slice(0, 300)
+        });
+      }
+
+      const ext = lowerCT.includes('png')
         ? 'png'
-        : contentType.includes('webp')
+        : lowerCT.includes('webp')
           ? 'webp'
           : 'jpg';
 
@@ -293,7 +329,6 @@ exports.handler = async (event) => {
     // ===================== 3) DEDUCT TOKENS (بعد النجاح) =====================
     const deducted = await atomicDeductTokens(pi_uid, cost);
     if (!deducted.ok) {
-      // ✅ لو فشل الخصم، امسح الصورة اللي اترفعت (عشان مايتاخدش فايدة بدون خصم)
       if (uploadedFileName) {
         try { await supabase.storage.from('nano_images').remove([uploadedFileName]); } catch {}
       }
@@ -332,19 +367,16 @@ exports.handler = async (event) => {
   } catch (error) {
     console.error("Handler Error:", error);
 
-    // لو رفعنا ملف وفشلنا بعده، نمسحه
     if (uploadedFileName) {
       try { await supabase.storage.from('nano_images').remove([uploadedFileName]); } catch {}
     }
 
     const msg = String(error?.message || "");
 
-    // لو RPC رمت exception
     if (msg.toUpperCase().includes("INSUFFICIENT_TOKENS")) {
       return json(403, { error: "INSUFFICIENT_TOKENS" });
     }
 
-    // upstream errors
     if (msg.toLowerCase().includes("upstream") || msg.includes("Image") || msg.includes("Chat API Error")) {
       return json(502, { error: "UPSTREAM_FAILED", message: msg });
     }
