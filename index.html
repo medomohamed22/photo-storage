@@ -1095,23 +1095,23 @@ async function sendPrompt() {
   triggerCooldown(5);
   
   try {
+    // ✅ ابعت prompt دايمًا (ده اللي بيمنع Missing data)
     let payload = {
+      prompt: String(text),
       username: piUser.username,
       pi_uid: piUser.uid,
       model: currentModel
     };
     
     if (isChat) {
-      // ✅ CHAT
+      // ✅ ابعت messages كمان لو شات
       payload.messages = [...normalizeMessages(chatHistory), { role: "user", content: String(text) }];
     } else {
-      // ✅ IMAGE
-      payload.prompt = String(text);
+      // ✅ ابعت المقاسات لو صورة
       payload.width = currentWidth;
       payload.height = currentHeight;
     }
     
-    // ✅ IMPORTANT: اسم الفانكشن generate-and-save.js
     const response = await fetchWithRetry('/.netlify/functions/generate-and-save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1119,9 +1119,8 @@ async function sendPrompt() {
     });
     
     const status = response.status;
-    let data = null;
-    
-    try { data = await response.json(); } catch { data = {}; }
+    let data = {};
+    try { data = await response.json(); } catch {}
     
     safeRemove(loadingId);
     
@@ -1142,12 +1141,10 @@ async function sendPrompt() {
       return;
     }
     
-    // ✅ تحديث الرصيد لو رجع من السيرفر
     if (data?.newBalance !== undefined) {
       document.getElementById('tokenBalance').textContent = data.newBalance;
     }
     
-    // ✅ استقبال رد CHAT أو رابط IMAGE
     const reply = (typeof data?.reply === "string") ? data.reply : (typeof data?.text === "string" ? data.text : "");
     const imgUrl = data?.imageUrl || data?.image_url || data?.url || "";
     
