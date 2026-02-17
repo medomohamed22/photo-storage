@@ -733,28 +733,52 @@ function renderMarkdownSafe(markdown) {
 /* =========================
    MARKED + COPY
    ========================= */
+/* =========================
+   MARKED + COPY (UPDATED)
+   ========================= */
 const renderer = new marked.Renderer();
 renderer.code = function(code, language) {
     const validLang = language || 'plaintext';
-    const escapedCode = String(code || "")
+    
+    // 1. تجهيز الكود للعرض (تغيير العلامات لتظهر كنص html)
+    const displayCode = String(code || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 
+    // 2. تجهيز الكود للنسخ (تشفيره بالكامل ليوضع داخل الزر بأمان)
+    const safeCodeToCopy = encodeURIComponent(String(code || ""));
+
     return `
     <div class="code-wrapper">
         <div class="code-header">
             <span class="code-lang">${validLang}</span>
-            <button class="copy-code-btn" onclick="copyText(this, decodeURIComponent('${encodeURIComponent(String(code||""))}'))">
+            <button class="copy-code-btn" data-code="${safeCodeToCopy}" onclick="copyCodeBlock(this)">
                 📋 Copy Code
             </button>
         </div>
-        <pre><code class="language-${validLang}">${escapedCode}</code></pre>
+        <pre><code class="language-${validLang}">${displayCode}</code></pre>
     </div>`;
 };
 marked.setOptions({ renderer: renderer });
+// دالة جديدة مخصصة لفك تشفير الكود من الزر ونسخه
+function copyCodeBlock(btn) {
+    // جلب الكود المشفر من خاصية data-code
+    const encodedData = btn.getAttribute('data-code');
+    if (!encodedData) return;
+    
+    try {
+        // فك التشفير
+        const code = decodeURIComponent(encodedData);
+        // استدعاء دالة النسخ الأصلية
+        copyText(btn, code);
+    } catch (e) {
+        console.error("Copy Error:", e);
+    }
+}
+
 
 function copyText(btn, text) {
     const value = String(text || "");
