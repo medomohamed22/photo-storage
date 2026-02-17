@@ -695,12 +695,48 @@ let cooldownEndTime = 0;
 let currentPiPrice = 40.0;
 
 /* =========================
+   SAFE HELPERS (FIXES)
+   ========================= */
+function safeRemove(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function normalizeMessages(list) {
+    return (Array.isArray(list) ? list : [])
+        .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+        .slice(-12);
+}
+
+function renderMarkdownSafe(markdown) {
+    const md = String(markdown || "");
+    let dirty = "";
+    try { dirty = marked.parse(md); } catch (e) { dirty = md; }
+
+    let safe = dirty;
+    if (window.DOMPurify && typeof DOMPurify.sanitize === "function") {
+        safe = DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
+    }
+
+    // fallback لو الـ markdown خرج فاضي أو اتكسر
+    const plain = (safe || "").replace(/<[^>]*>/g, '').trim();
+    if (!plain || plain.length < 2) {
+        const escaped = md
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        return `<pre style="white-space:pre-wrap; margin:0; font-family:monospace; color:#ddd;">${escaped}</pre>`;
+    }
+    return safe;
+}
+
+/* =========================
    MARKED + COPY
    ========================= */
 const renderer = new marked.Renderer();
 renderer.code = function(code, language) {
     const validLang = language || 'plaintext';
-    const escapedCode = code
+    const escapedCode = String(code || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -711,7 +747,7 @@ renderer.code = function(code, language) {
     <div class="code-wrapper">
         <div class="code-header">
             <span class="code-lang">${validLang}</span>
-            <button class="copy-code-btn" onclick="copyText(this, decodeURIComponent('${encodeURIComponent(code)}'))">
+            <button class="copy-code-btn" onclick="copyText(this, decodeURIComponent('${encodeURIComponent(String(code||""))}'))">
                 📋 Copy Code
             </button>
         </div>
@@ -721,13 +757,27 @@ renderer.code = function(code, language) {
 marked.setOptions({ renderer: renderer });
 
 function copyText(btn, text) {
-    navigator.clipboard.writeText(text).then(() => {
+    const value = String(text || "");
+    navigator.clipboard.writeText(value).then(() => {
         const originalText = btn.innerHTML;
         btn.innerHTML = '✅ Copied!';
         setTimeout(() => { btn.innerHTML = originalText; }, 2000);
     }).catch(err => {
         console.error('Failed to copy', err);
-        alert("Could not copy text.");
+        // fallback
+        try {
+            const ta = document.createElement("textarea");
+            ta.value = value;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ Copied!';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        } catch {
+            alert("Could not copy text.");
+        }
     });
 }
 
@@ -778,7 +828,6 @@ function applyLanguage(lang) {
     document.getElementById('txtLogin').textContent = t.login;
     document.getElementById('txtFeaturesTitle').textContent = t.features;
 
-    // ✅ FIX: تحديث عنصرين بدل id واحد متكرر
     const soonVideo = document.getElementById('txtSoonVideo');
     const soonText = document.getElementById('txtSoonText');
     if (soonVideo) soonVideo.textContent = t.soon;
@@ -816,7 +865,6 @@ async function fetchBalance() {
 }
 
 function updateHeaderModelUI() {
-    // ✅ FIX: حماية لو الموديل مش موجود لأي سبب
     const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
     currentModel = m.id;
 
@@ -1015,14 +1063,19 @@ function triggerCooldown(seconds) {
 }
 
 async function fetchWithRetry(url, options, retries = 2) {
+    let lastErr = null;
     for (let i = 0; i <= retries; i++) {
         try {
             const res = await fetch(url, options);
-            if (res.ok) return res;
-        } catch {}
+
+            // ✅ FIX: رجّع الريسبونس حتى لو 403/429/500 عشان نقرأ رسالة الخطأ
+            if (res) return res;
+        } catch (e) {
+            lastErr = e;
+        }
         await new Promise(r => setTimeout(r, 1200));
     }
-    throw new Error("Request failed after retries");
+    throw lastErr || new Error("Request failed after retries");
 }
 
 async function sendPrompt() {
@@ -1050,8 +1103,8 @@ async function sendPrompt() {
         };
 
         if (isChat) {
-            const trimmedHistory = chatHistory.slice(-12);
-            payload.messages = [...trimmedHistory, { role: "user", content: text }];
+            // ✅ FIX: فلترة + قص الهيستوري + enforce strings
+            payload.messages = [...normalizeMessages(chatHistory), { role: "user", content: String(text) }];
             delete payload.prompt;
         } else {
             payload.width = currentWidth;
@@ -1064,64 +1117,73 @@ async function sendPrompt() {
             body: JSON.stringify(payload)
         });
 
-        if (response.status === 403) {
-            const maybe = await response.json().catch(() => ({}));
-            document.getElementById(loadingId).remove();
+        // ✅ FIX: remove loader safely
+        const status = response.status;
+        let data = null;
 
-            if (maybe?.error === 'INSUFFICIENT_TOKENS') addNoTokenCard();
-            else addBotText(`⚠️ ${maybe?.error || "Forbidden"}`);
+        // ✅ FIX: حاول تقرأ JSON حتى لو status مش 200
+        try { data = await response.json(); } catch { data = {}; }
+
+        safeRemove(loadingId);
+
+        if (status === 403) {
+            if (data?.error === 'INSUFFICIENT_TOKENS') addNoTokenCard();
+            else addBotText(`⚠️ ${data?.error || "Forbidden"}`);
             return;
         }
 
-        const data = await response.json();
-        document.getElementById(loadingId).remove();
-
-        if (!data || (!data.reply && !data.imageUrl)) {
-            addBotText("⚠️ AI returned no content");
+        // ✅ FIX: Rate limit / overload من السيرفر
+        if (status === 429) {
+            addBotText(`⚠️ ${TRANSLATIONS[currentLang].rateLimit}`);
+            triggerCooldown(25);
             return;
         }
 
-        if (data.newBalance !== undefined)
+        if (!response.ok) {
+            addBotText(`⚠️ Error (${status}): ${data?.error || data?.message || "Server error"}`);
+            return;
+        }
+
+        if (data?.newBalance !== undefined)
             document.getElementById('tokenBalance').textContent = data.newBalance;
 
-        if (data.reply && data.reply.trim() !== "") {
-            chatHistory.push({ role: "user", content: text });
-            chatHistory.push({ role: "assistant", content: data.reply });
+        // ✅ FIX: دعم أكتر من اسم للحقول (reply / text / imageUrl / image_url)
+        const reply = (typeof data?.reply === "string") ? data.reply : (typeof data?.text === "string" ? data.text : "");
+        const imgUrl = data?.imageUrl || data?.image_url || data?.url || "";
 
-            if (chatHistory.length > 24)
-                chatHistory = chatHistory.slice(-24);
+        if (reply && reply.trim() !== "") {
+            chatHistory.push({ role: "user", content: String(text) });
+            chatHistory.push({ role: "assistant", content: String(reply) });
+            if (chatHistory.length > 24) chatHistory = chatHistory.slice(-24);
+            addBotText(reply);
+            return;
+        }
 
-            addBotText(data.reply);
+        if (imgUrl) {
+            addBotImage(imgUrl, data?.width, data?.height);
+            return;
         }
-        else if (data.imageUrl) {
-            addBotImage(data.imageUrl);
-        }
-        else {
-            addBotText("⚠️ Empty AI response");
-        }
+
+        addBotText("⚠️ AI returned no content");
 
     } catch (error) {
         console.error("Frontend Error:", error);
         triggerCooldown(12);
-        const errDiv = document.getElementById(loadingId);
-        if (errDiv)
-            errDiv.innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ Network / AI overload</div>`;
+
+        // ✅ FIX: بدل ما نسيب loader “معلق”
+        safeRemove(loadingId);
+
+        addBotText("⚠️ Network / AI overload");
     }
 }
-
 
 function addBotText(markdown) {
     const div = document.createElement('div');
     div.className = 'message bot';
 
-    const dirty = marked.parse(markdown || "");
-
-    // ✅ FIX: تأكد إن DOMPurify موجود
-    const htmlContent = (window.DOMPurify)
-        ? DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } })
-        : dirty;
-
-    const rawText = encodeURIComponent(markdown || "");
+    // ✅ FIX: markdown render قوي + fallback
+    const htmlContent = renderMarkdownSafe(markdown);
+    const rawText = encodeURIComponent(String(markdown || ""));
 
     div.innerHTML = `
         <div class="msg-bubble" style="background:#111; color:#eee; border:1px solid #333; padding:15px; width:100%; border-radius:20px; border-top-left-radius:4px;">
@@ -1136,9 +1198,12 @@ function addBotText(markdown) {
 
     document.getElementById('chatContainer').appendChild(div);
 
-    div.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block);
-    });
+    // ✅ FIX: highlight لو موجود
+    if (window.hljs && typeof hljs.highlightElement === "function") {
+        div.querySelectorAll('pre code').forEach((block) => {
+            try { hljs.highlightElement(block); } catch {}
+        });
+    }
 
     scrollToBottom();
 }
@@ -1173,7 +1238,7 @@ function renderLoader(isChat) {
 function addMessage(content, type) {
     const div = document.createElement('div');
     div.className = `message ${type}`;
-    div.innerHTML = `<div class="msg-bubble">${content}</div>`;
+    div.innerHTML = `<div class="msg-bubble">${String(content || "")}</div>`;
     document.getElementById('chatContainer').appendChild(div);
     document.getElementById('emptyMsg').style.display = 'none';
     scrollToBottom();
@@ -1203,7 +1268,6 @@ function addBotImage(url, w, h) {
     const div = document.createElement('div');
     div.className = 'message bot';
 
-    // ✅ FIX: دعم الأبعاد لو الصورة جاية من الهيستوري
     const ww = Number(w) || currentWidth;
     const hh = Number(h) || currentHeight;
     let aspectRatio = ww / hh;
@@ -1326,23 +1390,24 @@ async function loadChatHistory() {
         document.getElementById('emptyMsg').style.display = 'none';
         loadingDiv.remove();
 
-        // ✅ FIX: لازم Array
         const list = Array.isArray(historyData) ? historyData : [];
 
         list.forEach(item => {
             if (item?.prompt) {
                 addMessage(item.prompt, 'user');
-                chatHistory.push({ role: "user", content: item.prompt });
+                chatHistory.push({ role: "user", content: String(item.prompt) });
             }
 
             if (item?.type === 'text' && item?.bot_response) {
                 addBotText(item.bot_response);
-                chatHistory.push({ role: "assistant", content: item.bot_response });
-            } else if (item?.image_url) {
-                // ✅ FIX: لو السيرفر بيرجع width/height حطهم هنا
-                addBotImage(item.image_url, item.width, item.height);
+                chatHistory.push({ role: "assistant", content: String(item.bot_response) });
+            } else if (item?.image_url || item?.imageUrl) {
+                addBotImage(item.image_url || item.imageUrl, item.width, item.height);
             }
         });
+
+        // ✅ FIX: نظّف الهستوري
+        chatHistory = normalizeMessages(chatHistory).slice(-24);
 
         scrollToBottom();
 
