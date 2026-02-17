@@ -367,7 +367,8 @@ body {
 }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-/* أضف هذا في الـ CSS */
+
+/* --- Code box styling --- */
 .markdown-body pre {
     background: #1e1e1e;
     padding: 10px;
@@ -379,9 +380,7 @@ body {
     font-family: monospace;
 }
 .markdown-body p { margin-bottom: 8px; }
-/* --- أضف هذا الكود في نهاية قسم <style> --- */
 
-/* تنسيق عناوين الأقسام في القائمة */
 .menu-category-title {
     color: var(--pi-gold); 
     font-size: 11px; 
@@ -393,7 +392,6 @@ body {
     padding-bottom: 4px;
 }
 
-/* تنسيق التاج الصغير بجانب اسم الموديل */
 .model-tag { 
     font-size: 9px; 
     padding: 2px 5px; 
@@ -404,12 +402,12 @@ body {
 }
 .tag-img { background: rgba(245, 158, 11, 0.15); color: var(--pi-gold); }
 .tag-txt { background: rgba(124, 58, 237, 0.15); color: #a78bfa; }
-/* --- ستايل انتظار الشات (فقاعة صغيرة) --- */
+
 .chat-loading-bubble {
     padding: 15px 20px;
     background: #1e1e1e;
     border-radius: 20px;
-    border-top-left-radius: 4px; /* لتمييز أنها من البوت */
+    border-top-left-radius: 4px;
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -433,7 +431,6 @@ body {
     40% { transform: scale(1); opacity: 1; }
 }
 
-/* تعديل بسيط للودر الصور ليكون مختلفاً */
 .image-loading-box {
     width: 100%;
     aspect-ratio: 1/1;
@@ -447,7 +444,7 @@ body {
     position: relative;
     overflow: hidden;
 }
-/* --- تنسيق بوكس الكود الجديد --- */
+
 .code-wrapper {
     margin: 10px 0;
     border-radius: 8px;
@@ -485,7 +482,6 @@ body {
 }
 .copy-code-btn:hover { color: white; }
 
-/* تعديل الـ pre ليتناسب مع البوكس الجديد */
 .markdown-body pre {
     margin: 0 !important;
     border: none !important;
@@ -493,7 +489,6 @@ body {
     background: transparent !important;
 }
 
-/* --- زر نسخ الرسالة بالكامل --- */
 .msg-actions {
     display: flex;
     justify-content: flex-end;
@@ -532,12 +527,13 @@ body {
             </button>
             <button class="feature-btn f-video">
                 <span>Ai Video</span>
-                <span class="soon-badge" id="txtSoon">Soon</span>
+                <span class="soon-badge" id="txtSoonVideo">Soon</span>
             </button>
-             <button class="feature-btn f-video">
-     <span>Ai Text</span>
-     <span class="soon-badge" id="txtSoon">Soon</span>
- </button>
+
+            <button class="feature-btn f-video">
+                <span>Ai Text</span>
+                <span class="soon-badge" id="txtSoonText">Soon</span>
+            </button>
         </div>
 
         <button class="pi-login-btn" onclick="authenticatePi()">
@@ -629,97 +625,102 @@ body {
     </div>
 
 <script>
-    // --- Config ---
-    // استبدل const MODELS القديمة بهذه:
+/* =========================
+   CONFIG
+   ========================= */
 const MODELS = [
-    // --- قسم Chat & Vision ---
     { id: 'openai-large', category: 'Chat & Vision', name: 'GPT-5.2', type: 'text', cost: 3, desc: 'Deep Reasoning' },
     { id: 'openai-fast', category: 'Chat & Vision', name: 'GPT-5 Nano', type: 'text', cost: 1, desc: 'Fast Chat' },
     { id: 'openai', category: 'Chat & Vision', name: 'GPT-5 Mini', type: 'text', cost: 1, desc: 'Balanced' },
 
-    // --- قسم Image Generation ---
     { id: 'imagen-4', category: 'Image Generation', name: 'Imagen 4', type: 'image', cost: 1, desc: 'High Quality' },
     { id: 'gptimage', category: 'Image Generation', name: 'Chat GPT Image', type: 'image', cost: 5, desc: 'Creative' },
     { id: 'klein', category: 'Image Generation', name: 'FLUX.2 Klein 4B', type: 'image', cost: 2, desc: 'Fast Gen' },
     { id: 'klein-large', category: 'Image Generation', name: 'FLUX.2 Klein 9B', type: 'image', cost: 4, desc: 'Detailed' }
 ];
 
-    const RATIOS = [
-        { id: 'square', label: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-        { id: 'portrait', label: '9:16', w: 768, h: 1344, icon: '<rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-        { id: 'landscape', label: '16:9', w: 1344, h: 768, icon: '<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-        { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
-    ];
+const RATIOS = [
+    { id: 'square', label: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
+    { id: 'portrait', label: '9:16', w: 768, h: 1344, icon: '<rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
+    { id: 'landscape', label: '16:9', w: 1344, h: 768, icon: '<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
+    { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
+];
 
-    const PACKAGES = [ 
-        { usd: 1, tokens: 150 }, 
-        { usd: 5, tokens: 750 }, 
-        { usd: 10, tokens: 1500 } 
-    ];
+const PACKAGES = [
+    { usd: 1, tokens: 150 },
+    { usd: 5, tokens: 750 },
+    { usd: 10, tokens: 1500 }
+];
 
-    const TRANSLATIONS = {
-        ar: {
-            gallery: "معرضي", welcome: "أهلاً بك في AIWay <br> اختر الموديل واكتب ما تتخيله",
-            placeholder: "تخيل أي شيء...", generating: "جاري الإنشاء...", download: "تحميل",
-            delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
-            noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
-            sec: "ث", noImage: "مفيش صورة للتحميل",
-            buy: "شراء", tokens: "توكين", pi: "π", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
-            cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
-            login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
-            dlTitle: "تم نسخ رابط الصورة! 📋",
-            dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح.",
-            rateLimit: "ضغط عالي! انتظر 25 ثانية..."
-        },
-        en: {
-            gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
-            placeholder: "Imagine anything...", generating: "Generating...", download: "Download",
-            delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
-            noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
-            sec: "s", noImage: "No image to download",
-            buy: "Buy", tokens: "Tokens", pi: "π", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
-            cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
-            login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
-            dlTitle: "Link Copied! 📋",
-            dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution.",
-            rateLimit: "High traffic! Wait 25s..."
-        }
-    };
+const TRANSLATIONS = {
+    ar: {
+        gallery: "معرضي", welcome: "أهلاً بك في AIWay <br> اختر الموديل واكتب ما تتخيله",
+        placeholder: "تخيل أي شيء...", generating: "جاري الإنشاء...", download: "تحميل",
+        delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
+        noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
+        sec: "ث", noImage: "مفيش صورة للتحميل",
+        buy: "شراء", tokens: "توكين", pi: "π", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
+        cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
+        login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
+        dlTitle: "تم نسخ رابط الصورة! 📋",
+        dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح.",
+        rateLimit: "ضغط عالي! انتظر 25 ثانية..."
+    },
+    en: {
+        gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
+        placeholder: "Imagine anything...", generating: "Generating...", download: "Download",
+        delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
+        noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
+        sec: "s", noImage: "No image to download",
+        buy: "Buy", tokens: "Tokens", pi: "π", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
+        cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
+        login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
+        dlTitle: "Link Copied! 📋",
+        dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution.",
+        rateLimit: "High traffic! Wait 25s..."
+    }
+};
 
-    // --- State ---
-    let currentLang = 'en'; 
-   let currentModel = 'imagen-4';
-    let currentWidth = 1024;
-    let currentHeight = 1024;
-    let currentRatioId = 'square';
-    let piUser = null;
-    // أضف هذا المتغير مع باقي المتغيرات في الأعلى
+/* =========================
+   STATE
+   ========================= */
+let currentLang = 'en';
+let currentModel = 'imagen-4';
+let currentWidth = 1024;
+let currentHeight = 1024;
+let currentRatioId = 'square';
+let piUser = null;
 let chatHistory = [];
-    let cooldownEndTime = 0;
-    let currentPiPrice = 40.0; 
-// --- إعدادات تنسيق الكود مع زر النسخ ---
-    const renderer = new marked.Renderer();
-    renderer.code = function(code, language) {
-        const validLang = language || 'plaintext';
-        // نقوم بتنظيف الكود من العلامات التي قد تكسر الـ HTML
-        const escapedCode = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        
-        return `
-        <div class="code-wrapper">
-            <div class="code-header">
-                <span class="code-lang">${validLang}</span>
-                <button class="copy-code-btn" onclick="copyText(this, decodeURIComponent('${encodeURIComponent(code)}'))">
-                    📋 Copy Code
-                </button>
-            </div>
-            <pre><code class="language-${validLang}">${escapedCode}</code></pre>
-        </div>`;
-    };
-    
-    marked.setOptions({ renderer: renderer });
+let cooldownEndTime = 0;
+let currentPiPrice = 40.0;
 
-    // --- دالة النسخ العامة ---
-    function copyText(btn, text) {
+/* =========================
+   MARKED + COPY
+   ========================= */
+const renderer = new marked.Renderer();
+renderer.code = function(code, language) {
+    const validLang = language || 'plaintext';
+    const escapedCode = code
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    return `
+    <div class="code-wrapper">
+        <div class="code-header">
+            <span class="code-lang">${validLang}</span>
+            <button class="copy-code-btn" onclick="copyText(this, decodeURIComponent('${encodeURIComponent(code)}'))">
+                📋 Copy Code
+            </button>
+        </div>
+        <pre><code class="language-${validLang}">${escapedCode}</code></pre>
+    </div>`;
+};
+marked.setOptions({ renderer: renderer });
+
+function copyText(btn, text) {
     navigator.clipboard.writeText(text).then(() => {
         const originalText = btn.innerHTML;
         btn.innerHTML = '✅ Copied!';
@@ -729,312 +730,319 @@ let chatHistory = [];
         alert("Could not copy text.");
     });
 }
-    const Pi = window.Pi;
-    document.addEventListener('DOMContentLoaded', () => {
-        try { Pi.init({ version: "2.0", sandbox: false }); } catch (e) { console.error("Pi Init Error:", e); }
-        renderModelMenu();
-        renderAspectMenu();
-        updateAspectUI();
-        updateHeaderModelUI();
-        applyLanguage('en'); 
-        fetchPiPrice(); 
-        setInterval(fetchPiPrice, 10000); 
-    });
 
-    async function fetchPiPrice() {
-        try {
-            const res = await fetch('/.netlify/functions/get-pi-price');
-            const data = await res.json();
-            if(data.price) {
-                currentPiPrice = data.price;
-                if(document.getElementById('buyModal').style.display === 'flex') {
-                    renderBuyGrid(); 
-                }
+const Pi = window.Pi;
+
+document.addEventListener('DOMContentLoaded', () => {
+    try { Pi.init({ version: "2.0", sandbox: false }); } catch (e) { console.error("Pi Init Error:", e); }
+
+    renderModelMenu();
+    renderAspectMenu();
+    updateAspectUI();
+    applyLanguage('en');
+    updateHeaderModelUI(); // ✅ FIX: بعد applyLanguage علشان placeholder يبقى صح حسب نوع الموديل
+    fetchPiPrice();
+    setInterval(fetchPiPrice, 10000);
+});
+
+async function fetchPiPrice() {
+    try {
+        const res = await fetch('/.netlify/functions/get-pi-price');
+        const data = await res.json();
+        if (data.price) {
+            currentPiPrice = data.price;
+            if (document.getElementById('buyModal').style.display === 'flex') {
+                renderBuyGrid();
             }
-        } catch(e) { console.log("Using default price"); }
-    }
+        }
+    } catch(e) { console.log("Using default price"); }
+}
 
-    function toggleLanguage() {
-        currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        const label = currentLang === 'ar' ? 'EN' : 'AR';
-        document.getElementById('langBtn').textContent = label;
-        document.getElementById('landingLangBtn').textContent = label;
-        applyLanguage(currentLang);
-    }
+function toggleLanguage() {
+    currentLang = currentLang === 'ar' ? 'en' : 'ar';
+    const label = currentLang === 'ar' ? 'EN' : 'AR';
+    document.getElementById('langBtn').textContent = label;
+    document.getElementById('landingLangBtn').textContent = label;
+    applyLanguage(currentLang);
+    updateHeaderModelUI(); // ✅ FIX: لضمان placeholder الصحيح حسب نوع الموديل
+}
 
-    function applyLanguage(lang) {
-        const t = TRANSLATIONS[lang];
-        document.getElementById('txtGallery').textContent = t.gallery;
-        document.getElementById('emptyMsg').innerHTML = t.welcome;
-        document.getElementById('promptInput').placeholder = t.placeholder;
-        document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
-        document.getElementById('txtBuyTitle').textContent = t.buyTitle;
-        document.getElementById('txtLandingDesc').textContent = t.desc;
-        document.getElementById('txtLogin').textContent = t.login;
-        document.getElementById('txtFeaturesTitle').textContent = t.features;
-        document.getElementById('txtSoon').textContent = t.soon;
-        
-        document.getElementById('txtDlTitle').textContent = t.dlTitle;
-        document.getElementById('txtDlDesc').innerHTML = t.dlDesc.replace(/\n/g, '<br>');
+function applyLanguage(lang) {
+    const t = TRANSLATIONS[lang];
+    document.getElementById('txtGallery').textContent = t.gallery;
+    document.getElementById('emptyMsg').innerHTML = t.welcome;
+    document.getElementById('promptInput').placeholder = t.placeholder;
+    document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
+    document.getElementById('txtBuyTitle').textContent = t.buyTitle;
+    document.getElementById('txtLandingDesc').textContent = t.desc;
+    document.getElementById('txtLogin').textContent = t.login;
+    document.getElementById('txtFeaturesTitle').textContent = t.features;
 
-        renderModelMenu();
-        renderBuyGrid();
-    }
+    // ✅ FIX: تحديث عنصرين بدل id واحد متكرر
+    const soonVideo = document.getElementById('txtSoonVideo');
+    const soonText = document.getElementById('txtSoonText');
+    if (soonVideo) soonVideo.textContent = t.soon;
+    if (soonText) soonText.textContent = t.soon;
 
-   async function authenticatePi() {
-        try {
-            const scopes = ['username', 'payments'];
-            const auth = await Pi.authenticate(scopes, onIncompletePayment);
-            if(auth.user) {
-                piUser = auth.user;
-                document.getElementById('landingPage').style.display = 'none';
-                fetchBalance();
-                
-                // --- الإضافة الجديدة هنا ---
-                loadChatHistory(); // استدعاء دالة تحميل الشات
-                // --------------------------
-            }
-        } catch (err) { console.error(err); alert("Auth Failed"); }
-    }
-    function onIncompletePayment(payment) { console.log("Incomplete Payment", payment); }
+    document.getElementById('txtDlTitle').textContent = t.dlTitle;
+    document.getElementById('txtDlDesc').innerHTML = t.dlDesc.replace(/\n/g, '<br>');
 
-    async function fetchBalance() {
-        if (!piUser) return;
-        try {
-            const res = await fetch(`/.netlify/functions/get-balance?uid=${piUser.uid}`);
-            const data = await res.json();
-            document.getElementById('tokenBalance').textContent = data.balance || 0;
-        } catch (e) { console.error("Balance Error", e); }
-    }
+    renderModelMenu();
+    renderBuyGrid();
+}
 
-   function updateHeaderModelUI() {
-    const m = MODELS.find(x => x.id === currentModel);
+async function authenticatePi() {
+    try {
+        const scopes = ['username', 'payments'];
+        const auth = await Pi.authenticate(scopes, onIncompletePayment);
+        if (auth.user) {
+            piUser = auth.user;
+            document.getElementById('landingPage').style.display = 'none';
+            fetchBalance();
+            loadChatHistory();
+        }
+    } catch (err) { console.error(err); alert("Auth Failed"); }
+}
+
+function onIncompletePayment(payment) { console.log("Incomplete Payment", payment); }
+
+async function fetchBalance() {
+    if (!piUser) return;
+    try {
+        const res = await fetch(`/.netlify/functions/get-balance?uid=${piUser.uid}`);
+        const data = await res.json();
+        document.getElementById('tokenBalance').textContent = data.balance || 0;
+    } catch (e) { console.error("Balance Error", e); }
+}
+
+function updateHeaderModelUI() {
+    // ✅ FIX: حماية لو الموديل مش موجود لأي سبب
+    const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
+    currentModel = m.id;
+
     const badge = `<span class="header-cost-badge">${m.cost}</span>`;
     document.getElementById('headerModelName').innerHTML = `${m.name} ${badge}`;
 
-    // إخفاء زر الأبعاد إذا كان شات
     const aspectBtn = document.getElementById('aspectTriggerBtn');
+    const input = document.getElementById('promptInput');
+    const t = TRANSLATIONS[currentLang];
+
     if (m.type === 'text') {
         aspectBtn.style.display = 'none';
-        document.getElementById('promptInput').placeholder = "Ask me anything...";
+        input.placeholder = (currentLang === 'ar') ? "اسأل أي شيء..." : "Ask me anything...";
     } else {
         aspectBtn.style.display = 'flex';
-        document.getElementById('promptInput').placeholder = "Imagine anything...";
+        input.placeholder = t.placeholder;
     }
 }
 
-    function renderModelMenu() {
-        const menu = document.getElementById('modelMenu');
-        menu.innerHTML = '';
-        
-        // 1. استخراج الفئات الموجودة بدون تكرار
-        const categories = [...new Set(MODELS.map(m => m.category))];
+function renderModelMenu() {
+    const menu = document.getElementById('modelMenu');
+    menu.innerHTML = '';
 
-        categories.forEach(cat => {
-            // 2. إضافة عنوان الفئة
-            const title = document.createElement('div');
-            title.className = 'menu-category-title';
-            title.innerText = cat;
-            menu.appendChild(title);
+    const categories = [...new Set(MODELS.map(m => m.category))];
 
-            // 3. عرض الموديلات الخاصة بهذه الفئة فقط
-            const catModels = MODELS.filter(m => m.category === cat);
-            
-            catModels.forEach(m => {
-                const div = document.createElement('div');
-                div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
-                div.onclick = () => selectModel(m);
-                
-                // تحديد شكل التاج (IMG أو CHAT)
-                const tagType = m.type === 'image' ? 'tag-img' : 'tag-txt';
-                const tagLabel = m.type === 'image' ? 'IMG' : 'CHAT';
+    categories.forEach(cat => {
+        const title = document.createElement('div');
+        title.className = 'menu-category-title';
+        title.innerText = cat;
+        menu.appendChild(title);
 
-                div.innerHTML = `
-                    <div>
-                        <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center;">
-                            ${m.name}
-                        </div>
-                        <div style="font-size:11px; color:#888; margin-top:3px;">
-                            <span class="model-tag ${tagType}">${tagLabel}</span> ${m.desc}
-                        </div>
-                    </div>
-                    <div style="font-size:11px; font-weight:bold; color:var(--pi-gold); background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">
-                        ${m.cost} π
-                    </div>
-                `;
-                menu.appendChild(div);
-            });
-        });
-    }
+        const catModels = MODELS.filter(m => m.category === cat);
 
-    function selectModel(m) {
-        currentModel = m.id;
-        updateHeaderModelUI();
-        toggleModelMenu();
-        renderModelMenu();
-    }
-
-    function toggleModelMenu() {
-        const menu = document.getElementById('modelMenu');
-        const chevron = document.getElementById('modelChevron');
-        const isHidden = menu.style.display === 'none' || menu.style.display === '';
-        menu.style.display = isHidden ? 'flex' : 'none';
-        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-        if(isHidden) document.getElementById('aspectMenu').style.display = 'none';
-    }
-
-    function renderAspectMenu() {
-        const menu = document.getElementById('aspectMenu');
-        menu.innerHTML = '';
-        RATIOS.forEach(r => {
+        catModels.forEach(m => {
             const div = document.createElement('div');
-            div.className = `menu-option ${r.id === currentRatioId ? 'active' : ''}`;
-            div.onclick = () => selectRatio(r);
+            div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
+            div.onclick = () => selectModel(m);
+
+            const tagType = m.type === 'image' ? 'tag-img' : 'tag-txt';
+            const tagLabel = m.type === 'image' ? 'IMG' : 'CHAT';
+
             div.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:white;">${r.icon}</svg>
-                    <span style="font-size:13px; font-weight:600; color:white;">${r.label}</span>
+                <div>
+                    <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center;">
+                        ${m.name}
+                    </div>
+                    <div style="font-size:11px; color:#888; margin-top:3px;">
+                        <span class="model-tag ${tagType}">${tagLabel}</span> ${m.desc}
+                    </div>
+                </div>
+                <div style="font-size:11px; font-weight:bold; color:var(--pi-gold); background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">
+                    ${m.cost} π
                 </div>
             `;
             menu.appendChild(div);
         });
-    }
+    });
+}
 
-    function selectRatio(r) {
-        currentWidth = r.w;
-        currentHeight = r.h;
-        currentRatioId = r.id;
-        updateAspectUI();
-        document.getElementById('aspectMenu').style.display = 'none'; 
-        renderAspectMenu();
-    }
+function selectModel(m) {
+    currentModel = m.id;
+    updateHeaderModelUI();
+    toggleModelMenu();
+    renderModelMenu();
+}
 
-    function updateAspectUI() {
-        const r = RATIOS.find(x => x.id === currentRatioId);
-        document.getElementById('currentAspectLabel').textContent = r.label;
-        document.getElementById('currentAspectIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none">${r.icon}</svg>`;
-    }
+function toggleModelMenu() {
+    const menu = document.getElementById('modelMenu');
+    const chevron = document.getElementById('modelChevron');
+    const isHidden = menu.style.display === 'none' || menu.style.display === '';
+    menu.style.display = isHidden ? 'flex' : 'none';
+    chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    if (isHidden) document.getElementById('aspectMenu').style.display = 'none';
+}
 
-    function toggleAspectMenu(e) {
-        if(e) e.stopPropagation();
-        const menu = document.getElementById('aspectMenu');
-        const isHidden = menu.style.display === 'none' || menu.style.display === '';
-        menu.style.display = isHidden ? 'flex' : 'none';
-        if(isHidden) document.getElementById('modelMenu').style.display = 'none';
-    }
+function renderAspectMenu() {
+    const menu = document.getElementById('aspectMenu');
+    menu.innerHTML = '';
+    RATIOS.forEach(r => {
+        const div = document.createElement('div');
+        div.className = `menu-option ${r.id === currentRatioId ? 'active' : ''}`;
+        div.onclick = () => selectRatio(r);
+        div.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:white;">${r.icon}</svg>
+                <span style="font-size:13px; font-weight:600; color:white;">${r.label}</span>
+            </div>
+        `;
+        menu.appendChild(div);
+    });
+}
 
-    function openBuyModal() { renderBuyGrid(); document.getElementById('buyModal').style.display = 'flex'; }
+function selectRatio(r) {
+    currentWidth = r.w;
+    currentHeight = r.h;
+    currentRatioId = r.id;
+    updateAspectUI();
+    document.getElementById('aspectMenu').style.display = 'none';
+    renderAspectMenu();
+}
 
-    function renderBuyGrid() {
-        const grid = document.getElementById('buyGrid');
-        grid.innerHTML = '';
-        const t = TRANSLATIONS[currentLang];
-        PACKAGES.forEach(pkg => {
-            const piAmount = (pkg.usd / currentPiPrice).toFixed(4);
-            const div = document.createElement('div');
-            div.className = 'buy-card';
-            div.onclick = () => buyTokens(pkg, piAmount);
-            div.innerHTML = `
-                <div class="buy-info">
-                    <span class="buy-amount">${pkg.tokens} ${t.tokens}</span>
-                    <span class="buy-cost" style="color:#aaa; font-size:11px;">$${pkg.usd}</span>
-                    <span class="buy-cost">${piAmount} ${t.pi}</span>
-                </div>
-                <svg class="buy-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-            `;
-            grid.appendChild(div);
+function updateAspectUI() {
+    const r = RATIOS.find(x => x.id === currentRatioId) || RATIOS[0];
+    document.getElementById('currentAspectLabel').textContent = r.label;
+    document.getElementById('currentAspectIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none">${r.icon}</svg>`;
+}
+
+function toggleAspectMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('aspectMenu');
+    const isHidden = menu.style.display === 'none' || menu.style.display === '';
+    menu.style.display = isHidden ? 'flex' : 'none';
+    if (isHidden) document.getElementById('modelMenu').style.display = 'none';
+}
+
+function openBuyModal() { renderBuyGrid(); document.getElementById('buyModal').style.display = 'flex'; }
+
+function renderBuyGrid() {
+    const grid = document.getElementById('buyGrid');
+    grid.innerHTML = '';
+    const t = TRANSLATIONS[currentLang];
+    PACKAGES.forEach(pkg => {
+        const piAmount = (pkg.usd / currentPiPrice).toFixed(4);
+        const div = document.createElement('div');
+        div.className = 'buy-card';
+        div.onclick = () => buyTokens(pkg, piAmount);
+        div.innerHTML = `
+            <div class="buy-info">
+                <span class="buy-amount">${pkg.tokens} ${t.tokens}</span>
+                <span class="buy-cost" style="color:#aaa; font-size:11px;">$${pkg.usd}</span>
+                <span class="buy-cost">${piAmount} ${t.pi}</span>
+            </div>
+            <svg class="buy-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+        `;
+        grid.appendChild(div);
+    });
+}
+
+async function buyTokens(pkg, piAmount) {
+    if (!piUser) { alert("Login first"); return; }
+    try {
+        const paymentData = {
+            amount: parseFloat(piAmount),
+            memo: `${pkg.tokens} Tokens - AIWay`,
+            metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
+        };
+        await Pi.createPayment(paymentData, {
+            onReadyForServerApproval: async (paymentId) => {
+                const res = await fetch('/.netlify/functions/approve', { method: 'POST', body: JSON.stringify({ paymentId }) });
+                if (!res.ok) throw new Error("Approval Failed");
+            },
+            onReadyForServerCompletion: async (paymentId, txid) => {
+                const res = await fetch('/.netlify/functions/complete', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        paymentId,
+                        txid,
+                        pi_uid: piUser.uid,
+                        username: piUser.username,
+                        tokenAmount: pkg.tokens,
+                        usdAmount: pkg.usd,
+                        pAmount: paymentData.amount
+                    })
+                });
+                if (!res.ok) throw new Error("Completion Failed");
+                const data = await res.json();
+                document.getElementById('tokenBalance').textContent = data.newBalance;
+                document.getElementById('buyModal').style.display = 'none';
+                alert(`+${pkg.tokens} Tokens!`);
+            },
+            onCancel: (paymentId) => { console.log("Cancelled"); },
+            onError: (error) => { console.error("Error", error); }
         });
-    }
+    } catch (e) { console.error(e); alert("Payment Failed"); }
+}
 
-    async function buyTokens(pkg, piAmount) {
-        if (!piUser) { alert("Login first"); return; }
-        try {
-            const paymentData = {
-                amount: parseFloat(piAmount),
-                memo: `${pkg.tokens} Tokens - AIWay`,
-                metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
-            };
-            await Pi.createPayment(paymentData, {
-                onReadyForServerApproval: async (paymentId) => {
-                    const res = await fetch('/.netlify/functions/approve', { method: 'POST', body: JSON.stringify({ paymentId }) });
-                    if (!res.ok) throw new Error("Approval Failed");
-                },
-                onReadyForServerCompletion: async (paymentId, txid) => {
-                    const res = await fetch('/.netlify/functions/complete', {
-                        method: 'POST', 
-                        body: JSON.stringify({ 
-                            paymentId, 
-                            txid, 
-                            pi_uid: piUser.uid,
-                            username: piUser.username,
-                            tokenAmount: pkg.tokens,
-                            usdAmount: pkg.usd,
-                            pAmount: paymentData.amount
-                        })
-                    });
-                    if (!res.ok) throw new Error("Completion Failed");
-                    const data = await res.json();
-                    document.getElementById('tokenBalance').textContent = data.newBalance;
-                    document.getElementById('buyModal').style.display = 'none';
-                    alert(`+${pkg.tokens} Tokens!`);
-                },
-                onCancel: (paymentId) => { console.log("Cancelled"); },
-                onError: (error) => { console.error("Error", error); }
-            });
-        } catch (e) { console.error(e); alert("Payment Failed"); }
+function updateCooldownUI() {
+    const now = Date.now();
+    const btn = document.getElementById('sendBtn');
+    const icon = document.getElementById('sendIcon');
+    const countEl = document.getElementById('countdownEl');
+    const t = TRANSLATIONS[currentLang];
+    if (now < cooldownEndTime) {
+        const remaining = Math.ceil((cooldownEndTime - now) / 1000);
+        btn.disabled = true; icon.style.display = 'none'; countEl.style.display = 'block';
+        countEl.innerText = `${t.wait}\n${remaining}${t.sec}`;
+        requestAnimationFrame(updateCooldownUI);
+    } else {
+        btn.disabled = false; icon.style.display = 'block'; countEl.style.display = 'none';
     }
+}
 
-    function updateCooldownUI() {
-        const now = Date.now();
-        const btn = document.getElementById('sendBtn');
-        const icon = document.getElementById('sendIcon');
-        const countEl = document.getElementById('countdownEl');
-        const t = TRANSLATIONS[currentLang];
-        if (now < cooldownEndTime) {
-            const remaining = Math.ceil((cooldownEndTime - now) / 1000);
-            btn.disabled = true; icon.style.display = 'none'; countEl.style.display = 'block';
-            countEl.innerText = `${t.wait}\n${remaining}${t.sec}`;
-            requestAnimationFrame(updateCooldownUI);
-        } else {
-            btn.disabled = false; icon.style.display = 'block'; countEl.style.display = 'none';
-        }
-    }
+function triggerCooldown(seconds) {
+    cooldownEndTime = Date.now() + (seconds * 1000);
+    updateCooldownUI();
+}
 
-    function triggerCooldown(seconds) {
-        cooldownEndTime = Date.now() + (seconds * 1000);
-        updateCooldownUI();
-    }
-
-   async function sendPrompt() {
+async function sendPrompt() {
     if (Date.now() < cooldownEndTime) return;
+
     const input = document.getElementById('promptInput');
     const text = input.value.trim();
     const t = TRANSLATIONS[currentLang];
-    
+
     if (!text || !piUser) return;
 
     input.value = '';
     addMessage(text, 'user');
-    
-    const m = MODELS.find(x => x.id === currentModel);
+
+    const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
     const isChat = m.type === 'text';
-    const loadingId = renderLoader(isChat); 
-    
-    triggerCooldown(5); 
+    const loadingId = renderLoader(isChat);
+
+    triggerCooldown(5);
 
     try {
         let payload = {
-            prompt: text, 
-            username: piUser.username, 
+            prompt: text,
+            username: piUser.username,
             pi_uid: piUser.uid,
             model: currentModel
         };
 
         if (isChat) {
-            // دمج الهيستوري مع الرسالة الحالية قبل الإرسال
             payload.messages = [...chatHistory, { role: "user", content: text }];
-            // يفضل حذف الـ prompt عند إرسال messages لتجنب التكرار في الباك إند
-            delete payload.prompt; 
+            delete payload.prompt;
         } else {
             payload.width = currentWidth;
             payload.height = currentHeight;
@@ -1046,26 +1054,32 @@ let chatHistory = [];
             body: JSON.stringify(payload)
         });
 
+        // ✅ FIX: 403 مش دايمًا معناها No Tokens
         if (response.status === 403) {
+            const maybe = await response.json().catch(() => ({}));
             document.getElementById(loadingId).remove();
-            addNoTokenCard();
+
+            if (maybe?.error === 'INSUFFICIENT_TOKENS') {
+                addNoTokenCard();
+            } else {
+                addBotText(`⚠️ ${maybe?.error || "Forbidden / Access denied"}`);
+            }
             return;
         }
 
         const data = await response.json();
         document.getElementById(loadingId).remove();
-        
-        if(data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
+
+        if (data.newBalance !== undefined) document.getElementById('tokenBalance').textContent = data.newBalance;
 
         if (data.type === 'text' || data.reply) {
-            // تحديث الهيستوري المحلي
             chatHistory.push({ role: "user", content: text });
-            chatHistory.push({ role: "assistant", content: data.reply });
-            addBotText(data.reply);
-        } 
+            chatHistory.push({ role: "assistant", content: data.reply || "" });
+            addBotText(data.reply || "");
+        }
         else if (data.imageUrl) {
             addBotImage(data.imageUrl);
-        } 
+        }
         else {
             addMessage("No response from AI", 'bot');
         }
@@ -1074,19 +1088,22 @@ let chatHistory = [];
         console.error("Frontend Error:", error);
         triggerCooldown(15);
         const errDiv = document.getElementById(loadingId);
-        if(errDiv) errDiv.innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ Error: Connection failed</div>`;
+        if (errDiv) errDiv.innerHTML = `<div style="color:#f59e0b; padding:10px;">⚠️ Error: Connection failed</div>`;
     }
 }
+
 function addBotText(markdown) {
     const div = document.createElement('div');
     div.className = 'message bot';
-    
-    // تحويل الماركداون إلى HTML
-    const dirty = marked.parse(markdown);
-const htmlContent = DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
 
-    // تجهيز النص الخام للنسخ
-    const rawText = encodeURIComponent(markdown);
+    const dirty = marked.parse(markdown || "");
+
+    // ✅ FIX: تأكد إن DOMPurify موجود
+    const htmlContent = (window.DOMPurify)
+        ? DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } })
+        : dirty;
+
+    const rawText = encodeURIComponent(markdown || "");
 
     div.innerHTML = `
         <div class="msg-bubble" style="background:#111; color:#eee; border:1px solid #333; padding:15px; width:100%; border-radius:20px; border-top-left-radius:4px;">
@@ -1098,226 +1115,224 @@ const htmlContent = DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
             </div>
         </div>
     `;
-    
+
     document.getElementById('chatContainer').appendChild(div);
-    
-    // تلوين الأكواد
+
     div.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block);
     });
-    
+
     scrollToBottom();
 }
-    function renderLoader(isChat) {
-        const div = document.createElement('div');
-        div.className = 'message bot';
-        div.id = 'loading-' + Date.now();
 
-        if (isChat) {
-            // --- شكل الشات (نقاط متحركة في فقاعة) ---
-            div.innerHTML = `
-                <div class="chat-loading-bubble">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-        } else {
-            // --- شكل الصورة (مربع كبير) ---
-            div.innerHTML = `
-                <div class="image-loading-box">
-                    <div class="blur-wave"></div>
-                    <div class="loading-text">Generating...</div>
-                </div>
-            `;
-        }
+function renderLoader(isChat) {
+    const div = document.createElement('div');
+    div.className = 'message bot';
+    div.id = 'loading-' + Date.now();
 
-        document.getElementById('chatContainer').appendChild(div);
-        scrollToBottom();
-        return div.id;
-    }
-
-    function addMessage(content, type) {
-        const div = document.createElement('div');
-        div.className = `message ${type}`;
-        div.innerHTML = `<div class="msg-bubble">${content}</div>`;
-        document.getElementById('chatContainer').appendChild(div);
-        document.getElementById('emptyMsg').style.display = 'none';
-        scrollToBottom();
-    }
-
-    function addNoTokenCard() {
-        const t = TRANSLATIONS[currentLang];
-        const div = document.createElement('div');
-        div.className = 'message bot';
+    if (isChat) {
         div.innerHTML = `
-            <div class="msg-bubble">
-                <div class="no-token-card">
-                    <div class="no-token-text">${t.noTokens}</div>
-                    <button class="buy-now-btn" onclick="openBuyModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="black"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-                        ${t.buyNow}
-                    </button>
-                </div>
+            <div class="chat-loading-bubble">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
             </div>
         `;
-        document.getElementById('chatContainer').appendChild(div);
-        scrollToBottom();
-    }
-
-    function addBotImage(url) {
-        const t = TRANSLATIONS[currentLang];
-        const div = document.createElement('div');
-        div.className = 'message bot';
-        
-        let aspectRatio = currentWidth / currentHeight;
-        
+    } else {
         div.innerHTML = `
-            <div class="msg-bubble">
-                <div class="image-container" style="aspect-ratio: ${aspectRatio};">
-                    <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
-                </div>
-                <div class="download-bar">
-                    <button class="d-btn" onclick="forceDownload('${url}', this)">${t.download}</button>
-                </div>
+            <div class="image-loading-box">
+                <div class="blur-wave"></div>
+                <div class="loading-text">Generating...</div>
             </div>
         `;
-        document.getElementById('chatContainer').appendChild(div);
-        scrollToBottom();
     }
 
-    function scrollToBottom() {
-        const c = document.getElementById('chatContainer');
-        c.scrollTop = c.scrollHeight;
-    }
+    document.getElementById('chatContainer').appendChild(div);
+    scrollToBottom();
+    return div.id;
+}
 
-    // --- Updated Download Logic (Copy & Show Modal) ---
-    async function forceDownload(url, btn) {
-        // Prepare the download URL
-        // We append ?download= to prompt immediate download in Chrome
-        const downloadUrl = url + "?download=";
-        
+function addMessage(content, type) {
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    div.innerHTML = `<div class="msg-bubble">${content}</div>`;
+    document.getElementById('chatContainer').appendChild(div);
+    document.getElementById('emptyMsg').style.display = 'none';
+    scrollToBottom();
+}
+
+function addNoTokenCard() {
+    const t = TRANSLATIONS[currentLang];
+    const div = document.createElement('div');
+    div.className = 'message bot';
+    div.innerHTML = `
+        <div class="msg-bubble">
+            <div class="no-token-card">
+                <div class="no-token-text">${t.noTokens}</div>
+                <button class="buy-now-btn" onclick="openBuyModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="black"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+                    ${t.buyNow}
+                </button>
+            </div>
+        </div>
+    `;
+    document.getElementById('chatContainer').appendChild(div);
+    scrollToBottom();
+}
+
+function addBotImage(url, w, h) {
+    const t = TRANSLATIONS[currentLang];
+    const div = document.createElement('div');
+    div.className = 'message bot';
+
+    // ✅ FIX: دعم الأبعاد لو الصورة جاية من الهيستوري
+    const ww = Number(w) || currentWidth;
+    const hh = Number(h) || currentHeight;
+    let aspectRatio = ww / hh;
+
+    div.innerHTML = `
+        <div class="msg-bubble">
+            <div class="image-container" style="aspect-ratio: ${aspectRatio};">
+                <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
+            </div>
+            <div class="download-bar">
+                <button class="d-btn" onclick="forceDownload('${url}', this)">${t.download}</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('chatContainer').appendChild(div);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const c = document.getElementById('chatContainer');
+    c.scrollTop = c.scrollHeight;
+}
+
+async function forceDownload(url, btn) {
+    const downloadUrl = url + "?download=";
+
+    try {
+        await navigator.clipboard.writeText(downloadUrl);
+        showInfoModal(downloadUrl);
+    } catch (err) {
+        const textArea = document.createElement("textarea");
+        textArea.value = downloadUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
         try {
-            // Attempt 1: Modern Clipboard API
-            await navigator.clipboard.writeText(downloadUrl);
+            document.execCommand('copy');
             showInfoModal(downloadUrl);
         } catch (err) {
-            // Attempt 2: Fallback for older WebViews
-            const textArea = document.createElement("textarea");
-            textArea.value = downloadUrl;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showInfoModal(downloadUrl);
-            } catch (err) {
-                console.error('Fallback copy failed', err);
-                alert("Failed to copy link. Please manually open: " + downloadUrl);
-            }
-            document.body.removeChild(textArea);
+            console.error('Fallback copy failed', err);
+            alert("Failed to copy link. Please manually open: " + downloadUrl);
         }
+        document.body.removeChild(textArea);
     }
+}
 
-    function showInfoModal(link) {
-        document.getElementById('dlLinkBox').textContent = link;
-        document.getElementById('downloadInfoModal').style.display = 'flex';
-    }
+function showInfoModal(link) {
+    document.getElementById('dlLinkBox').textContent = link;
+    document.getElementById('downloadInfoModal').style.display = 'flex';
+}
 
-    // --- Gallery ---
-    async function openGallery() {
-        const t = TRANSLATIONS[currentLang];
-        if(!piUser) { alert("Login Required"); return; }
-        const modal = document.getElementById('galleryModal');
-        const grid = document.getElementById('galleryGrid');
-        modal.style.display = 'flex';
-        grid.innerHTML = '<div style="color:white; text-align:center; grid-column: span 2;">Loading...</div>';
-        try {
-            const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
-            const images = await res.json();
-            grid.innerHTML = '';
-            if(images.length === 0) { grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`; return; }
-            
-            images.forEach(img => {
-                const div = document.createElement('div');
-                div.className = 'gallery-item';
-                div.innerHTML = `
-                    <img src="${img.url}" loading="lazy">
-                    <div class="gallery-actions">
-                        <button class="g-btn g-down" onclick="forceDownload('${img.url}', this)">${t.download}</button>
-                        <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">${t.delete}</button>
-                    </div>
-                `;
-                grid.appendChild(div);
-            });
-        } catch (e) { grid.innerHTML = `<div style="color:red; grid-column: span 2;">${t.error}</div>`; }
-    }
-
-    async function deleteImage(imageId, btn) {
-        const t = TRANSLATIONS[currentLang];
-        if(!confirm(t.confirmDel)) return;
-        const parent = btn.closest('.gallery-item');
-        parent.style.opacity = '0.5';
-        try {
-            const res = await fetch('/.netlify/functions/delete-image', {
-                method: 'POST',
-                body: JSON.stringify({ id: imageId, username: piUser.username })
-            });
-            if(res.ok) parent.remove();
-            else { alert(t.error); parent.style.opacity = '1'; }
-        } catch(e) { console.error(e); }
-    }
-
-    document.addEventListener('click', (e) => {
-        if(!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
-            document.getElementById('modelMenu').style.display = 'none';
-            document.getElementById('modelChevron').style.transform = 'rotate(0deg)';
+async function openGallery() {
+    const t = TRANSLATIONS[currentLang];
+    if (!piUser) { alert("Login Required"); return; }
+    const modal = document.getElementById('galleryModal');
+    const grid = document.getElementById('galleryGrid');
+    modal.style.display = 'flex';
+    grid.innerHTML = '<div style="color:white; text-align:center; grid-column: span 2;">Loading...</div>';
+    try {
+        const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
+        const images = await res.json();
+        grid.innerHTML = '';
+        if (!Array.isArray(images) || images.length === 0) {
+            grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`;
+            return;
         }
-        if(!e.target.closest('#aspectMenu') && !e.target.closest('#aspectTriggerBtn')) {
-            document.getElementById('aspectMenu').style.display = 'none';
-        }
-    });
-    // --- دالة تحميل السجل القديم ---
-    async function loadChatHistory() {
-        if (!piUser) return;
 
-        // إظهار رسالة تحميل صغيرة
-        const loadingDiv = document.createElement('div');
-        loadingDiv.innerHTML = '<div style="text-align:center; color:#555; font-size:12px; margin:10px;">Loading history...</div>';
-        document.getElementById('chatContainer').appendChild(loadingDiv);
+        images.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            div.innerHTML = `
+                <img src="${img.url}" loading="lazy">
+                <div class="gallery-actions">
+                    <button class="g-btn g-down" onclick="forceDownload('${img.url}', this)">${t.download}</button>
+                    <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">${t.delete}</button>
+                </div>
+            `;
+            grid.appendChild(div);
+        });
+    } catch (e) {
+        grid.innerHTML = `<div style="color:red; grid-column: span 2;">${t.error}</div>`;
+    }
+}
 
-        try {
-            const res = await fetch(`/.netlify/functions/get-chat-history?username=${piUser.username}`);
-            const historyData = await res.json();
-            
-            // إزالة رسالة الترحيب والتحميل
-            document.getElementById('emptyMsg').style.display = 'none';
-            loadingDiv.remove();
+async function deleteImage(imageId, btn) {
+    const t = TRANSLATIONS[currentLang];
+    if (!confirm(t.confirmDel)) return;
+    const parent = btn.closest('.gallery-item');
+    parent.style.opacity = '0.5';
+    try {
+        const res = await fetch('/.netlify/functions/delete-image', {
+            method: 'POST',
+            body: JSON.stringify({ id: imageId, username: piUser.username })
+        });
+        if (res.ok) parent.remove();
+        else { alert(t.error); parent.style.opacity = '1'; }
+    } catch(e) { console.error(e); }
+}
 
-            historyData.forEach(item => {
-                // 1. عرض رسالة المستخدم
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
+        document.getElementById('modelMenu').style.display = 'none';
+        document.getElementById('modelChevron').style.transform = 'rotate(0deg)';
+    }
+    if (!e.target.closest('#aspectMenu') && !e.target.closest('#aspectTriggerBtn')) {
+        document.getElementById('aspectMenu').style.display = 'none';
+    }
+});
+
+async function loadChatHistory() {
+    if (!piUser) return;
+
+    const loadingDiv = document.createElement('div');
+    loadingDiv.innerHTML = '<div style="text-align:center; color:#555; font-size:12px; margin:10px;">Loading history...</div>';
+    document.getElementById('chatContainer').appendChild(loadingDiv);
+
+    try {
+        const res = await fetch(`/.netlify/functions/get-chat-history?username=${piUser.username}`);
+        const historyData = await res.json();
+
+        document.getElementById('emptyMsg').style.display = 'none';
+        loadingDiv.remove();
+
+        // ✅ FIX: لازم Array
+        const list = Array.isArray(historyData) ? historyData : [];
+
+        list.forEach(item => {
+            if (item?.prompt) {
                 addMessage(item.prompt, 'user');
-
-                // 2. تحديث سياق المحادثة (عشان الذكاء الاصطناعي يفتكر الكلام القديم)
                 chatHistory.push({ role: "user", content: item.prompt });
+            }
 
-                // 3. عرض رد البوت (سواء نص أو صورة)
-                if (item.type === 'text' && item.bot_response) {
-                    addBotText(item.bot_response);
-                    chatHistory.push({ role: "assistant", content: item.bot_response });
-                } 
-                else if (item.image_url) { // يدعم الصور القديمة والجديدة
-                    addBotImage(item.image_url);
-                }
-            });
-            
-            // النزول لآخر الشات
-            scrollToBottom();
+            if (item?.type === 'text' && item?.bot_response) {
+                addBotText(item.bot_response);
+                chatHistory.push({ role: "assistant", content: item.bot_response });
+            } else if (item?.image_url) {
+                // ✅ FIX: لو السيرفر بيرجع width/height حطهم هنا
+                addBotImage(item.image_url, item.width, item.height);
+            }
+        });
 
-        } catch (e) {
-            console.error("Error loading history:", e);
-            loadingDiv.innerHTML = '<div style="text-align:center; color:red; font-size:12px;">Failed to load history</div>';
-        }
+        scrollToBottom();
+
+    } catch (e) {
+        console.error("Error loading history:", e);
+        loadingDiv.innerHTML = '<div style="text-align:center; color:red; font-size:12px;">Failed to load history</div>';
     }
+}
 </script>
 </body>
 </html>
