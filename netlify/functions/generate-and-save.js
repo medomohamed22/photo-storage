@@ -20,7 +20,6 @@ const json = (statusCode, data) => ({
     body: JSON.stringify(data)
 });
 
-// دالة مساعدة للانتظار
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 exports.handler = async (event) => {
@@ -38,11 +37,19 @@ exports.handler = async (event) => {
         }
 
         const selectedModel = model ? model.trim() : 'imagen-4';
-        const isChat = selectedModel.includes('openai') || selectedModel.includes('gpt') || (messages && messages.length > 0);
+        
+        // 🛠️ الإصلاح هنا: استثناء gptimage من الشات
+        // نتأكد أن الموديل ليس gptimage حتى لو أرسل الفرونت رسائل (messages)
+        const isChat = (
+            (selectedModel.includes('openai') || 
+            (selectedModel.includes('gpt') && !selectedModel.includes('gptimage'))) || 
+            (messages && messages.length > 0 && selectedModel !== 'gptimage')
+        );
+
         const cost = MODEL_COSTS[selectedModel] || 5;
         const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY || "";
 
-        // التحقق من الرصيد
+        // 1. التحقق من الرصيد
         const { data: user, error: userErr } = await supabase
             .from('users')
             .select('token_balance')
@@ -55,7 +62,7 @@ exports.handler = async (event) => {
         let botReply = null;
         let finalImageUrl = null;
 
-        // --- التنفيذ ---
+        // 2. التنفيذ
         if (isChat) {
             console.log("Starting Chat:", selectedModel);
             
@@ -87,40 +94,35 @@ exports.handler = async (event) => {
             let imgUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
             if (POLLINATIONS_KEY) imgUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-            // 🔄 نظام إعادة المحاولة (Retry Logic) لحل مشكلة 500
+            // 🔄 نظام Retry (المحسّن للوقت القصير)
             let imgRes;
-            let lastError;
             
-            for (let attempt = 1; attempt <= 3; attempt++) {
+            // نحاول مرتين فقط، كل مرة 12 ثانية كحد أقصى لتفادي خطأ 30 ثانية
+            for (let attempt = 1; attempt <= 2; attempt++) {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 ثانية لكل محاولة
+                    const timeoutId = setTimeout(() => controller.abort(), 12000); 
 
-                    console.log(`Image Attempt ${attempt}...`);
+                    console.log(`Image Attempt ${attempt} (${selectedModel})...`);
                     imgRes = await fetch(imgUrl, { signal: controller.signal });
                     clearTimeout(timeoutId);
 
-                    if (imgRes.ok) break; // نجحنا! اخرج من الحلقة
+                    if (imgRes.ok) break; 
                     
-                    // إذا كان الخطأ 500 أو 502 أو 503 (مشاكل سيرفر)، ننتظر ونحاول مرة أخرى
                     if ([500, 502, 503, 504].includes(imgRes.status)) {
                         console.log(`Server Error ${imgRes.status}, retrying...`);
-                        await sleep(2000); // انتظر ثانيتين
+                        if (attempt < 2) await sleep(1000);
                         continue;
                     }
-                    
-                    // أخطاء أخرى لا تستدعي إعادة المحاولة (مثل 400 Bad Request)
                     throw new Error(`Image Gen Failed: ${imgRes.status}`);
 
                 } catch (err) {
-                    lastError = err;
                     console.log(`Attempt ${attempt} failed: ${err.message}`);
-                    if (attempt === 3) throw new Error(`Failed after 3 attempts: ${err.message}`);
-                    await sleep(2000);
+                    if (attempt === 2) throw new Error("Image Generation Timed Out or Failed");
+                    await sleep(1000);
                 }
             }
 
-            // معالجة الصورة بعد النجاح
             const buffer = Buffer.from(await imgRes.arrayBuffer());
             uploadedFileName = `${username}_${Date.now()}.jpg`;
             
@@ -137,18 +139,18 @@ exports.handler = async (event) => {
             finalImageUrl = publicUrlData.publicUrl;
         }
 
-        // خصم الرصيد
+        // 3. خصم الرصيد
         const { data: userFinal } = await supabase.from('users').select('token_balance').eq('pi_uid', pi_uid).single();
         if (!userFinal || userFinal.token_balance < cost) throw new Error("INSUFFICIENT_TOKENS_LATE");
         
         const newBalance = userFinal.token_balance - cost;
         await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-        // حفظ السجل
+        // 4. حفظ السجل
         const dbPayload = {
             pi_uid,
             pi_username: username,
-            prompt: prompt || (messages ? messages[messages.length-1].content : ""),
+            prompt: prompt || (messages && messages.length > 0 ? messages[messages.length-1].content : "No Prompt"),
             type: isChat ? 'text' : 'image',
             bot_response: botReply,
             image_url: finalImageUrl
