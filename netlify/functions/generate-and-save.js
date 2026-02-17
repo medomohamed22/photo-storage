@@ -1,25 +1,20 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// ⚠️ هام: لا نستخدم require('node-fetch') هنا لتجنب مشاكل "Absolute URL"
-// Netlify Functions (Node 18+) تدعم fetch تلقائياً
-
+// ملاحظة: نعتمد على fetch المدمج في Node.js 18+ لتجنب مشاكل الروابط
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // إعدادات التكلفة
 const MODEL_COSTS = {
-    // صور
     'imagen-4': 1,
     'klein': 2,
     'klein-large': 4,
     'gptimage': 5,
-    // شات
     'openai-large': 3,
     'openai-fast': 1,
     'openai': 1
 };
 
 exports.handler = async (event) => {
-    // السماح فقط بطلبات POST
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -30,19 +25,21 @@ exports.handler = async (event) => {
         const body = JSON.parse(event.body);
         let { prompt, username, pi_uid, model, width, height, messages } = body;
 
-        // تنظيف البيانات
         if (!prompt || !username || !pi_uid) {
             return { statusCode: 400, body: JSON.stringify({ error: "بيانات ناقصة" }) };
         }
 
         const selectedModel = model ? model.trim() : 'imagen-4';
         
-        // 1. تحديد نوع العملية (شات أم صور)
-        // أي موديل يحتوي على openai أو gpt أو تم إرسال messages معه يعتبر شات
+        // جلب مفتاح API من متغيرات البيئة
+        // ⚠️ تأكد من إضافة POLLINATIONS_API_KEY في إعدادات Netlify
+        const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY || ""; 
+
+        // تحديد نوع العملية
         const isChat = selectedModel.includes('openai') || selectedModel.includes('gpt-5') || (messages && messages.length > 0);
         const cost = MODEL_COSTS[selectedModel] || 5;
 
-        // 2. التحقق من الرصيد
+        // 1. التحقق من الرصيد
         const { data: userCheck, error: checkError } = await supabase
             .from('users')
             .select('token_balance')
@@ -60,35 +57,39 @@ exports.handler = async (event) => {
             };
         }
 
-        // متغيرات لتخزين النتائج
         let botReply = null;
         let finalImageUrl = null;
 
-        // 3. التنفيذ
+        // 2. التنفيذ
         if (isChat) {
-            // ====================== مسار الشات (تعديل حسب طلبك) ======================
             console.log("Processing Chat Request:", selectedModel);
 
-            // تجهيز الرسائل
             let finalMessages = messages || [];
-            
-            // إضافة System Message لتنسيق الكود إذا لم تكن موجودة
             const systemMsg = { role: "system", content: "You are a helpful assistant. Use Markdown for code." };
+            
             if (finalMessages.length === 0 || finalMessages[0].role !== 'system') {
                 finalMessages.unshift(systemMsg);
             }
-            // إذا لم تصل رسائل، نضع البرومبت كرسالة مستخدم
             if (finalMessages.length === 1 && prompt) {
                 finalMessages.push({ role: "user", content: prompt });
             }
 
-            // استدعاء API الشات (نفس الكود الذي أرسلته لي)
-            const chatResponse = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
+            // إعداد الهيدر (Headers) ليشمل المفتاح
+            const headers = { 
+                "Content-Type": "application/json" 
+            };
+            
+            // 🔴 إضافة المفتاح هنا لحل مشكلة 401 🔴
+            if (POLLINATIONS_KEY) {
+                headers["Authorization"] = `Bearer ${POLLINATIONS_KEY}`;
+            }
+
+            // يمكن تمرير المفتاح أيضًا عبر الرابط كاحتياط
+            const chatUrl = `https://gen.pollinations.ai/v1/chat/completions?key=${encodeURIComponent(POLLINATIONS_KEY)}`;
+
+            const chatResponse = await fetch(chatUrl, {
                 method: "POST",
-                headers: { 
-                    "Content-Type": "application/json"
-                    // "Authorization": `Bearer ${API_KEY}` // أضف المفتاح هنا إذا كان لديك، وإلا اتركه
-                },
+                headers: headers,
                 body: JSON.stringify({ 
                     model: selectedModel, 
                     messages: finalMessages 
@@ -97,31 +98,34 @@ exports.handler = async (event) => {
 
             if (!chatResponse.ok) {
                 const errTxt = await chatResponse.text();
+                // إذا كان الخطأ 401 والمفتاح غير موجود، نرسل تنبيه واضح
+                if (chatResponse.status === 401 && !POLLINATIONS_KEY) {
+                    throw new Error("Missing API Key in Server Env");
+                }
                 throw new Error(`Chat API Error: ${chatResponse.status} - ${errTxt}`);
             }
 
             const chatData = await chatResponse.json();
-            botReply = chatData.choices[0].message.content; // استخراج النص
+            botReply = chatData.choices[0].message.content;
 
         } else {
-            // ====================== مسار الصور ======================
+            // مسار الصور
             console.log("Processing Image Request:", selectedModel);
 
             const safeWidth = width || 1024;
             const safeHeight = height || 1024;
             const seed = Math.floor(Math.random() * 1000000);
             
-            // بناء رابط الصورة
-            const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
+            let targetUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${selectedModel}&width=${safeWidth}&height=${safeHeight}&seed=${seed}&nologo=true`;
+            if (POLLINATIONS_KEY) targetUrl += `&key=${encodeURIComponent(POLLINATIONS_KEY)}`;
 
-            const imageRes = await fetch(imageUrl);
+            const imageRes = await fetch(targetUrl);
             
             if (!imageRes.ok) throw new Error(`Image Gen Failed: ${imageRes.status}`);
             
             const arrayBuffer = await imageRes.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
-            // رفع الصورة لـ Supabase
             uploadedFileName = `${username}_${Date.now()}.jpg`;
             const { error: uploadError } = await supabase.storage.from('nano_images').upload(uploadedFileName, buffer, { contentType: 'image/jpeg' });
             if (uploadError) throw uploadError;
@@ -130,56 +134,42 @@ exports.handler = async (event) => {
             finalImageUrl = publicUrlData.publicUrl;
         }
 
-        // 4. خصم الرصيد (بعد النجاح)
+        // 3. خصم الرصيد
         const { data: userFinal } = await supabase.from('users').select('token_balance').eq('pi_uid', pi_uid).single();
         if (!userFinal || userFinal.token_balance < cost) throw new Error("INSUFFICIENT_TOKENS_LATE");
         
         const newBalance = userFinal.token_balance - cost;
         await supabase.from('users').update({ token_balance: newBalance }).eq('pi_uid', pi_uid);
 
-        // 5. حفظ البيانات في الجدول والرد
+        // 4. الحفظ والرد
         if (isChat) {
-            // حفظ الشات
             await supabase.from('user_images').insert([{ 
                 pi_username: username, 
                 prompt: prompt, 
-                bot_response: botReply, // العمود الجديد للنص
+                bot_response: botReply, 
                 type: 'text' 
             }]);
 
             return {
                 statusCode: 200,
-                body: JSON.stringify({ 
-                    success: true, 
-                    reply: botReply, // نرد بالنص
-                    newBalance: newBalance, 
-                    type: 'text' 
-                })
+                body: JSON.stringify({ success: true, reply: botReply, newBalance, type: 'text' })
             };
         } else {
-            // حفظ الصورة
             await supabase.from('user_images').insert([{ 
                 pi_username: username, 
                 prompt: prompt, 
-                image_url: finalImageUrl, // العمود القديم للصورة
+                image_url: finalImageUrl, 
                 type: 'image' 
             }]);
 
             return {
                 statusCode: 200,
-                body: JSON.stringify({ 
-                    success: true, 
-                    imageUrl: finalImageUrl, // نرد برابط الصورة
-                    newBalance: newBalance, 
-                    type: 'image' 
-                })
+                body: JSON.stringify({ success: true, imageUrl: finalImageUrl, newBalance, type: 'image' })
             };
         }
 
     } catch (error) {
         console.error("Handler Error:", error);
-        
-        // تنظيف (إذا فشل رفع الصورة نمسحها)
         if (uploadedFileName) await supabase.storage.from('nano_images').remove([uploadedFileName]);
         
         if (error.message === "INSUFFICIENT_TOKENS_LATE") {
