@@ -58,6 +58,7 @@
         .pool-input:focus { border-color: var(--primary-purple); }
         .btn-primary { padding: 15px; border-radius: 15px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 1.1rem; width: 100%; transition: 0.3s; }
         .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { background: #bdc3c7; cursor: not-allowed; }
 
         /* قسم الطلبات */
         .section-header { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 25px; text-align: center; }
@@ -95,7 +96,7 @@
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; padding: 15px; }
         .modal-content { background: white; padding: 25px 20px; border-radius: 20px; width: 100%; max-width: 400px; position: relative; max-height: 90vh; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; left: 15px; cursor: pointer; font-size: 1.5rem; color: #888; line-height: 1; }
-        .form-group { margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; text-align: right; }
         .form-control { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 0.95rem; }
         .impact-img { width: 100%; border-radius: 15px; margin-top: 15px; }
 
@@ -159,9 +160,10 @@
                 <input type="number" id="req-amount" class="form-control" placeholder="المبلغ المطلوب بالـ (π)">
             </div>
             <div class="form-group">
-                <input type="text" id="req-proof" class="form-control" placeholder="رابط صورة الإثبات (روشتة، فاتورة، الخ)">
+                <label style="display:block; margin-bottom: 5px; color:#555; font-size: 0.9rem;">إرفاق صورة الإثبات (روشتة، فاتورة...)</label>
+                <input type="file" id="req-proof-file" class="form-control" accept="image/*">
             </div>
-            <button class="btn-primary" onclick="submitRequest()">إرسال الطلب للتدقيق</button>
+            <button class="btn-primary" id="submit-req-btn" onclick="submitRequest()">إرسال الطلب للتدقيق</button>
         </div>
     </div>
 
@@ -175,8 +177,8 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+        const SUPABASE_URL = 'https://jtbxdymviqmfhffixmat.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const Pi = window.Pi;
 
@@ -207,7 +209,7 @@
             // 2. جلب الحالات
             const { data: requests } = await _supabase.from('requests')
                 .select('*')
-                .order('status', { ascending: false }) // المفتوح يظهر أولاً
+                .order('status', { ascending: false }) 
                 .order('votes', { ascending: false });
             
             const container = document.getElementById('cases-container');
@@ -215,7 +217,6 @@
                 container.innerHTML = requests.map(req => {
                     const isFunded = req.status === 'funded';
                     
-                    // تحديد الأزرار بناءً على حالة الطلب
                     let actionButtons = '';
                     if(isFunded) {
                         actionButtons = `
@@ -289,14 +290,12 @@
         async function voteForCase(caseId) {
             if (!currentUser) return alert('يرجى تسجيل الدخول لتتمكن من التصويت');
             
-            // محاولة تسجيل الصوت في جدول votes_log
             const { error: voteError } = await _supabase.from('votes_log').insert([{
                 request_id: caseId,
                 username: currentUser.username
             }]);
 
             if (voteError) {
-                // إذا كان هناك خطأ (غالباً بسبب الـ UNIQUE constraint)، يعني أنه صوّت مسبقاً
                 if(voteError.code === '23505') {
                     alert('لقد قمت بالتصويت لهذه الحالة مسبقاً! لا يمكن تكرار التصويت.');
                 } else {
@@ -305,7 +304,6 @@
                 return;
             }
             
-            // إذا نجح التسجيل في votes_log، نقوم بزيادة العداد في جدول requests
             const { data: currentReq } = await _supabase.from('requests').select('votes').eq('id', caseId).single();
             await _supabase.from('requests').update({ votes: (currentReq.votes || 0) + 1 }).eq('id', caseId);
             
@@ -325,36 +323,65 @@
             openModal('impact-modal');
         }
 
+        // الدالة المحدثة لرفع الصورة إلى Supabase Storage ثم حفظ الطلب
         async function submitRequest() {
             if (!currentUser) return alert('يرجى تسجيل الدخول لتقديم طلب');
+            
             const title = document.getElementById('req-title').value;
             const desc = document.getElementById('req-desc').value;
             const amount = document.getElementById('req-amount').value;
-            const proof = document.getElementById('req-proof').value;
+            const fileInput = document.getElementById('req-proof-file');
+            const file = fileInput.files[0];
 
-            if(!title || !amount || !proof) return alert('يرجى ملء كافة البيانات الأساسية وإرفاق رابط الإثبات');
+            if(!title || !amount || !file) return alert('يرجى ملء كافة البيانات وإرفاق صورة الإثبات');
 
-            const btn = event.target;
-            btn.disabled = true; btn.innerText = "جاري الإرسال...";
+            const btn = document.getElementById('submit-req-btn');
+            btn.disabled = true; btn.innerText = "جاري رفع الصورة والإرسال...";
 
-            await _supabase.from('requests').insert([{
-                username: currentUser.username,
-                title: title,
-                description: desc,
-                target_amount: parseFloat(amount),
-                proof_url: proof
-            }]);
+            try {
+                // 1. تجهيز اسم فريد للصورة لتجنب التكرار
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${currentUser.username}.${fileExt}`;
 
-            alert('تم رفع طلبك للمجتمع بنجاح!');
-            closeModal('request-modal');
-            loadData();
-            
-            // تفريغ الحقول
-            document.getElementById('req-title').value = '';
-            document.getElementById('req-desc').value = '';
-            document.getElementById('req-amount').value = '';
-            document.getElementById('req-proof').value = '';
-            btn.disabled = false; btn.innerText = "إرسال الطلب للتدقيق";
+                // 2. رفع الصورة إلى Storage في Supabase
+                const { data: uploadData, error: uploadError } = await _supabase.storage
+                    .from('proofs')
+                    .upload(fileName, file);
+
+                if (uploadError) throw new Error('فشل رفع الصورة: ' + uploadError.message);
+
+                // 3. الحصول على الرابط العام (Public URL) للصورة المرفوعة
+                const { data: { publicUrl } } = _supabase.storage
+                    .from('proofs')
+                    .getPublicUrl(fileName);
+
+                // 4. حفظ بيانات الطلب مع رابط الصورة في قاعدة البيانات
+                const { error: insertError } = await _supabase.from('requests').insert([{
+                    username: currentUser.username,
+                    title: title,
+                    description: desc,
+                    target_amount: parseFloat(amount),
+                    proof_url: publicUrl
+                }]);
+
+                if (insertError) throw new Error('فشل حفظ الطلب في قاعدة البيانات.');
+
+                alert('تم رفع طلبك للمجتمع بنجاح وسيتم مراجعته والتصويت عليه!');
+                closeModal('request-modal');
+                loadData();
+                
+                // تفريغ الحقول بعد النجاح
+                document.getElementById('req-title').value = '';
+                document.getElementById('req-desc').value = '';
+                document.getElementById('req-amount').value = '';
+                fileInput.value = '';
+
+            } catch (error) {
+                console.error(error);
+                alert('حدث خطأ: ' + error.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "إرسال الطلب للتدقيق";
+            }
         }
 
         window.onload = () => {
