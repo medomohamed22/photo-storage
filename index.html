@@ -1,1463 +1,366 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"/>
-<title>AIWay</title>
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
-
-<style>
-/* --- Design System & New Colors --- */
-:root {
-    --bg: #050505; 
-    --chat-bg: #000000;
-    --card: #121212;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Donate Way - مجمع الخير</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
     
-    /* Gradient from Logo (Purple to Orange/Gold) */
-    --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #f59e0b 100%);
-    --text-gradient: linear-gradient(135deg, #a78bfa 0%, #fbbf24 100%);
-    
-    --pi-purple: #7c3aed;
-    --pi-gold: #f59e0b;
-    
-    --text-main: #ffffff;
-    --text-sub: #a1a1aa;
-    --border: #27272a;
-}
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    <style>
+        :root {
+            --primary-purple: #8e44ad;
+            --accent-purple: #a29bfe;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --dark: #2d3436;
+            --light: #f9f9f9;
+        }
 
-body {
-    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--chat-bg); color: var(--text-main);
-    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-    direction: rtl; 
-}
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
 
-/* --- Landing Page --- */
-.landing-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: #000; z-index: 9999;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 20px; text-align: center;
-    transition: opacity 0.5s ease;
-    background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
-}
+        body { background: #f0f2f5; min-height: 100vh; padding-top: 90px; overflow-x: hidden; }
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient); clip-path: circle(40% at 100% 0%); z-index: -1;
+        }
 
-.landing-lang-btn {
-    position: absolute; top: 20px; right: 20px;
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
-    font-weight: 700; z-index: 10; backdrop-filter: blur(10px);
-}
+        /* الهيدر متجاوب */
+        header {
+            position: fixed; top: 0; left: 0; right: 0; height: 70px; 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); z-index: 1000;
+        }
 
-/* Updated Text Logo Style */
-.landing-logo-text {
-    font-size: 64px; 
-    font-weight: 900; 
-    margin-bottom: 10px;
-    background: var(--text-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.4));
-    letter-spacing: -2px;
-}
+        .logo { font-size: 1.5rem; font-weight: 900; color: var(--primary-purple); cursor: pointer; }
+        .user-pill { display: none; background: var(--primary-purple); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+        .btn-login { padding: 8px 15px; border-radius: 20px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
 
-.landing-desc { color: #ccc; margin-bottom: 40px; font-size: 15px; line-height: 1.6; max-width: 300px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
 
-.features-title { font-size: 14px; color: var(--pi-gold); margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-.features-container { display: flex; gap: 15px; justify-content: center; margin-bottom: 50px; }
+        /* مجمع السيولة - تعديلات الهاتف */
+        .pool-section {
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
+            border-radius: 25px; padding: 30px 20px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05); margin-bottom: 40px;
+            border: 2px solid var(--primary-purple);
+        }
+        .pool-title { font-size: 1.5rem; color: var(--dark); margin-bottom: 10px; font-weight: 900; }
+        .pool-desc { color: #555; font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; }
+        .pool-amount { font-size: 3rem; font-weight: 900; color: var(--primary-purple); margin: 15px 0; text-shadow: 0 4px 10px rgba(142, 68, 173, 0.2); }
+        
+        .donate-pool-box { display: flex; flex-direction: column; gap: 12px; max-width: 100%; margin: 0 auto; }
+        .pool-input { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #eee; font-size: 1.1rem; text-align: center; outline: none; transition: 0.3s; }
+        .pool-input:focus { border-color: var(--primary-purple); }
+        .btn-primary { padding: 15px; border-radius: 15px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 1.1rem; width: 100%; transition: 0.3s; }
+        .btn-primary:active { transform: scale(0.98); }
 
-.feature-btn {
-    padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 14px;
-    display: flex; flex-direction: column; align-items: center; gap: 5px;
-    border: none; cursor: default; position: relative; min-width: 110px;
-}
+        /* قسم الطلبات */
+        .section-header { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 25px; text-align: center; }
+        .section-title { font-size: 1.4rem; color: var(--dark); font-weight: 900; }
+        .btn-outline { padding: 10px 20px; border-radius: 15px; border: 2px dashed var(--primary-purple); background: white; color: var(--primary-purple); font-weight: 700; cursor: pointer; width: 100%; max-width: 300px; }
 
-.f-images {
-    background: var(--primary-gradient);
-    color: white;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
-}
+        .cases-grid { display: grid; grid-template-columns: 1fr; gap: 20px; padding-bottom: 40px; }
+        
+        .case-card {
+            background: white; border-radius: 20px; padding: 20px;
+            border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+            position: relative; display: flex; flex-direction: column; gap: 12px;
+        }
+        
+        /* تصميم الكارت للحالة المكتملة */
+        .case-card.funded { border: 2px solid var(--success); background: #f2fcf5; }
+        .funded-badge { position: absolute; top: -12px; right: 20px; background: var(--success); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); }
 
-.f-video {
-    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.soon-badge {
-    font-size: 9px; background: #333; color: #fff; padding: 2px 6px; border-radius: 4px;
-    position: absolute; bottom: -10px; border: 1px solid #444;
-}
+        .case-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .case-title { font-size: 1.2rem; color: var(--dark); font-weight: 700; line-height: 1.4; }
+        .case-user { font-size: 0.8rem; color: #888; background: #eee; padding: 3px 8px; border-radius: 10px; }
+        .case-desc { color: #666; font-size: 0.9rem; line-height: 1.6; }
+        
+        .case-meta { display: flex; justify-content: space-around; background: var(--light); padding: 12px; border-radius: 15px; }
+        .meta-item { text-align: center; }
+        .meta-value { font-weight: 900; color: var(--primary-purple); display: block; font-size: 1.1rem; }
+        .meta-label { font-size: 0.75rem; color: #888; }
+        
+        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+        .vote-btn { padding: 12px; border-radius: 12px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 1rem; }
+        .proof-btn { padding: 12px; border-radius: 12px; border: 1px solid #ddd; background: white; color: #555; font-weight: 700; cursor: pointer; font-size: 0.95rem; }
+        .impact-btn { padding: 12px; border-radius: 12px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.2); }
 
-.pi-login-btn {
-    background: var(--primary-gradient);
-    color: white;
-    border: none;
-    padding: 14px 50px; border-radius: 30px;
-    font-weight: 800; font-size: 16px; cursor: pointer;
-    box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
-    display: flex; align-items: center; gap: 10px;
-    transition: transform 0.2s;
-}
-.pi-login-btn:active { transform: scale(0.95); }
-.pi-login-btn svg { width: 24px; height: 24px; fill: white; }
+        /* النوافذ المنبثقة متجاوبة */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; padding: 15px; }
+        .modal-content { background: white; padding: 25px 20px; border-radius: 20px; width: 100%; max-width: 400px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-btn { position: absolute; top: 15px; left: 15px; cursor: pointer; font-size: 1.5rem; color: #888; line-height: 1; }
+        .form-group { margin-bottom: 15px; }
+        .form-control { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 0.95rem; }
+        .impact-img { width: 100%; border-radius: 15px; margin-top: 15px; }
 
-/* --- Header --- */
-.header {
-    padding: 10px 16px; background: rgba(5, 5, 5, 0.9);
-    backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    height: 60px; flex-shrink: 0; z-index: 100;
-}
-.header-title-area {
-    display: flex; align-items: center; gap: 8px; cursor: pointer;
-    padding: 4px 8px; border-radius: 12px; transition: 0.2s;
-}
-.header-title-area:active { background: rgba(255,255,255,0.05); }
-
-/* Token Badge in Header */
-.header-cost-badge {
-    background: var(--pi-gold); color: #000;
-    font-size: 11px; font-weight: 800;
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin-right: 5px; 
-}
-
-.header-left { display: flex; gap: 8px; align-items: center; }
-
-.token-btn {
-    background: rgba(245, 158, 11, 0.1); 
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    color: var(--pi-gold);
-    padding: 0 12px; height: 34px; border-radius: 18px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-    transition: 0.2s;
-}
-.token-btn:active { transform: scale(0.95); }
-.token-icon { width: 14px; height: 14px; fill: currentColor; }
-
-.lang-btn {
-    background: var(--card); border: 1px solid var(--border);
-    color: var(--text-main); padding: 0 12px; height: 34px; border-radius: 18px;
-    font-size: 11px; font-weight: 600; cursor: pointer;
-}
-
-/* --- Chat & Content --- */
-.chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
-.message { display: flex; flex-direction: column; max-width: 90%; animation: slideUp 0.3s ease; }
-.message.user { align-self: flex-end; } 
-.message.bot { align-self: flex-start; }
-
-.msg-bubble {
-    padding: 12px 16px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-wrap: break-word;
-    display: flex; 
-    flex-direction: column; 
-}
-
-/* User Bubble */
-.message.user .msg-bubble { 
-    background: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
-    color: #fff; border: 1px solid rgba(124, 58, 237, 0.3);
-    border-bottom-left-radius: 4px; 
-}
-
-.message.bot .msg-bubble {
-    background: transparent;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    overflow: hidden;
-    width: 100%;
-    max-width: 320px;
-}
-
-.no-token-card {
-    background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 20px; padding: 20px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.no-token-text { color: #fca5a5; font-size: 14px; font-weight: 600; margin-bottom: 5px; }
-.buy-now-btn {
-    background: var(--pi-gold); color: black; border: none;
-    padding: 8px 24px; border-radius: 20px; font-weight: 700; font-size: 12px;
-    cursor: pointer; display: flex; align-items: center; gap: 6px;
-}
-
-/* Animation & Image Placeholders */
-.loading-box {
-    width: 280px; 
-    aspect-ratio: 1/1; 
-    border-radius: 20px;
-    position: relative; overflow: hidden;
-    background: #000; border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-}
-.blur-wave {
-    position: absolute; inset: -50%;
-    background: conic-gradient(from 0deg, transparent 0deg, var(--pi-purple) 100deg, transparent 180deg, var(--pi-gold) 260deg, transparent 360deg);
-    filter: blur(40px); opacity: 0.5;
-    animation: rotateWave 4s linear infinite;
-}
-.loading-text {
-    position: relative; z-index: 2; font-weight: 700; font-size: 13px; color: white;
-    background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
-    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
-    animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes rotateWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
-
-/* Image Style: Fixed smooth transition */
-.image-container {
-    position: relative;
-    width: 100%;
-    min-height: 280px; 
-    background: #000;
-}
-.msg-image { 
-    width: 100%; height: auto; display: block; 
-    opacity: 0; transition: opacity 0.8s ease-in; 
-}
-.msg-image.loaded { opacity: 1; }
-
-.download-bar {
-    padding: 12px;
-    background: #141414;
-    display: flex;
-    justify-content: center;
-    border-top: 1px solid #222;
-    width: 100%;
-}
-.d-btn { background: var(--pi-gold); color: black; border: none; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: 0.2s; }
-
-/* --- Footer --- */
-.footer-container { background: #050505; border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; position: relative; }
-.control-bar { display: flex; gap: 10px; padding: 8px 12px 0 12px; position: relative; }
-
-.footer-btn {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 6px 12px; color: var(--text-sub);
-    font-size: 12px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; gap: 8px; min-width: 90px; justify-content: space-between;
-    transition: 0.2s;
-}
-.input-row { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
-.input-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 14px 18px; color: white; outline: none; resize: none; max-height: 120px; font-size: 15px; }
-.send-btn { 
-    width: 48px; height: 48px; border-radius: 50%; 
-    background: var(--primary-gradient); border: none; cursor: pointer; 
-    display: flex; align-items: center; justify-content: center; 
-    transition: 0.3s; font-weight: 700; font-size: 12px;
-}
-.send-btn:disabled { background: #333; cursor: not-allowed; }
-.countdown-text { color: white; font-size: 10px; text-align: center; line-height: 1; }
-
-/* --- Menus --- */
-.model-menu, .aspect-menu-dropdown {
-    background: rgba(18, 18, 18, 0.98); backdrop-filter: blur(20px);
-    border: 1px solid var(--border); border-radius: 16px;
-    display: none; flex-direction: column; gap: 5px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-}
-.model-menu { position: absolute; top: 60px; left: 0; right: 0; z-index: 90; padding: 10px; }
-.aspect-menu-dropdown { position: absolute; bottom: 100%; right: 12px; width: 200px; margin-bottom: 8px; padding: 8px; z-index: 200; }
-
-.menu-option {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;
-    border: 1px solid transparent; transition: 0.2s;
-}
-.menu-option.active { border-color: var(--pi-purple); background: rgba(124, 58, 237, 0.1); }
-.cost-badge-menu {
-    background: rgba(255,255,255,0.1); color: var(--pi-gold);
-    font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700;
-}
-
-/* --- Modals --- */
-.modal-overlay { 
-    position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 500; 
-    display: none; flex-direction: column; justify-content: center; align-items: center;
-}
-.modal-window {
-    width: 90%; max-width: 400px; max-height: 80vh; background: #111;
-    border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
-    display: flex; flex-direction: column;
-}
-.modal-header { 
-    padding: 15px; border-bottom: 1px solid var(--border); 
-    display: flex; justify-content: space-between; align-items: center; background: #18181b; 
-}
-
-/* Buy Grid */
-.buy-grid { padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-.buy-card {
-    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; transition: 0.2s;
-}
-.buy-card:active { border-color: var(--pi-gold); background: rgba(245, 158, 11, 0.1); }
-.buy-info { display: flex; flex-direction: column; gap: 4px; }
-.buy-amount { color: var(--text-main); font-weight: 700; font-size: 16px; }
-.buy-cost { color: var(--pi-gold); font-size: 13px; font-weight: 600; }
-.buy-icon { width: 24px; height: 24px; fill: var(--pi-gold); }
-
-/* --- Gallery Styling --- */
-.gallery-grid { 
-    flex: 1; 
-    overflow-y: auto; 
-    padding: 12px; 
-    padding-bottom: 50px;
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    grid-auto-rows: min-content; 
-    gap: 15px; 
-    align-content: start;
-}
-.gallery-item { 
-    position: relative; 
-    border-radius: 12px; 
-    overflow: hidden; 
-    border: 1px solid var(--border); 
-    aspect-ratio: 1/1; 
-    background: #18181b;
-    display: flex;
-    flex-direction: column;
-}
-.gallery-item img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
-}
-/* Overlay Actions */
-.gallery-actions { 
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 10px; 
-    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 100%);
-    display: flex; gap: 8px; 
-    z-index: 5;
-    backdrop-filter: blur(2px);
-}
-.g-btn { 
-    flex: 1; border: none; padding: 8px 0; font-size: 11px; 
-    cursor: pointer; color: white; border-radius: 6px; font-weight: 700; 
-    display: flex; align-items: center; justify-content: center; transition: 0.2s;
-    text-transform: uppercase; letter-spacing: 0.5px;
-}
-.g-del { background: rgba(239, 68, 68, 0.6); color: white; border: 1px solid rgba(239, 68, 68, 0.3); }
-.g-del:active { background: rgba(239, 68, 68, 0.8); }
-.g-down { background: var(--pi-gold); color: black; border: 1px solid var(--pi-gold); }
-.g-down:active { opacity: 0.9; }
-
-/* Download Help Modal Styling */
-.dl-help-icon { font-size: 40px; margin-bottom: 10px; }
-.dl-help-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--pi-gold); }
-.dl-help-text { color: #ccc; text-align: center; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
-.dl-copy-box { 
-    background: rgba(255,255,255,0.1); border: 1px dashed #555; 
-    padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--pi-gold);
-    width: 100%; text-align: center; margin-bottom: 15px; word-break: break-all;
-}
-
-@keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-
-/* --- Code box styling --- */
-.markdown-body pre {
-    background: #1e1e1e;
-    padding: 10px;
-    border-radius: 8px;
-    overflow-x: auto;
-    border: 1px solid #333;
-}
-.markdown-body code {
-    font-family: monospace;
-}
-.markdown-body p { margin-bottom: 8px; }
-
-.menu-category-title {
-    color: var(--pi-gold); 
-    font-size: 11px; 
-    font-weight: 800; 
-    margin: 10px 5px 5px 5px;
-    text-transform: uppercase; 
-    letter-spacing: 1px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 4px;
-}
-
-.model-tag { 
-    font-size: 9px; 
-    padding: 2px 5px; 
-    border-radius: 4px; 
-    font-weight: 700; 
-    margin-inline-end: 6px; 
-    display: inline-block;
-}
-.tag-img { background: rgba(245, 158, 11, 0.15); color: var(--pi-gold); }
-.tag-txt { background: rgba(124, 58, 237, 0.15); color: #a78bfa; }
-
-.chat-loading-bubble {
-    padding: 15px 20px;
-    background: #1e1e1e;
-    border-radius: 20px;
-    border-top-left-radius: 4px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    width: fit-content;
-    border: 1px solid var(--border);
-}
-
-.typing-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--pi-gold);
-    border-radius: 50%;
-    animation: typing 1.4s infinite ease-in-out both;
-}
-
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes typing {
-    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
-    40% { transform: scale(1); opacity: 1; }
-}
-
-.image-loading-box {
-    width: 100%;
-    aspect-ratio: 1/1;
-    border-radius: 20px;
-    background: #111;
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.code-wrapper {
-    margin: 10px 0;
-    border-radius: 8px;
-    border: 1px solid #333;
-    overflow: hidden;
-    background: #1e1e1e;
-}
-
-.code-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #252526;
-    padding: 6px 12px;
-    border-bottom: 1px solid #333;
-}
-
-.code-lang {
-    font-size: 12px;
-    color: #9cdcfe;
-    font-family: monospace;
-    font-weight: bold;
-}
-
-.copy-code-btn {
-    background: transparent;
-    border: none;
-    color: #ccc;
-    font-size: 11px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: 0.2s;
-}
-.copy-code-btn:hover { color: white; }
-
-.markdown-body pre {
-    margin: 0 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-}
-
-.msg-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #333;
-}
-
-.copy-msg-btn {
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: #ccc;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.copy-msg-btn:hover { background: rgba(255,255,255,0.2); color: white; }
-</style>
+        /* الشاشات الكبيرة */
+        @media (min-width: 768px) {
+            .donate-pool-box { flex-direction: row; }
+            .pool-input { width: 60%; }
+            .btn-primary { width: 40%; }
+            .cases-grid { grid-template-columns: repeat(2, 1fr); }
+            .section-header { flex-direction: row; justify-content: space-between; text-align: right; }
+            .btn-outline { width: auto; }
+            .btn-group { flex-direction: row; }
+            .btn-group button { flex: 1; }
+            .pool-amount { font-size: 4rem; }
+        }
+    </style>
 </head>
 <body>
 
-    <div id="landingPage" class="landing-overlay">
-        <button class="landing-lang-btn" onclick="toggleLanguage()" id="landingLangBtn">AR</button>
+    <header>
+        <div class="logo">Donate Way</div>
+        <div>
+            <button id="login-button" class="btn-login" onclick="login()">دخول بحساب Pi</button>
+            <div id="user-pill" class="user-pill">@username</div>
+        </div>
+    </header>
 
-        <div class="landing-logo-text">AiWay</div>
-        <div class="landing-desc" id="txtLandingDesc">Generate professional images using state-of-the-art AI technologies</div>
-        
-        <div class="features-title" id="txtFeaturesTitle">Site Supports</div>
-       <div class="features-container">
-            <button class="feature-btn f-images">
-                <span>Ai Images</span>
-            </button>
+    <div class="container">
+        <div class="pool-section">
+            <h1 class="pool-title">مجمع التبرعات العام 🌍</h1>
+            <p class="pool-desc">يتم تجميع التبرعات هنا، ويقوم المجتمع بالتصويت على الحالات الأحق بالدعم لدفع تكلفتها من هذا المجمع بشفافية تامة.</p>
+            <div class="pool-amount" id="global-pool-amount">0.00 π</div>
             
-            <button class="feature-btn f-video">
-                <span>Ai Video</span>
-                <span class="soon-badge" id="txtSoonVideo">Soon</span>
-            </button>
-
-            <button class="feature-btn f-images">
-                <span>Ai Chat</span>
-            </button>
-        </div>
-
-        <button class="pi-login-btn" onclick="authenticatePi()">
-            <svg viewBox="0 0 32 32"><path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm-2.5-22h-3v12h3V10zm8 0h-3v12h3V10z"/></svg>
-            <span id="txtLogin">Pi Login</span>
-        </button>
-    </div>
-
-    <div class="header">
-        <div class="header-title-area" onclick="toggleModelMenu()">
-            <div style="font-weight:700; font-size:16px; display:flex; align-items:center;" id="headerModelName">
-                Imagen 4
+            <div class="donate-pool-box">
+                <input type="number" id="pool-input" class="pool-input" placeholder="أدخل مبلغ التبرع للمجمع">
+                <button class="btn-primary" onclick="donateToPool()" id="donate-btn">تبرع لدعم المجمع</button>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#777" id="modelChevron" style="transition:0.3s; margin-inline-start:5px;"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
-        <div class="header-left">
-            <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">AR</button>
-            <button class="token-btn" onclick="openBuyModal()">
-                <svg class="token-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.38 0 2.53-.83 2.53-1.94 0-.85-.38-1.55-2.03-1.95l-1.04-.25c-2.31-.55-3.62-1.89-3.62-3.63 0-1.86 1.34-3.2 3.14-3.56V4h2.67v1.9c1.68.39 2.92 1.43 3.08 3.13h-2.01c-.13-.88-.95-1.57-2.19-1.57-1.32 0-2.19.85-2.19 1.83 0 .74.43 1.35 2.17 1.77l.82.2c2.51.6 3.84 1.95 3.84 3.73 0 1.96-1.5 3.33-3.22 3.66z"/></svg>
-                <span id="tokenBalance">0</span> π
-            </button>
+
+        <div class="section-header">
+            <h2 class="section-title">الحالات المعروضة ونتائج الدعم 🗳️</h2>
+            <button class="btn-outline" onclick="openModal('request-modal')">+ تقديم طلب مساعدة</button>
         </div>
-    </div>
 
-    <div class="model-menu" id="modelMenu"></div>
-
-    <div class="chat-container" id="chatContainer">
-        <div style="text-align:center; color:#555; margin-top:50px;" id="emptyMsg">
-            Welcome to AIWay <br> Select a model and imagine
+        <div class="cases-grid" id="cases-container">
+            <div style="text-align: center; color: #888; padding: 20px;">جاري تحميل الحالات...</div>
         </div>
     </div>
 
-    <div class="footer-container">
-        <div class="control-bar">
-            <button class="footer-btn" onclick="openGallery()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4z"/></svg>
-                <span id="txtGallery">Gallery</span>
-            </button>
-            
-            <div class="aspect-menu-dropdown" id="aspectMenu"></div>
-            <button class="footer-btn" id="aspectTriggerBtn" onclick="toggleAspectMenu(event)">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span id="currentAspectIcon"></span>
-                    <span id="currentAspectLabel">1:1</span>
-                </div>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="#777"><path d="M7 10l5 5 5-5z"/></svg>
-            </button>
-        </div>
-
-        <div class="input-row">
-            <textarea id="promptInput" class="input-box" rows="1" placeholder="Imagine anything..." dir="auto"></textarea>
-            <button class="send-btn" id="sendBtn" onclick="sendPrompt()">
-                <svg id="sendIcon" width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                <span id="countdownEl" class="countdown-text" style="display:none;"></span>
-            </button>
-        </div>
-    </div>
-
-    <div id="galleryModal" class="modal-overlay">
-        <div class="modal-window" style="height:80%;">
-            <div class="modal-header">
-                <span style="font-weight:700; color:white;" id="txtGalleryTitle">My Gallery</span>
-                <button onclick="document.getElementById('galleryModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+    <div id="request-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('request-modal')">&times;</span>
+            <h3 style="color: var(--primary-purple); margin-bottom: 20px; text-align: center;">رفع حالة للمجتمع</h3>
+            <div class="form-group">
+                <input type="text" id="req-title" class="form-control" placeholder="عنوان الحالة (مثال: كرسي متحرك لشاب)">
             </div>
-            <div class="gallery-grid" id="galleryGrid"></div>
-        </div>
-    </div>
-
-    <div id="buyModal" class="modal-overlay">
-        <div class="modal-window">
-            <div class="modal-header">
-                <span style="font-weight:700; color:white;" id="txtBuyTitle">Buy Tokens</span>
-                <button onclick="document.getElementById('buyModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+            <div class="form-group">
+                <textarea id="req-desc" class="form-control" rows="4" placeholder="اشرح الحالة بالتفصيل ليتمكن المجتمع من تقييمها..."></textarea>
             </div>
-            <div class="buy-grid" id="buyGrid"></div>
-        </div>
-    </div>
-
-    <div id="downloadInfoModal" class="modal-overlay">
-        <div class="modal-window" style="padding:20px; align-items:center;">
-            <div class="dl-help-icon">📋</div>
-            <div class="dl-help-title" id="txtDlTitle">Link Copied!</div>
-            <div class="dl-help-text" id="txtDlDesc">
-                Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.
+            <div class="form-group">
+                <input type="number" id="req-amount" class="form-control" placeholder="المبلغ المطلوب بالـ (π)">
             </div>
-            <div class="dl-copy-box" id="dlLinkBox">...</div>
-            <button class="g-btn g-down" onclick="document.getElementById('downloadInfoModal').style.display='none'" style="width:100%; max-width:200px; padding:12px;">OK</button>
+            <div class="form-group">
+                <input type="text" id="req-proof" class="form-control" placeholder="رابط صورة الإثبات (روشتة، فاتورة، الخ)">
+            </div>
+            <button class="btn-primary" onclick="submitRequest()">إرسال الطلب للتدقيق</button>
         </div>
     </div>
 
-<script>
-// دالة النسخ الذكية (تقرأ من الصفحة مباشرة)
-function copyCodeFromBlock(btn) {
-    // 1. العثور على الحاوية الأب (code-wrapper)
-    const wrapper = btn.closest('.code-wrapper');
-    if (!wrapper) return;
-
-    // 2. العثور على عنصر الكود داخل الحاوية
-    const codeElement = wrapper.querySelector('code');
-    if (!codeElement) return;
-
-    // 3. جلب النص كما هو مكتوب
-    const textToCopy = codeElement.innerText || codeElement.textContent;
-
-    // 4. النسخ للحافظة
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '✅ Copied!';
-        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
-    }).catch(err => {
-        console.error('Copy failed:', err);
-        // Fallback للأجهزة القديمة
-        const textarea = document.createElement('textarea');
-        textarea.value = textToCopy;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        btn.innerHTML = '✅ Copied!';
-    });
-}
-
-
-/* =========================
-   CONFIG
-   ========================= */
-const MODELS = [
-    { id: 'openai-large', category: 'Chat & Vision', name: 'GPT-5.2', type: 'text', cost: 3, desc: 'Deep Reasoning' },
-    { id: 'openai-fast', category: 'Chat & Vision', name: 'GPT-5 Nano', type: 'text', cost: 1, desc: 'Fast Chat' },
-    { id: 'openai', category: 'Chat & Vision', name: 'GPT-5 Mini', type: 'text', cost: 1, desc: 'Balanced' },
-
-    { id: 'imagen-4', category: 'Image Generation', name: 'Imagen 4', type: 'image', cost: 1, desc: 'High Quality' },
-    { id: 'gptimage', category: 'Image Generation', name: 'Chat GPT Image', type: 'image', cost: 5, desc: 'Creative' },
-    { id: 'klein', category: 'Image Generation', name: 'FLUX.2 Klein 4B', type: 'image', cost: 2, desc: 'Fast Gen' },
-    { id: 'klein-large', category: 'Image Generation', name: 'FLUX.2 Klein 9B', type: 'image', cost: 4, desc: 'Detailed' }
-];
-
-const RATIOS = [
-    { id: 'square', label: '1:1', w: 1024, h: 1024, icon: '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-    { id: 'portrait', label: '9:16', w: 768, h: 1344, icon: '<rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-    { id: 'landscape', label: '16:9', w: 1344, h: 768, icon: '<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' },
-    { id: 'wide', label: '21:9', w: 1536, h: 640, icon: '<rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>' }
-];
-
-const PACKAGES = [
-    { usd: 1, tokens: 150 },
-    { usd: 5, tokens: 750 },
-    { usd: 10, tokens: 1500 }
-];
-
-const TRANSLATIONS = {
-    ar: {
-        gallery: "معرضي", welcome: "أهلاً بك في AIWay <br> اختر الموديل واكتب ما تتخيله",
-        placeholder: "تخيل أي شيء...", generating: "جاري الإنشاء...", download: "تحميل",
-        delete: "حذف", error: "خطأ", galleryTitle: "معرض صوري", buyTitle: "شراء توكين",
-        noImages: "لا توجد صور محفوظة.", confirmDel: "هل أنت متأكد من الحذف؟", wait: "انتظر",
-        sec: "ث", noImage: "مفيش صورة للتحميل",
-        buy: "شراء", tokens: "توكين", pi: "π", noTokens: "رصيد التوكين نفذ 😢", buyNow: "شراء الآن",
-        cost: "توكين", done: "تم", desc: "توليد صور احترافية باستخدام أحدث تقنيات الذكاء الاصطناعي",
-        login: "Pi Login", features: "الموقع يدعم", soon: "قريباً", usd: "دولار",
-        dlTitle: "تم نسخ رابط الصورة! 📋",
-        dlDesc: "بسبب قيود متصفح Pi حالياً، يرجى لصق الرابط في متصفح Google Chrome ليتم تنزيل الصورة فوراً.\nهذا حل مؤقت حتى يتم تحديث المتصفح.",
-        rateLimit: "ضغط عالي! انتظر 25 ثانية..."
-    },
-    en: {
-        gallery: "Gallery", welcome: "Welcome to AIWay <br> Select a model and imagine.",
-        placeholder: "Imagine anything...", generating: "Generating...", download: "Download",
-        delete: "Delete", error: "Error", galleryTitle: "My Gallery", buyTitle: "Buy Tokens",
-        noImages: "No saved images.", confirmDel: "Are you sure?", wait: "Wait",
-        sec: "s", noImage: "No image to download",
-        buy: "Buy", tokens: "Tokens", pi: "π", noTokens: "Out of Tokens 😢", buyNow: "Buy Now",
-        cost: "Tokens", done: "Done", desc: "Generate professional images using state-of-the-art AI technologies",
-        login: "Pi Login", features: "Site Supports", soon: "Soon", usd: "USD",
-        dlTitle: "Link Copied! 📋",
-        dlDesc: "Due to Pi Browser limitations, please paste this link into Google Chrome to download the image immediately.\nThis is a temporary solution.",
-        rateLimit: "High traffic! Wait 25s..."
-    }
-};
-
-/* =========================
-   STATE
-   ========================= */
-let currentLang = 'en';
-let currentModel = 'imagen-4';
-let currentWidth = 1024;
-let currentHeight = 1024;
-let currentRatioId = 'square';
-let piUser = null;
-let chatHistory = [];
-let cooldownEndTime = 0;
-let currentPiPrice = 40.0;
-
-/* =========================
-   SAFE HELPERS (FIXES)
-   ========================= */
-function safeRemove(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-}
-
-function normalizeMessages(list) {
-    return (Array.isArray(list) ? list : [])
-        .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-        .slice(-12);
-}
-
-function renderMarkdownSafe(markdown) {
-    const md = String(markdown || "");
-    let dirty = "";
-    try { dirty = marked.parse(md); } catch (e) { dirty = md; }
-
-    let safe = dirty;
-    if (window.DOMPurify && typeof DOMPurify.sanitize === "function") {
-        safe = DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
-    }
-
-    // fallback لو الـ markdown خرج فاضي أو اتكسر
-    const plain = (safe || "").replace(/<[^>]*>/g, '').trim();
-    if (!plain || plain.length < 2) {
-        const escaped = md
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-        return `<pre style="white-space:pre-wrap; margin:0; font-family:monospace; color:#ddd;">${escaped}</pre>`;
-    }
-    return safe;
-}
-
-/* =========================
-   MARKED CONFIG (CLEAN)
-   ========================= */
-const renderer = new marked.Renderer();
-renderer.code = function(code, language) {
-    const validLang = language || 'plaintext';
-    // تنظيف الكود للعرض فقط
-    const escapedCode = String(code || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-    // نضع الكود داخل <pre><code> بشكل طبيعي
-    // الزر الآن يستدعي دالة تبحث عن الكود المجاور
-    return `
-    <div class="code-wrapper">
-        <div class="code-header">
-            <span class="code-lang">${validLang}</span>
-            <button class="copy-code-btn" type="button" onclick="copyCodeFromBlock(this)">
-                📋 Copy Code
-            </button>
+    <div id="impact-modal" class="modal" onclick="closeModal('impact-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal('impact-modal')">&times;</span>
+            <h3 style="color: var(--success); text-align: center;">أثر مجتمع Donate Way 💚</h3>
+            <p style="text-align: center; font-size: 0.9rem; color: #666; margin-top: 5px;">تم حل هذه الحالة بفضل تصويتكم وتبرعاتكم.</p>
+            <img id="impact-img-src" src="" class="impact-img" alt="صورة الأثر">
         </div>
-        <pre><code class="language-${validLang}">${escapedCode}</code></pre>
-    </div>`;
-};
-marked.setOptions({ renderer: renderer });
+    </div>
 
-function copyCodeBlock(btn) {
-    // جلب الكود المشفر من خاصية data-code
-    const encodedData = btn.getAttribute('data-code');
-    if (!encodedData) return;
-    
-    try {
-        // فك التشفير
-        const code = decodeURIComponent(encodedData);
-        // استدعاء دالة النسخ الأصلية
-        copyText(btn, code);
-    } catch (e) {
-        console.error("Copy Error:", e);
-    }
-}
+    <script>
+        const SUPABASE_URL = 'https://axjkwrssmofzavaoqutq.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_tiuMncgWhf1YRWoD-uYQ3Q_ziI8OKci';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const Pi = window.Pi;
 
+        let currentUser = null;
 
-function copyText(btn, text) {
-    const value = String(text || "");
-    navigator.clipboard.writeText(value).then(() => {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '✅ Copied!';
-        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy', err);
-        // fallback
-        try {
-            const ta = document.createElement("textarea");
-            ta.value = value;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand("copy");
-            document.body.removeChild(ta);
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '✅ Copied!';
-            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-        } catch {
-            alert("Could not copy text.");
-        }
-    });
-}
-
-const Pi = window.Pi;
-
-document.addEventListener('DOMContentLoaded', () => {
-    try { Pi.init({ version: "2.0", sandbox: false }); } catch (e) { console.error("Pi Init Error:", e); }
-
-    renderModelMenu();
-    renderAspectMenu();
-    updateAspectUI();
-    applyLanguage('en');
-    updateHeaderModelUI(); // ✅ FIX: بعد applyLanguage علشان placeholder يبقى صح حسب نوع الموديل
-    fetchPiPrice();
-    setInterval(fetchPiPrice, 10000);
-});
-
-async function fetchPiPrice() {
-    try {
-        const res = await fetch('/.netlify/functions/get-pi-price');
-        const data = await res.json();
-        if (data.price) {
-            currentPiPrice = data.price;
-            if (document.getElementById('buyModal').style.display === 'flex') {
-                renderBuyGrid();
+        async function login() {
+            try {
+                const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
+                currentUser = auth.user;
+                document.getElementById('login-button').style.display = 'none';
+                document.getElementById('user-pill').style.display = 'block';
+                document.getElementById('user-pill').textContent = '@' + currentUser.username;
+            } catch (e) {
+                alert("يرجى فتح الموقع من متصفح Pi Browser");
             }
         }
-    } catch(e) { console.log("Using default price"); }
-}
 
-function toggleLanguage() {
-    currentLang = currentLang === 'ar' ? 'en' : 'ar';
-    const label = currentLang === 'ar' ? 'EN' : 'AR';
-    document.getElementById('langBtn').textContent = label;
-    document.getElementById('landingLangBtn').textContent = label;
-    applyLanguage(currentLang);
-    updateHeaderModelUI(); // ✅ FIX: لضمان placeholder الصحيح حسب نوع الموديل
-}
+        const onIncompletePaymentFound = async (payment) => { /* معالجة المدفوعات المعلقة */ };
 
-function applyLanguage(lang) {
-    const t = TRANSLATIONS[lang];
-    document.getElementById('txtGallery').textContent = t.gallery;
-    document.getElementById('emptyMsg').innerHTML = t.welcome;
-    document.getElementById('promptInput').placeholder = t.placeholder;
-    document.getElementById('txtGalleryTitle').textContent = t.galleryTitle;
-    document.getElementById('txtBuyTitle').textContent = t.buyTitle;
-    document.getElementById('txtLandingDesc').textContent = t.desc;
-    document.getElementById('txtLogin').textContent = t.login;
-    document.getElementById('txtFeaturesTitle').textContent = t.features;
+        async function loadData() {
+            // 1. حساب سيولة المجمع
+            const { data: donations } = await _supabase.from('donations').select('amount');
+            if(donations) {
+                const total = donations.reduce((sum, d) => sum + parseFloat(d.amount), 0);
+                document.getElementById('global-pool-amount').innerText = total.toFixed(2) + ' π';
+            }
 
-    const soonVideo = document.getElementById('txtSoonVideo');
-    const soonText = document.getElementById('txtSoonText');
-    if (soonVideo) soonVideo.textContent = t.soon;
-    if (soonText) soonText.textContent = t.soon;
+            // 2. جلب الحالات
+            const { data: requests } = await _supabase.from('requests')
+                .select('*')
+                .order('status', { ascending: false }) // المفتوح يظهر أولاً
+                .order('votes', { ascending: false });
+            
+            const container = document.getElementById('cases-container');
+            if(requests && requests.length > 0) {
+                container.innerHTML = requests.map(req => {
+                    const isFunded = req.status === 'funded';
+                    
+                    // تحديد الأزرار بناءً على حالة الطلب
+                    let actionButtons = '';
+                    if(isFunded) {
+                        actionButtons = `
+                            <button class="impact-btn" onclick="showImpact('${req.impact_url}')">🖼️ مشاهدة الأثر والنتيجة</button>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button class="vote-btn" onclick="voteForCase(${req.id})">👍 تصويت للحالة</button>
+                            <button class="proof-btn" onclick="window.open('${req.proof_url}', '_blank')">📄 الإثبات</button>
+                        `;
+                    }
 
-    document.getElementById('txtDlTitle').textContent = t.dlTitle;
-    document.getElementById('txtDlDesc').innerHTML = t.dlDesc.replace(/\n/g, '<br>');
-
-    renderModelMenu();
-    renderBuyGrid();
-}
-
-async function authenticatePi() {
-    try {
-        const scopes = ['username', 'payments'];
-        const auth = await Pi.authenticate(scopes, onIncompletePayment);
-        if (auth.user) {
-            piUser = auth.user;
-            document.getElementById('landingPage').style.display = 'none';
-            fetchBalance();
-            loadChatHistory();
+                    return `
+                    <div class="case-card ${isFunded ? 'funded' : ''}">
+                        ${isFunded ? '<div class="funded-badge">✅ تم التمويل</div>' : ''}
+                        <div class="case-header">
+                            <h3 class="case-title">${req.title}</h3>
+                            <span class="case-user">@${req.username}</span>
+                        </div>
+                        <p class="case-desc">${req.description}</p>
+                        
+                        <div class="case-meta">
+                            <div class="meta-item">
+                                <span class="meta-value">${req.target_amount} π</span>
+                                <span class="meta-label">المطلوب</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-value">${req.votes || 0}</span>
+                                <span class="meta-label">الأصوات</span>
+                            </div>
+                        </div>
+                        
+                        <div class="btn-group">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } else {
+                container.innerHTML = "<p style='text-align:center; width:100%; color:#888;'>لا توجد طلبات معروضة حالياً.</p>";
+            }
         }
-    } catch (err) { console.error(err); alert("Auth Failed"); }
-}
 
-function onIncompletePayment(payment) { console.log("Incomplete Payment", payment); }
+        function donateToPool() {
+            if (!currentUser) return alert('يرجى تسجيل الدخول أولاً');
+            const amt = parseFloat(document.getElementById('pool-input').value);
+            if (!amt || amt <= 0) return alert('أدخل مبلغاً صحيحاً');
 
-async function fetchBalance() {
-    if (!piUser) return;
-    try {
-        const res = await fetch(`/.netlify/functions/get-balance?uid=${piUser.uid}`);
-        const data = await res.json();
-        document.getElementById('tokenBalance').textContent = data.balance || 0;
-    } catch (e) { console.error("Balance Error", e); }
-}
+            const btn = document.getElementById('donate-btn');
+            btn.disabled = true; btn.innerText = "جاري الدفع...";
 
-function updateHeaderModelUI() {
-    const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
-    currentModel = m.id;
+            Pi.createPayment({
+                amount: amt,
+                memo: `دعم مجمع الخير بـ Donate Way`,
+                metadata: { type: 'global_pool' }
+            }, {
+                onReadyForServerApproval: (payId) => fetch('/api/pi/approve', { method:'POST', body: JSON.stringify({ paymentId: payId }) }),
+                onReadyForServerCompletion: (payId, tx) => fetch('/api/pi/complete', { method:'POST', body: JSON.stringify({ paymentId: payId, txid: tx }) })
+                .then(async () => { 
+                    await _supabase.from('donations').insert([{ username: currentUser.username, amount: amt }]);
+                    alert('تم إضافة تبرعك للمجمع بنجاح! شكراً لعطائك.');
+                    btn.disabled = false; btn.innerText = "تبرع لدعم المجمع";
+                    document.getElementById('pool-input').value = '';
+                    loadData();
+                }),
+                onCancel: () => { btn.disabled = false; btn.innerText = "تبرع لدعم المجمع"; },
+                onError: (e) => { btn.disabled = false; btn.innerText = "تبرع لدعم المجمع"; alert('حدث خطأ أثناء الدفع'); }
+            });
+        }
 
-    const badge = `<span class="header-cost-badge">${m.cost}</span>`;
-    document.getElementById('headerModelName').innerHTML = `${m.name} ${badge}`;
+        async function voteForCase(caseId) {
+            if (!currentUser) return alert('يرجى تسجيل الدخول لتتمكن من التصويت');
+            
+            // محاولة تسجيل الصوت في جدول votes_log
+            const { error: voteError } = await _supabase.from('votes_log').insert([{
+                request_id: caseId,
+                username: currentUser.username
+            }]);
 
-    const aspectBtn = document.getElementById('aspectTriggerBtn');
-    const input = document.getElementById('promptInput');
-    const t = TRANSLATIONS[currentLang];
+            if (voteError) {
+                // إذا كان هناك خطأ (غالباً بسبب الـ UNIQUE constraint)، يعني أنه صوّت مسبقاً
+                if(voteError.code === '23505') {
+                    alert('لقد قمت بالتصويت لهذه الحالة مسبقاً! لا يمكن تكرار التصويت.');
+                } else {
+                    alert('حدث خطأ أثناء التصويت، حاول مرة أخرى.');
+                }
+                return;
+            }
+            
+            // إذا نجح التسجيل في votes_log، نقوم بزيادة العداد في جدول requests
+            const { data: currentReq } = await _supabase.from('requests').select('votes').eq('id', caseId).single();
+            await _supabase.from('requests').update({ votes: (currentReq.votes || 0) + 1 }).eq('id', caseId);
+            
+            alert('تم تسجيل صوتك بنجاح! شكراً لمساهمتك في القرار.');
+            loadData();
+        }
 
-    if (m.type === 'text') {
-        aspectBtn.style.display = 'none';
-        input.placeholder = (currentLang === 'ar') ? "اسأل أي شيء..." : "Ask me anything...";
-    } else {
-        aspectBtn.style.display = 'flex';
-        input.placeholder = t.placeholder;
-    }
-}
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function renderModelMenu() {
-    const menu = document.getElementById('modelMenu');
-    menu.innerHTML = '';
+        function showImpact(url) {
+            if(!url || url === 'null') {
+                alert('سيتم رفع صورة الأثر قريباً جداً!');
+                return;
+            }
+            document.getElementById('impact-img-src').src = url;
+            openModal('impact-modal');
+        }
 
-    const categories = [...new Set(MODELS.map(m => m.category))];
+        async function submitRequest() {
+            if (!currentUser) return alert('يرجى تسجيل الدخول لتقديم طلب');
+            const title = document.getElementById('req-title').value;
+            const desc = document.getElementById('req-desc').value;
+            const amount = document.getElementById('req-amount').value;
+            const proof = document.getElementById('req-proof').value;
 
-    categories.forEach(cat => {
-        const title = document.createElement('div');
-        title.className = 'menu-category-title';
-        title.innerText = cat;
-        menu.appendChild(title);
+            if(!title || !amount || !proof) return alert('يرجى ملء كافة البيانات الأساسية وإرفاق رابط الإثبات');
 
-        const catModels = MODELS.filter(m => m.category === cat);
+            const btn = event.target;
+            btn.disabled = true; btn.innerText = "جاري الإرسال...";
 
-        catModels.forEach(m => {
-            const div = document.createElement('div');
-            div.className = `menu-option ${m.id === currentModel ? 'active' : ''}`;
-            div.onclick = () => selectModel(m);
+            await _supabase.from('requests').insert([{
+                username: currentUser.username,
+                title: title,
+                description: desc,
+                target_amount: parseFloat(amount),
+                proof_url: proof
+            }]);
 
-            const tagType = m.type === 'image' ? 'tag-img' : 'tag-txt';
-            const tagLabel = m.type === 'image' ? 'IMG' : 'CHAT';
+            alert('تم رفع طلبك للمجتمع بنجاح!');
+            closeModal('request-modal');
+            loadData();
+            
+            // تفريغ الحقول
+            document.getElementById('req-title').value = '';
+            document.getElementById('req-desc').value = '';
+            document.getElementById('req-amount').value = '';
+            document.getElementById('req-proof').value = '';
+            btn.disabled = false; btn.innerText = "إرسال الطلب للتدقيق";
+        }
 
-            div.innerHTML = `
-                <div>
-                    <div style="font-weight:700; font-size:14px; color:white; display:flex; align-items:center;">
-                        ${m.name}
-                    </div>
-                    <div style="font-size:11px; color:#888; margin-top:3px;">
-                        <span class="model-tag ${tagType}">${tagLabel}</span> ${m.desc}
-                    </div>
-                </div>
-                <div style="font-size:11px; font-weight:bold; color:var(--pi-gold); background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">
-                    ${m.cost} </div>
-            `;
-            menu.appendChild(div);
-        });
-    });
-}
-
-function selectModel(m) {
-    currentModel = m.id;
-    updateHeaderModelUI();
-    toggleModelMenu();
-    renderModelMenu();
-}
-
-function toggleModelMenu() {
-    const menu = document.getElementById('modelMenu');
-    const chevron = document.getElementById('modelChevron');
-    const isHidden = menu.style.display === 'none' || menu.style.display === '';
-    menu.style.display = isHidden ? 'flex' : 'none';
-    chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-    if (isHidden) document.getElementById('aspectMenu').style.display = 'none';
-}
-
-function renderAspectMenu() {
-    const menu = document.getElementById('aspectMenu');
-    menu.innerHTML = '';
-    RATIOS.forEach(r => {
-        const div = document.createElement('div');
-        div.className = `menu-option ${r.id === currentRatioId ? 'active' : ''}`;
-        div.onclick = () => selectRatio(r);
-        div.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:white;">${r.icon}</svg>
-                <span style="font-size:13px; font-weight:600; color:white;">${r.label}</span>
-            </div>
-        `;
-        menu.appendChild(div);
-    });
-}
-
-function selectRatio(r) {
-    currentWidth = r.w;
-    currentHeight = r.h;
-    currentRatioId = r.id;
-    updateAspectUI();
-    document.getElementById('aspectMenu').style.display = 'none';
-    renderAspectMenu();
-}
-
-function updateAspectUI() {
-    const r = RATIOS.find(x => x.id === currentRatioId) || RATIOS[0];
-    document.getElementById('currentAspectLabel').textContent = r.label;
-    document.getElementById('currentAspectIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none">${r.icon}</svg>`;
-}
-
-function toggleAspectMenu(e) {
-    if (e) e.stopPropagation();
-    const menu = document.getElementById('aspectMenu');
-    const isHidden = menu.style.display === 'none' || menu.style.display === '';
-    menu.style.display = isHidden ? 'flex' : 'none';
-    if (isHidden) document.getElementById('modelMenu').style.display = 'none';
-}
-
-function openBuyModal() { renderBuyGrid(); document.getElementById('buyModal').style.display = 'flex'; }
-
-function renderBuyGrid() {
-    const grid = document.getElementById('buyGrid');
-    grid.innerHTML = '';
-    const t = TRANSLATIONS[currentLang];
-    PACKAGES.forEach(pkg => {
-        const piAmount = (pkg.usd / currentPiPrice).toFixed(4);
-        const div = document.createElement('div');
-        div.className = 'buy-card';
-        div.onclick = () => buyTokens(pkg, piAmount);
-        div.innerHTML = `
-            <div class="buy-info">
-                <span class="buy-amount">${pkg.tokens} ${t.tokens}</span>
-                <span class="buy-cost" style="color:#aaa; font-size:11px;">$${pkg.usd}</span>
-                <span class="buy-cost">${piAmount} ${t.pi}</span>
-            </div>
-            <svg class="buy-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-        `;
-        grid.appendChild(div);
-    });
-}
-
-async function buyTokens(pkg, piAmount) {
-    if (!piUser) { alert("Login first"); return; }
-    try {
-        const paymentData = {
-            amount: parseFloat(piAmount),
-            memo: `${pkg.tokens} Tokens - AIWay`,
-            metadata: { type: "tokens", tokenAmount: pkg.tokens, pi_uid: piUser.uid }
+        window.onload = () => {
+            Pi.init({version:"2.0"});
+            loadData();
         };
-        await Pi.createPayment(paymentData, {
-            onReadyForServerApproval: async (paymentId) => {
-                const res = await fetch('/.netlify/functions/approve', { method: 'POST', body: JSON.stringify({ paymentId }) });
-                if (!res.ok) throw new Error("Approval Failed");
-            },
-            onReadyForServerCompletion: async (paymentId, txid) => {
-                const res = await fetch('/.netlify/functions/complete', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        paymentId,
-                        txid,
-                        pi_uid: piUser.uid,
-                        username: piUser.username,
-                        tokenAmount: pkg.tokens,
-                        usdAmount: pkg.usd,
-                        pAmount: paymentData.amount
-                    })
-                });
-                if (!res.ok) throw new Error("Completion Failed");
-                const data = await res.json();
-                document.getElementById('tokenBalance').textContent = data.newBalance;
-                document.getElementById('buyModal').style.display = 'none';
-                alert(`+${pkg.tokens} Tokens!`);
-            },
-            onCancel: (paymentId) => { console.log("Cancelled"); },
-            onError: (error) => { console.error("Error", error); }
-        });
-    } catch (e) { console.error(e); alert("Payment Failed"); }
-}
-
-function updateCooldownUI() {
-    const now = Date.now();
-    const btn = document.getElementById('sendBtn');
-    const icon = document.getElementById('sendIcon');
-    const countEl = document.getElementById('countdownEl');
-    const t = TRANSLATIONS[currentLang];
-    if (now < cooldownEndTime) {
-        const remaining = Math.ceil((cooldownEndTime - now) / 1000);
-        btn.disabled = true; icon.style.display = 'none'; countEl.style.display = 'block';
-        countEl.innerText = `${t.wait}\n${remaining}${t.sec}`;
-        requestAnimationFrame(updateCooldownUI);
-    } else {
-        btn.disabled = false; icon.style.display = 'block'; countEl.style.display = 'none';
-    }
-}
-
-function triggerCooldown(seconds) {
-    cooldownEndTime = Date.now() + (seconds * 1000);
-    updateCooldownUI();
-}
-
-async function fetchWithRetry(url, options, retries = 2) {
-    let lastErr = null;
-    for (let i = 0; i <= retries; i++) {
-        try {
-            const res = await fetch(url, options);
-
-            // ✅ FIX: رجّع الريسبونس حتى لو 403/429/500 عشان نقرأ رسالة الخطأ
-            if (res) return res;
-        } catch (e) {
-            lastErr = e;
-        }
-        await new Promise(r => setTimeout(r, 1200));
-    }
-    throw lastErr || new Error("Request failed after retries");
-}
-
-async function sendPrompt() {
-  if (Date.now() < cooldownEndTime) return;
-  
-  const input = document.getElementById('promptInput');
-  const text = input.value.trim();
-  if (!text || !piUser) return;
-  
-  input.value = '';
-  addMessage(text, 'user');
-  
-  const m = MODELS.find(x => x.id === currentModel) || MODELS[0];
-  const isChat = m.type === 'text';
-  const loadingId = renderLoader(isChat);
-  
-  triggerCooldown(5);
-  
-  try {
-    // ✅ ابعت prompt دايمًا (ده اللي بيمنع Missing data)
-    let payload = {
-      prompt: String(text),
-      username: piUser.username,
-      pi_uid: piUser.uid,
-      model: currentModel
-    };
-    
-    if (isChat) {
-      // ✅ ابعت messages كمان لو شات
-      payload.messages = [...normalizeMessages(chatHistory), { role: "user", content: String(text) }];
-    } else {
-      // ✅ ابعت المقاسات لو صورة
-      payload.width = currentWidth;
-      payload.height = currentHeight;
-    }
-    
-    const response = await fetchWithRetry('/.netlify/functions/generate-and-save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    
-    const status = response.status;
-    let data = {};
-    try { data = await response.json(); } catch {}
-    
-    safeRemove(loadingId);
-    
-    if (status === 403) {
-      if (data?.error === 'INSUFFICIENT_TOKENS') addNoTokenCard();
-      else addBotText(`⚠️ ${data?.error || "Forbidden"}`);
-      return;
-    }
-    
-    if (status === 429) {
-      addBotText(`⚠️ ${TRANSLATIONS[currentLang].rateLimit}`);
-      triggerCooldown(25);
-      return;
-    }
-    
-    if (!response.ok) {
-      addBotText(`⚠️ Error (${status}): ${data?.error || data?.message || "Server error"}`);
-      return;
-    }
-    
-    if (data?.newBalance !== undefined) {
-      document.getElementById('tokenBalance').textContent = data.newBalance;
-    }
-    
-    const reply = (typeof data?.reply === "string") ? data.reply : (typeof data?.text === "string" ? data.text : "");
-    const imgUrl = data?.imageUrl || data?.image_url || data?.url || "";
-    
-    if (reply && reply.trim() !== "") {
-      chatHistory.push({ role: "user", content: String(text) });
-      chatHistory.push({ role: "assistant", content: String(reply) });
-      if (chatHistory.length > 24) chatHistory = chatHistory.slice(-24);
-      addBotText(reply);
-      return;
-    }
-    
-    if (imgUrl) {
-      addBotImage(imgUrl, data?.width, data?.height);
-      return;
-    }
-    
-    addBotText("⚠️ AI returned no content");
-    
-  } catch (error) {
-    console.error("Frontend Error:", error);
-    triggerCooldown(12);
-    safeRemove(loadingId);
-    addBotText("⚠️ Network / AI overload");
-  }
-}
-
-function addBotText(markdown) {
-    const div = document.createElement('div');
-    div.className = 'message bot';
-
-    // ✅ FIX: markdown render قوي + fallback
-    const htmlContent = renderMarkdownSafe(markdown);
-    const rawText = encodeURIComponent(String(markdown || ""));
-
-    div.innerHTML = `
-        <div class="msg-bubble" style="background:#111; color:#eee; border:1px solid #333; padding:15px; width:100%; border-radius:20px; border-top-left-radius:4px;">
-            <div class="markdown-body">${htmlContent}</div>
-            <div class="msg-actions" style="display:flex; justify-content:flex-end; margin-top:10px; border-top:1px solid #222; padding-top:10px;">
-                <button class="copy-msg-btn" onclick="copyText(this, decodeURIComponent('${rawText}'))" style="background:rgba(255,255,255,0.05); border:1px solid #444; color:#ccc; padding:5px 12px; border-radius:8px; cursor:pointer; font-size:11px;">
-                    📑 Copy Message
-                </button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('chatContainer').appendChild(div);
-
-    // ✅ FIX: highlight لو موجود
-    if (window.hljs && typeof hljs.highlightElement === "function") {
-        div.querySelectorAll('pre code').forEach((block) => {
-            try { hljs.highlightElement(block); } catch {}
-        });
-    }
-
-    scrollToBottom();
-}
-
-function renderLoader(isChat) {
-    const div = document.createElement('div');
-    div.className = 'message bot';
-    div.id = 'loading-' + Date.now();
-
-    if (isChat) {
-        div.innerHTML = `
-            <div class="chat-loading-bubble">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-            </div>
-        `;
-    } else {
-        div.innerHTML = `
-            <div class="image-loading-box">
-                <div class="blur-wave"></div>
-                <div class="loading-text">Generating...</div>
-            </div>
-        `;
-    }
-
-    document.getElementById('chatContainer').appendChild(div);
-    scrollToBottom();
-    return div.id;
-}
-
-function addMessage(content, type) {
-    const div = document.createElement('div');
-    div.className = `message ${type}`;
-    div.innerHTML = `<div class="msg-bubble">${String(content || "")}</div>`;
-    document.getElementById('chatContainer').appendChild(div);
-    document.getElementById('emptyMsg').style.display = 'none';
-    scrollToBottom();
-}
-
-function addNoTokenCard() {
-    const t = TRANSLATIONS[currentLang];
-    const div = document.createElement('div');
-    div.className = 'message bot';
-    div.innerHTML = `
-        <div class="msg-bubble">
-            <div class="no-token-card">
-                <div class="no-token-text">${t.noTokens}</div>
-                <button class="buy-now-btn" onclick="openBuyModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="black"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-                    ${t.buyNow}
-                </button>
-            </div>
-        </div>
-    `;
-    document.getElementById('chatContainer').appendChild(div);
-    scrollToBottom();
-}
-
-function addBotImage(url, w, h) {
-    const t = TRANSLATIONS[currentLang];
-    const div = document.createElement('div');
-    div.className = 'message bot';
-
-    const ww = Number(w) || currentWidth;
-    const hh = Number(h) || currentHeight;
-    let aspectRatio = ww / hh;
-
-    div.innerHTML = `
-        <div class="msg-bubble">
-            <div class="image-container" style="aspect-ratio: ${aspectRatio};">
-                <img src="${url}" class="msg-image" onload="this.classList.add('loaded')">
-            </div>
-            <div class="download-bar">
-                <button class="d-btn" onclick="forceDownload('${url}', this)">${t.download}</button>
-            </div>
-        </div>
-    `;
-    document.getElementById('chatContainer').appendChild(div);
-    scrollToBottom();
-}
-
-function scrollToBottom() {
-    const c = document.getElementById('chatContainer');
-    c.scrollTop = c.scrollHeight;
-}
-
-async function forceDownload(url, btn) {
-    const downloadUrl = url + "?download=";
-
-    try {
-        await navigator.clipboard.writeText(downloadUrl);
-        showInfoModal(downloadUrl);
-    } catch (err) {
-        const textArea = document.createElement("textarea");
-        textArea.value = downloadUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showInfoModal(downloadUrl);
-        } catch (err) {
-            console.error('Fallback copy failed', err);
-            alert("Failed to copy link. Please manually open: " + downloadUrl);
-        }
-        document.body.removeChild(textArea);
-    }
-}
-
-function showInfoModal(link) {
-    document.getElementById('dlLinkBox').textContent = link;
-    document.getElementById('downloadInfoModal').style.display = 'flex';
-}
-
-async function openGallery() {
-    const t = TRANSLATIONS[currentLang];
-    if (!piUser) { alert("Login Required"); return; }
-    const modal = document.getElementById('galleryModal');
-    const grid = document.getElementById('galleryGrid');
-    modal.style.display = 'flex';
-    grid.innerHTML = '<div style="color:white; text-align:center; grid-column: span 2;">Loading...</div>';
-    try {
-        const res = await fetch(`/.netlify/functions/get-gallery?username=${piUser.username}`);
-        const images = await res.json();
-        grid.innerHTML = '';
-        if (!Array.isArray(images) || images.length === 0) {
-            grid.innerHTML = `<div style="color:#777; padding:20px; grid-column: span 2; text-align:center;">${t.noImages}</div>`;
-            return;
-        }
-
-        images.forEach(img => {
-            const div = document.createElement('div');
-            div.className = 'gallery-item';
-            div.innerHTML = `
-                <img src="${img.url}" loading="lazy">
-                <div class="gallery-actions">
-                    <button class="g-btn g-down" onclick="forceDownload('${img.url}', this)">${t.download}</button>
-                    <button class="g-btn g-del" onclick="deleteImage('${img.id}', this)">${t.delete}</button>
-                </div>
-            `;
-            grid.appendChild(div);
-        });
-    } catch (e) {
-        grid.innerHTML = `<div style="color:red; grid-column: span 2;">${t.error}</div>`;
-    }
-}
-
-async function deleteImage(imageId, btn) {
-    const t = TRANSLATIONS[currentLang];
-    if (!confirm(t.confirmDel)) return;
-    const parent = btn.closest('.gallery-item');
-    parent.style.opacity = '0.5';
-    try {
-        const res = await fetch('/.netlify/functions/delete-image', {
-            method: 'POST',
-            body: JSON.stringify({ id: imageId, username: piUser.username })
-        });
-        if (res.ok) parent.remove();
-        else { alert(t.error); parent.style.opacity = '1'; }
-    } catch(e) { console.error(e); }
-}
-
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('#modelMenu') && !e.target.closest('.header-title-area')) {
-        document.getElementById('modelMenu').style.display = 'none';
-        document.getElementById('modelChevron').style.transform = 'rotate(0deg)';
-    }
-    if (!e.target.closest('#aspectMenu') && !e.target.closest('#aspectTriggerBtn')) {
-        document.getElementById('aspectMenu').style.display = 'none';
-    }
-});
-
-async function loadChatHistory() {
-    if (!piUser) return;
-
-    const loadingDiv = document.createElement('div');
-    loadingDiv.innerHTML = '<div style="text-align:center; color:#555; font-size:12px; margin:10px;">Loading history...</div>';
-    document.getElementById('chatContainer').appendChild(loadingDiv);
-
-    try {
-        const res = await fetch(`/.netlify/functions/get-chat-history?username=${piUser.username}`);
-        const historyData = await res.json();
-
-        document.getElementById('emptyMsg').style.display = 'none';
-        loadingDiv.remove();
-
-        const list = Array.isArray(historyData) ? historyData : [];
-
-        list.forEach(item => {
-            if (item?.prompt) {
-                addMessage(item.prompt, 'user');
-                chatHistory.push({ role: "user", content: String(item.prompt) });
-            }
-
-            if (item?.type === 'text' && item?.bot_response) {
-                addBotText(item.bot_response);
-                chatHistory.push({ role: "assistant", content: String(item.bot_response) });
-            } else if (item?.image_url || item?.imageUrl) {
-                addBotImage(item.image_url || item.imageUrl, item.width, item.height);
-            }
-        });
-
-        // ✅ FIX: نظّف الهستوري
-        chatHistory = normalizeMessages(chatHistory).slice(-24);
-
-        scrollToBottom();
-
-    } catch (e) {
-        console.error("Error loading history:", e);
-        loadingDiv.innerHTML = '<div style="text-align:center; color:red; font-size:12px;">Failed to load history</div>';
-    }
-}
-</script>
+    </script>
 </body>
 </html>
