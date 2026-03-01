@@ -16,8 +16,8 @@
             --accent-purple: #a29bfe;
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --success: #2ecc71;
-            --warning: #f39c12;
             --danger: #e74c3c;
+            --warning: #f39c12;
             --dark: #2d3436;
             --light: #f9f9f9;
         }
@@ -91,12 +91,18 @@
         
         .case-meta { display: flex; justify-content: space-around; background: var(--light); padding: 12px; border-radius: 15px; }
         .meta-item { text-align: center; }
-        .meta-value { font-weight: 900; color: var(--primary-purple); display: block; font-size: 1.1rem; }
+        .meta-value { font-weight: 900; display: block; font-size: 1.1rem; }
         .meta-label { font-size: 0.75rem; color: #888; }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
-        .vote-btn { padding: 10px; border-radius: 12px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 0.95rem; grid-column: span 2; transition: 0.3s;}
-        .vote-btn:hover { background: #732d91; }
+        
+        /* أزرار التصويت الجديدة */
+        .vote-actions { display: flex; gap: 10px; grid-column: span 2; }
+        .vote-yes-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; font-size: 0.95rem; transition: 0.3s; }
+        .vote-yes-btn:hover { background: #27ae60; }
+        .vote-no-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; background: var(--danger); color: white; font-weight: 700; cursor: pointer; font-size: 0.95rem; transition: 0.3s; }
+        .vote-no-btn:hover { background: #c0392b; }
+
         .action-btn { padding: 10px; border-radius: 12px; border: 1px solid #ddd; background: white; color: #555; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .impact-btn { padding: 10px; border-radius: 12px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; grid-column: span 2; }
 
@@ -299,7 +305,6 @@
             openModal('custom-alert-modal');
         }
 
-        // دالة نافذة التأكيد الجديدة
         function customConfirm(message, callback) {
             document.getElementById('confirm-message').innerText = message;
             confirmActionCallback = callback;
@@ -330,7 +335,6 @@
                     document.getElementById('admin-btn').style.display = 'block';
                 }
                 
-                // إعادة رسم الحالات لإظهار أزرار الحذف/الإرجاع فور تسجيل الدخول
                 renderCases();
             } catch (e) { customAlert("يرجى فتح الموقع من متصفح Pi Browser"); }
         }
@@ -358,7 +362,7 @@
                 document.getElementById('leaderboard').innerHTML = sortedUsers.map(u => `<span class="leader-item">${getBadge(u.total)} @${u.user}</span>`).join('');
             }
 
-            const { data: requests } = await _supabase.from('requests').select('*').order('status', { ascending: false }).order('votes', { ascending: false });
+            const { data: requests } = await _supabase.from('requests').select('*').order('status', { ascending: false }).order('votes_yes', { ascending: false });
             if(requests) {
                 allRequests = requests;
                 renderCases();
@@ -387,12 +391,14 @@
                 
                 let actionButtons = isFunded 
                     ? `<button class="impact-btn" onclick="showImpact('${req.impact_url}')">🖼️ مشاهدة الأثر</button>`
-                    : `<button class="vote-btn" onclick="voteForCase(${req.id})">👍 تصويت للحالة</button>
+                    : `<div class="vote-actions">
+                           <button class="vote-yes-btn" onclick="voteForCase(${req.id}, 'yes')">👍 نعم</button>
+                           <button class="vote-no-btn" onclick="voteForCase(${req.id}, 'no')">👎 لا</button>
+                       </div>
                        <button class="action-btn" onclick="showProof('${req.proof_url}')">📄 الإثبات</button>
                        <button class="action-btn" onclick="openComments(${req.id})">💬 نقاش</button>
                        <button class="action-btn" style="grid-column: span 2;" onclick="shareCase('${req.title}')">📤 شارك الحالة</button>`;
 
-                // إضافة أزرار التحكم (الحذف والإرجاع) لصاحب الطلب أو الأدمن
                 let managementButtons = '';
                 if (isAdmin || isOwner) {
                     managementButtons += `<button class="delete-btn" onclick="deleteCase(${req.id})">🗑️ حذف الحالة</button>`;
@@ -400,7 +406,6 @@
                 if (isAdmin && isFunded) {
                     managementButtons += `<button class="revert-btn" onclick="revertCase(${req.id})">🔄 إعادة للتصويت</button>`;
                 }
-                
                 if(managementButtons !== '') {
                     managementButtons = `<div class="controls-row">${managementButtons}</div>`;
                 }
@@ -414,8 +419,9 @@
                     </div>
                     <p class="case-desc">${req.description}</p>
                     <div class="case-meta">
-                        <div class="meta-item"><span class="meta-value">${req.target_amount} π</span><span class="meta-label">المطلوب</span></div>
-                        <div class="meta-item"><span class="meta-value">${req.votes || 0}</span><span class="meta-label">الأصوات</span></div>
+                        <div class="meta-item"><span class="meta-value" style="color:var(--primary-purple);">${req.target_amount} π</span><span class="meta-label">المطلوب</span></div>
+                        <div class="meta-item"><span class="meta-value" style="color:var(--success);">${req.votes_yes || 0}</span><span class="meta-label">نعم 👍</span></div>
+                        <div class="meta-item"><span class="meta-value" style="color:var(--danger);">${req.votes_no || 0}</span><span class="meta-label">لا 👎</span></div>
                     </div>
                     <div class="btn-group">${actionButtons}</div>
                     ${managementButtons}
@@ -423,7 +429,6 @@
             }).join('');
         }
 
-        // دوال الحذف والإرجاع للتصويت
         function deleteCase(id) {
             customConfirm('هل أنت متأكد من حذف هذه الحالة نهائياً؟', async () => {
                 try {
@@ -431,9 +436,7 @@
                     if(error) throw error;
                     customAlert('تم حذف الحالة بنجاح.');
                     loadData();
-                } catch (e) {
-                    customAlert('حدث خطأ أثناء محاولة الحذف.');
-                }
+                } catch (e) { customAlert('حدث خطأ أثناء محاولة الحذف.'); }
             });
         }
 
@@ -444,9 +447,7 @@
                     if(error) throw error;
                     customAlert('تم إرجاع الحالة إلى ساحة التصويت بنجاح.');
                     loadData();
-                } catch (e) {
-                    customAlert('حدث خطأ أثناء العملية.');
-                }
+                } catch (e) { customAlert('حدث خطأ أثناء العملية.'); }
             });
         }
 
@@ -474,17 +475,35 @@
             });
         }
 
-        async function voteForCase(caseId) {
+        async function voteForCase(caseId, voteType) {
             if (!currentUser) return customAlert('سجل دخولك للتصويت');
-            const { error: voteError } = await _supabase.from('votes_log').insert([{ request_id: caseId, username: currentUser.username }]);
+            
+            // إضافة الصوت لنوع محدد في السجل (yes أو no)
+            const { error: voteError } = await _supabase.from('votes_log').insert([{ 
+                request_id: caseId, 
+                username: currentUser.username,
+                vote_type: voteType
+            }]);
+
             if (voteError) {
                 if(voteError.code === '23505') customAlert('لقد قمت بالتصويت مسبقاً لهذه الحالة.');
                 else customAlert('حدث خطأ أثناء التصويت.');
                 return;
             }
-            const { data: currentReq } = await _supabase.from('requests').select('votes').eq('id', caseId).single();
-            await _supabase.from('requests').update({ votes: (currentReq.votes || 0) + 1 }).eq('id', caseId);
-            customAlert('تم تسجيل صوتك! بفضلك اقتربت الحالة من الحل.');
+            
+            // جلب الأرقام الحالية ثم الزيادة
+            const { data: currentReq } = await _supabase.from('requests').select('votes_yes, votes_no').eq('id', caseId).single();
+            
+            let updateData = {};
+            if (voteType === 'yes') {
+                updateData = { votes_yes: (currentReq.votes_yes || 0) + 1 };
+            } else {
+                updateData = { votes_no: (currentReq.votes_no || 0) + 1 };
+            }
+
+            await _supabase.from('requests').update(updateData).eq('id', caseId);
+            
+            customAlert('تم تسجيل صوتك بنجاح! رأيك يهمنا.');
             loadData();
         }
 
