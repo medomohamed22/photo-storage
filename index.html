@@ -17,6 +17,7 @@
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --success: #2ecc71;
             --warning: #f39c12;
+            --danger: #e74c3c;
             --dark: #2d3436;
             --light: #f9f9f9;
         }
@@ -94,9 +95,17 @@
         .meta-label { font-size: 0.75rem; color: #888; }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
-        .vote-btn { padding: 10px; border-radius: 12px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 0.95rem; grid-column: span 2; }
+        .vote-btn { padding: 10px; border-radius: 12px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 0.95rem; grid-column: span 2; transition: 0.3s;}
+        .vote-btn:hover { background: #732d91; }
         .action-btn { padding: 10px; border-radius: 12px; border: 1px solid #ddd; background: white; color: #555; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .impact-btn { padding: 10px; border-radius: 12px; border: none; background: var(--success); color: white; font-weight: 700; cursor: pointer; grid-column: span 2; }
+
+        /* أزرار الإدارة والحذف للحالات */
+        .controls-row { display: flex; gap: 8px; margin-top: 5px; }
+        .delete-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; background: rgba(231, 76, 60, 0.1); color: var(--danger); font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: 0.3s; }
+        .delete-btn:hover { background: var(--danger); color: white; }
+        .revert-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; background: rgba(243, 156, 18, 0.1); color: var(--warning); font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: 0.3s; }
+        .revert-btn:hover { background: var(--warning); color: white; }
 
         /* النوافذ المنبثقة */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; padding: 15px; }
@@ -105,13 +114,14 @@
         .form-group { margin-bottom: 15px; text-align: right; }
         .form-control { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 0.95rem; }
         .impact-img { width: 100%; border-radius: 15px; margin-top: 15px; }
+        
         .btn-ok { background: transparent; color: var(--primary-purple); border: none; font-weight: 700; font-size: 1.1rem; cursor: pointer; padding: 10px 30px; border-radius: 15px; }
 
         /* التعليقات */
         .comment-box { background: var(--light); padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.9rem; text-align: right; }
         .comment-user { font-weight: bold; color: var(--primary-purple); font-size: 0.8rem; margin-bottom: 3px; }
 
-        /* زر الإدارة */
+        /* زر الإدارة الرئيسي */
         #admin-btn { display: none; background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; margin-left: 10px; }
 
         @media (min-width: 768px) {
@@ -255,31 +265,52 @@
     <div id="proof-modal" class="modal" onclick="closeModal('proof-modal')">
         <div class="modal-content" onclick="event.stopPropagation()"><span class="close-btn" onclick="closeModal('proof-modal')">&times;</span><h3 style="color: var(--primary-purple); text-align: center;">صورة الإثبات 📄</h3><img id="proof-img-src" src="" class="impact-img"></div>
     </div>
+
     <div id="custom-alert-modal" class="modal" onclick="closeModal('custom-alert-modal')">
         <div class="modal-content" style="max-width: 320px; text-align: center;" onclick="event.stopPropagation()"><p id="custom-alert-message" style="font-size: 1.1rem; margin-bottom: 25px;"></p><button class="btn-ok" onclick="closeModal('custom-alert-modal')">موافق</button></div>
     </div>
 
+    <div id="confirm-modal" class="modal" onclick="closeModal('confirm-modal')">
+        <div class="modal-content" style="max-width: 340px; text-align: center; padding-top: 35px;" onclick="event.stopPropagation()">
+            <p id="confirm-message" style="font-size: 1.1rem; color: var(--dark); margin-bottom: 25px; line-height: 1.5; font-weight: bold;"></p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-ok" style="background: var(--danger); color: white; flex: 1;" id="confirm-yes-btn" onclick="executeConfirm()">نعم، متأكد</button>
+                <button class="btn-ok" style="background: #eee; color: #333; flex: 1;" onclick="closeModal('confirm-modal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // إعدادات Supabase
         const SUPABASE_URL = 'https://jtbxdymviqmfhffixmat.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const Pi = window.Pi;
 
-        // **هام: ضع اسم حسابك في باي هنا ليظهر لك زر الإدارة**
         const ADMIN_USERNAME = 'medomohamed22'; 
 
         let currentUser = null;
         let allRequests = [];
         let currentCategoryFilter = 'الكل';
         let currentCaseIdForComment = null;
+        let confirmActionCallback = null;
 
         function customAlert(message) {
             document.getElementById('custom-alert-message').innerText = message;
             openModal('custom-alert-modal');
         }
 
-        // نظام الشارات والمستويات
+        // دالة نافذة التأكيد الجديدة
+        function customConfirm(message, callback) {
+            document.getElementById('confirm-message').innerText = message;
+            confirmActionCallback = callback;
+            openModal('confirm-modal');
+        }
+
+        function executeConfirm() {
+            closeModal('confirm-modal');
+            if (confirmActionCallback) confirmActionCallback();
+        }
+
         function getBadge(amount) {
             if(amount >= 500) return '💎';
             if(amount >= 100) return '🥇';
@@ -295,17 +326,18 @@
                 document.getElementById('user-pill').style.display = 'block';
                 document.getElementById('user-pill').textContent = '@' + currentUser.username;
                 
-                // إظهار زر الإدارة لو الحساب هو حساب الأدمن
                 if(currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
                     document.getElementById('admin-btn').style.display = 'block';
                 }
+                
+                // إعادة رسم الحالات لإظهار أزرار الحذف/الإرجاع فور تسجيل الدخول
+                renderCases();
             } catch (e) { customAlert("يرجى فتح الموقع من متصفح Pi Browser"); }
         }
 
         const onIncompletePaymentFound = async (payment) => {};
 
         async function loadData() {
-            // 1. حساب السيولة والهدف
             const { data: donations } = await _supabase.from('donations').select('username, amount');
             let totalPool = 0;
             let userTotals = {};
@@ -319,16 +351,13 @@
                 
                 document.getElementById('global-pool-amount').innerText = totalPool.toFixed(2) + ' π';
                 
-                // الهدف الشهري 1000 Pi
                 const goalPercentage = Math.min((totalPool / 1000) * 100, 100);
                 document.getElementById('pool-progress').style.width = goalPercentage + '%';
 
-                // تجهيز لوحة الشرف (Top 5)
                 const sortedUsers = Object.keys(userTotals).map(u => ({ user: u, total: userTotals[u] })).sort((a,b) => b.total - a.total).slice(0, 5);
                 document.getElementById('leaderboard').innerHTML = sortedUsers.map(u => `<span class="leader-item">${getBadge(u.total)} @${u.user}</span>`).join('');
             }
 
-            // 2. جلب الحالات وعرضها
             const { data: requests } = await _supabase.from('requests').select('*').order('status', { ascending: false }).order('votes', { ascending: false });
             if(requests) {
                 allRequests = requests;
@@ -349,16 +378,32 @@
             
             if(filtered.length === 0) { container.innerHTML = "<p style='text-align:center; color:#888;'>لا توجد حالات في هذا التصنيف.</p>"; return; }
 
+            const isAdmin = currentUser && currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+
             container.innerHTML = filtered.map(req => {
                 const isFunded = req.status === 'funded';
                 const catBadge = `<div class="category-badge">${req.category || 'عام'}</div>`;
+                const isOwner = currentUser && currentUser.username === req.username;
                 
                 let actionButtons = isFunded 
                     ? `<button class="impact-btn" onclick="showImpact('${req.impact_url}')">🖼️ مشاهدة الأثر</button>`
                     : `<button class="vote-btn" onclick="voteForCase(${req.id})">👍 تصويت للحالة</button>
                        <button class="action-btn" onclick="showProof('${req.proof_url}')">📄 الإثبات</button>
                        <button class="action-btn" onclick="openComments(${req.id})">💬 نقاش</button>
-                       <button class="action-btn" style="grid-column: span 2;" onclick="shareCase('${req.title}')">📤 شارك الحالة واكسب أجرها</button>`;
+                       <button class="action-btn" style="grid-column: span 2;" onclick="shareCase('${req.title}')">📤 شارك الحالة</button>`;
+
+                // إضافة أزرار التحكم (الحذف والإرجاع) لصاحب الطلب أو الأدمن
+                let managementButtons = '';
+                if (isAdmin || isOwner) {
+                    managementButtons += `<button class="delete-btn" onclick="deleteCase(${req.id})">🗑️ حذف الحالة</button>`;
+                }
+                if (isAdmin && isFunded) {
+                    managementButtons += `<button class="revert-btn" onclick="revertCase(${req.id})">🔄 إعادة للتصويت</button>`;
+                }
+                
+                if(managementButtons !== '') {
+                    managementButtons = `<div class="controls-row">${managementButtons}</div>`;
+                }
 
                 return `
                 <div class="case-card ${isFunded ? 'funded' : ''}">
@@ -373,8 +418,36 @@
                         <div class="meta-item"><span class="meta-value">${req.votes || 0}</span><span class="meta-label">الأصوات</span></div>
                     </div>
                     <div class="btn-group">${actionButtons}</div>
+                    ${managementButtons}
                 </div>`;
             }).join('');
+        }
+
+        // دوال الحذف والإرجاع للتصويت
+        function deleteCase(id) {
+            customConfirm('هل أنت متأكد من حذف هذه الحالة نهائياً؟', async () => {
+                try {
+                    const { error } = await _supabase.from('requests').delete().eq('id', id);
+                    if(error) throw error;
+                    customAlert('تم حذف الحالة بنجاح.');
+                    loadData();
+                } catch (e) {
+                    customAlert('حدث خطأ أثناء محاولة الحذف.');
+                }
+            });
+        }
+
+        function revertCase(id) {
+            customConfirm('هل تريد إعادة هذه الحالة إلى ساحة التصويت وحذف الأثر؟', async () => {
+                try {
+                    const { error } = await _supabase.from('requests').update({ status: 'open', impact_url: null }).eq('id', id);
+                    if(error) throw error;
+                    customAlert('تم إرجاع الحالة إلى ساحة التصويت بنجاح.');
+                    loadData();
+                } catch (e) {
+                    customAlert('حدث خطأ أثناء العملية.');
+                }
+            });
         }
 
         function donateToPool() {
@@ -390,10 +463,7 @@
                 onReadyForServerCompletion: (payId, tx) => fetch('/api/pi/complete', { method:'POST', body: JSON.stringify({ paymentId: payId, txid: tx }) })
                 .then(async () => { 
                     await _supabase.from('donations').insert([{ username: currentUser.username, amount: amt }]);
-                    
-                    // إطلاق احتفال Confetti عند التبرع بنجاح! 🎉
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                    
                     customAlert('شكراً لعطائك! تم التبرع للمجمع بنجاح.');
                     btn.disabled = false; btn.innerText = "تبرع لدعم المجمع";
                     document.getElementById('pool-input').value = '';
@@ -418,14 +488,12 @@
             loadData();
         }
 
-        // المشاركة (Social Sharing)
         function shareCase(title) {
             const shareText = `صوّت لدعم حالة: "${title}" في منصة Donate Way على شبكة Pi Network!`;
             if (navigator.share) { navigator.share({ title: 'Donate Way', text: shareText, url: window.location.href }); } 
             else { customAlert('انسخ رابط الموقع وشاركه مع أصدقائك!'); }
         }
 
-        // التعليقات
         async function openComments(id) {
             currentCaseIdForComment = id;
             document.getElementById('comments-list').innerHTML = 'جاري التحميل...';
@@ -442,10 +510,9 @@
             if(!text) return;
             await _supabase.from('comments').insert([{ request_id: currentCaseIdForComment, username: currentUser.username, comment: text }]);
             document.getElementById('new-comment').value = '';
-            openComments(currentCaseIdForComment); // Refresh
+            openComments(currentCaseIdForComment);
         }
 
-        // ملف المستخدم
         async function openProfile() {
             if(!currentUser) return;
             const { data } = await _supabase.from('donations').select('amount').eq('username', currentUser.username);
@@ -457,7 +524,6 @@
             openModal('profile-modal');
         }
 
-        // لوحة الإدارة (تحويل الحالة لمكتملة)
         async function markAsFunded() {
             const caseId = document.getElementById('admin-case-id').value;
             const file = document.getElementById('admin-impact-file').files[0];
@@ -475,7 +541,6 @@
             } catch (e) { customAlert('حدث خطأ في الرفع'); }
         }
 
-        // النوافذ الأساسية
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function showImpact(url) { document.getElementById('impact-img-src').src = url; openModal('impact-modal'); }
