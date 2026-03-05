@@ -15,7 +15,6 @@
             --text-light: #888888; --success-green: #2ecc71; --danger-red: #e74c3c;
         }
 
-        /* الوضع الداكن */
         body.dark-mode {
             --bg: #121212; --card: #1e1e1e; --text-dark: #f5f6f9; --text-light: #aaa;
         }
@@ -27,7 +26,6 @@
         .header-title { font-size: 22px; font-weight: 700; color: var(--primary-purple); }
         .dark-mode-toggle { cursor: pointer; font-size: 20px; color: var(--text-dark); }
 
-        /* كارت البروفايل */
         .profile-card {
             background: var(--card); margin: 10px 20px 25px; padding: 25px; border-radius: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center;
@@ -39,7 +37,6 @@
 
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
-        /* شريط تقدم الطلب */
         .order-progress { display: flex; justify-content: space-between; margin-top: 15px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
@@ -48,7 +45,6 @@
         .progress-step.active .step-label { color: var(--primary-purple); font-weight: bold; }
         .step-label { font-size: 9px; color: var(--text-light); white-space: nowrap; }
 
-        /* كروت الطلبات والمفضلة */
         .orders-container, .wishlist-grid { padding: 0 20px; display: flex; flex-direction: column; gap: 15px; }
         .order-card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 10px; }
         .order-main-info { display: flex; gap: 15px; align-items: center; }
@@ -57,7 +53,13 @@
         .order-title { font-weight: 700; font-size: 15px; }
         .order-price { font-weight: 700; color: var(--primary-orange); }
 
-        /* شبكة المفضلة (تشبه المنتجات) */
+        /* تنسيق النجوم */
+        .rating-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; text-align: center; }
+        .stars { display: flex; justify-content: center; gap: 5px; direction: ltr; margin-bottom: 5px; }
+        .stars i { font-size: 20px; color: #ccc; cursor: pointer; }
+        .stars i.active { color: #f1c40f; }
+        .btn-rate { background: var(--primary-purple); color: white; border: none; padding: 5px 15px; border-radius: 10px; font-size: 12px; cursor: pointer; margin-top: 5px; }
+
         .wishlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; }
         .wish-img { width: 100%; height: 140px; background-size: cover; background-position: center; }
@@ -103,8 +105,9 @@
         const SUPABASE_URL = "https://jtbxdymviqmfhffixmat.supabase.co";
         const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUserId = null;
+        let currentUserName = "";
 
-        // 1. الوضع الداكن
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             const isDark = document.body.classList.contains('dark-mode');
@@ -121,7 +124,9 @@
             if (!session) { window.location.href = "index.html"; return; }
 
             const user = session.user;
-            document.getElementById('user-name').innerText = user.user_metadata.full_name || "مستخدم";
+            currentUserId = user.id;
+            currentUserName = user.user_metadata.full_name || "مستخدم";
+            document.getElementById('user-name').innerText = currentUserName;
             document.getElementById('user-email').innerText = user.email;
             document.getElementById('user-img').src = user.user_metadata.avatar_url || "https://via.placeholder.com/90";
 
@@ -129,26 +134,48 @@
             loadMyWishlist(user.id);
         }
 
-        // 2. تحميل الطلبات مع شريط التقدم
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
+            // جلب الطلبات وجلب التقييم المرتبط بالمستخدم والمنتج لمنع التكرار
             const { data, error } = await supabaseClient
                 .from('orders')
-                .select(`id, status, products ( title, image_url, price )`)
+                .select(`id, status, product_id, products ( title, image_url, price )`)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
             if (error || !data.length) { container.innerHTML = `<div class="status-msg">لا توجد طلبات سابقة.</div>`; return; }
 
             container.innerHTML = "";
-            data.forEach(order => {
+            for (const order of data) {
                 const p = order.products;
                 const img = p?.image_url ? p.image_url.split(',')[0] : 'https://via.placeholder.com/80';
-                
-                // تحديد خطوات التقدم
                 const s = order.status;
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(s);
+
+                let ratingHtml = "";
+                if (s === 'مكتمل') {
+                    // فحص إذا كان المستخدم قيم المنتج فعلياً
+                    const { data: rated } = await supabaseClient.from('reviews').select('id').eq('user_id', userId).eq('product_id', order.product_id).maybeSingle();
+                    
+                    if (rated) {
+                        ratingHtml = `<div class="rating-box" style="color:var(--primary-green); font-size:12px;">✅ تم التقييم بنجاح</div>`;
+                    } else {
+                        ratingHtml = `
+                            <div class="rating-box" id="rate-box-${order.id}">
+                                <div style="font-size:12px; margin-bottom:5px;">قيم المنتج:</div>
+                                <div class="stars" data-order="${order.id}">
+                                    <i class="fa-solid fa-star" data-v="1" onclick="setStar(this, 1)"></i>
+                                    <i class="fa-solid fa-star" data-v="2" onclick="setStar(this, 2)"></i>
+                                    <i class="fa-solid fa-star" data-v="3" onclick="setStar(this, 3)"></i>
+                                    <i class="fa-solid fa-star" data-v="4" onclick="setStar(this, 4)"></i>
+                                    <i class="fa-solid fa-star" data-v="5" onclick="setStar(this, 5)"></i>
+                                </div>
+                                <button class="btn-rate" onclick="submitRating(${order.product_id}, ${order.id})">إرسال التقييم</button>
+                            </div>
+                        `;
+                    }
+                }
 
                 container.innerHTML += `
                     <div class="order-card">
@@ -167,25 +194,49 @@
                                 </div>
                             `).join('')}
                         </div>
+                        ${ratingHtml}
                     </div>
                 `;
-            });
+            }
         }
 
-        // 3. تحميل المفضلة
+        // دوال التقييم
+        function setStar(el, val) {
+            const stars = el.parentElement.querySelectorAll('i');
+            stars.forEach(s => s.classList.remove('active'));
+            for(let i=0; i<val; i++) stars[i].classList.add('active');
+            el.parentElement.dataset.value = val;
+        }
+
+        async function submitRating(prodId, orderId) {
+            const starBox = document.querySelector(`#rate-box-${orderId} .stars`);
+            const rating = starBox.dataset.value;
+            if(!rating) return alert("من فضلك اختر عدد النجوم أولاً");
+
+            const { error } = await supabaseClient.from('reviews').insert([{
+                product_id: prodId,
+                user_id: currentUserId,
+                rating: parseInt(rating),
+                full_name: currentUserName
+            }]);
+
+            if(!error) {
+                document.getElementById(`rate-box-${orderId}`).innerHTML = `<div style="color:var(--primary-green); font-size:12px;">✅ شكراً لتقييمك!</div>`;
+            } else {
+                alert("حدث خطأ أثناء إرسال التقييم");
+            }
+        }
+
         async function loadMyWishlist(userId) {
             const container = document.getElementById('wishlist-container');
             const { data, error } = await supabaseClient
                 .from('wishlist')
                 .select(`product_id, products ( id, title, image_url, price )`)
                 .eq('user_id', userId);
-
             if (error || !data.length) return;
-
             container.innerHTML = "";
             data.forEach(item => {
-                const p = item.products;
-                if(!p) return;
+                const p = item.products; if(!p) return;
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/150";
                 container.innerHTML += `
                     <div class="wish-card" onclick="location.href='index.html'">
