@@ -174,8 +174,8 @@
             <div class="gallery-wrapper">
                 <div id="m-gallery" class="modal-gallery"></div>
                 <div class="gallery-nav" id="m-arrows">
-                    <div class="nav-arrow" onclick="scrollGallery(1)"><i class="fa-solid fa-chevron-right"></i></div>
-                    <div class="nav-arrow" onclick="scrollGallery(-1)"><i class="fa-solid fa-chevron-left"></i></div>
+                    <div class="nav-arrow" onclick="scrollGallery(-1)"><i class="fa-solid fa-chevron-right"></i></div>
+                    <div class="nav-arrow" onclick="scrollGallery(1)"><i class="fa-solid fa-chevron-left"></i></div>
                 </div>
             </div>
 
@@ -233,20 +233,20 @@
             userWishlist = data ? data.map(item => item.product_id) : [];
         }
 
-        // 4. جلب المنتجات مع التقييمات
+        // 4. جلب المنتجات (تعديل: جلب التقييم من جدول المنتجات مباشرة)
         async function fetchProducts(catId = 'all') {
             const container = document.getElementById("products");
             container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px;">جاري التحميل...</div>`;
             
-            // جلب المنتجات مع متوسط التقييمات من جدول reviews
-            let { data: products, error } = await supabaseClient.from("products").select(`*, reviews(rating)`).order("created_at", { ascending: false });
+            let query = supabaseClient.from("products").select("*").order("created_at", { ascending: false });
             
-            if(catId !== 'all') products = products.filter(p => p.category_id == catId);
-            
+            const { data, error } = await query;
             if (!error) { 
-                if(catId === 'all') allProducts = products;
+                allProducts = data;
                 await fetchUserWishlist();
-                renderProducts(products); 
+                
+                let displayData = (catId !== 'all') ? data.filter(p => p.category_id == catId) : data;
+                renderProducts(displayData); 
             }
         }
 
@@ -258,9 +258,8 @@
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
                 const isWished = userWishlist.includes(p.id);
                 
-                // حساب التقييم الحقيقي
-                const ratings = p.reviews || [];
-                const avgRating = ratings.length > 0 ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length).toFixed(1) : "جديد";
+                // جلب التقييم من عمود rating في جدول المنتجات
+                const ratingValue = p.rating ? parseFloat(p.rating).toFixed(1) : "5.0";
 
                 container.innerHTML += `
                     <div class="product-card">
@@ -272,13 +271,13 @@
                             <div class="product-image" style="background-image:url('${img}')"></div>
                         </div>
                         <div class="product-title">${p.title}</div>
-                        <div class="product-rating"><i class="fa-solid fa-star"></i> ${avgRating}</div>
+                        <div class="product-rating"><i class="fa-solid fa-star"></i> ${ratingValue}</div>
                         <div class="product-price">${p.price} ج.م</div>
                     </div>`;
             });
         }
 
-        // 5. نظام المفضلة المطور
+        // 5. نظام المفضلة
         async function toggleWishlist(event, prodId) {
             event.stopPropagation();
             if(!currentUser) return alert("سجل دخولك أولاً لإضافة المنتج للمفضلة");
@@ -287,14 +286,12 @@
             const isRemoving = btn.classList.contains('active');
 
             if (isRemoving) {
-                // حذف من المفضلة
                 const { error } = await supabaseClient.from('wishlist').delete().eq('user_id', currentUser.id).eq('product_id', prodId);
                 if(!error) {
                     btn.classList.remove('active');
                     userWishlist = userWishlist.filter(id => id !== prodId);
                 }
             } else {
-                // إضافة للمفضلة
                 const { error } = await supabaseClient.from('wishlist').insert([{ user_id: currentUser.id, product_id: prodId }]);
                 if(!error) {
                     btn.classList.add('active');
@@ -363,7 +360,10 @@
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
             currentUser = session?.user;
             document.getElementById("loginBtn").innerHTML = session ? `حسابي <i class="fa-solid fa-user-check"></i>` : `تسجيل دخول <i class="fa-solid fa-fingerprint"></i>`;
-            if (currentUser) fetchProducts(); // تحديث القائمة لإظهار القلوب الحمراء
+            if (currentUser) {
+                await fetchUserWishlist();
+                renderProducts(allProducts);
+            }
         });
 
         document.getElementById('checkoutForm').onsubmit = async (e) => {
