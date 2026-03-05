@@ -34,10 +34,9 @@
             border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
-        /* تنسيق بار العرض العام */
         #global-offer-bar {
             display: none; background: var(--primary-red); color: white;
-            padding: 12px 20px; margin: 0 20px 15px; border-radius: 15px;
+            padding: 10px 20px; margin: 0 20px 15px; border-radius: 15px;
             justify-content: space-between; align-items: center; font-weight: bold;
             box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
         }
@@ -229,7 +228,6 @@
             document.getElementById('darkModeBtn').className = 'fa-solid fa-sun dark-mode-toggle';
         }
 
-        // جلب العرض العام والعداد
         async function fetchGlobalOffer() {
             try {
                 const { data, error } = await supabaseClient.from('site_settings').select('*').eq('id', 1).maybeSingle();
@@ -292,7 +290,9 @@
             data.forEach(p => {
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
                 const isWished = userWishlist.includes(p.id);
-                const ratingValue = p.rating ? parseFloat(p.rating).toFixed(1) : "5.0";
+
+                // --- التعديل المطلوب: يظهر 0 إذا لم توجد قيمة، ثم يعرض البيانات من عمود rating ---
+                const ratingValue = (p.rating != null) ? parseFloat(p.rating).toFixed(1) : "0";
 
                 container.innerHTML += `
                     <div class="product-card">
