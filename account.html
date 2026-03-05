@@ -53,7 +53,6 @@
         .order-title { font-weight: 700; font-size: 15px; }
         .order-price { font-weight: 700; color: var(--primary-orange); }
 
-        /* تنسيق النجوم */
         .rating-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; text-align: center; }
         .stars { display: flex; justify-content: center; gap: 5px; direction: ltr; margin-bottom: 5px; }
         .stars i { font-size: 20px; color: #ccc; cursor: pointer; }
@@ -136,10 +135,9 @@
 
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
-            // جلب الطلبات وجلب التقييم المرتبط بالمستخدم والمنتج لمنع التكرار
             const { data, error } = await supabaseClient
                 .from('orders')
-                .select(`id, status, product_id, products ( title, image_url, price )`)
+                .select(`id, status, product_id, rated, products ( title, image_url, price )`)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
@@ -155,10 +153,7 @@
 
                 let ratingHtml = "";
                 if (s === 'مكتمل') {
-                    // فحص إذا كان المستخدم قيم المنتج فعلياً
-                    const { data: rated } = await supabaseClient.from('reviews').select('id').eq('user_id', userId).eq('product_id', order.product_id).maybeSingle();
-                    
-                    if (rated) {
+                    if (order.rated) {
                         ratingHtml = `<div class="rating-box" style="color:var(--primary-green); font-size:12px;">✅ تم التقييم بنجاح</div>`;
                     } else {
                         ratingHtml = `
@@ -200,7 +195,6 @@
             }
         }
 
-        // دوال التقييم
         function setStar(el, val) {
             const stars = el.parentElement.querySelectorAll('i');
             stars.forEach(s => s.classList.remove('active'));
@@ -208,22 +202,36 @@
             el.parentElement.dataset.value = val;
         }
 
+        // تحديث التقييم في جدول المنتجات مباشرة
         async function submitRating(prodId, orderId) {
             const starBox = document.querySelector(`#rate-box-${orderId} .stars`);
-            const rating = starBox.dataset.value;
-            if(!rating) return alert("من فضلك اختر عدد النجوم أولاً");
+            const userRating = parseInt(starBox.dataset.value);
+            if(!userRating) return alert("من فضلك اختر عدد النجوم أولاً");
 
-            const { error } = await supabaseClient.from('reviews').insert([{
-                product_id: prodId,
-                user_id: currentUserId,
-                rating: parseInt(rating),
-                full_name: currentUserName
-            }]);
+            try {
+                // 1. تحديث التقييم في جدول المنتجات
+                // ملاحظة: هذا الكود يفترض وجود عمود rating في جدول products
+                // يفضل أن يكون لديك منطق لحساب المتوسط، ولكن هنا سنضع تقييم المستخدم مباشرة أو نحدثه
+                const { error: prodError } = await supabaseClient
+                    .from('products')
+                    .update({ rating: userRating })
+                    .eq('id', prodId);
 
-            if(!error) {
+                if (prodError) throw prodError;
+
+                // 2. تحديث الطلب لتعليم أنه تم تقييمه (يفضل إضافة عمود rated في جدول orders)
+                const { error: orderError } = await supabaseClient
+                    .from('orders')
+                    .update({ rated: true })
+                    .eq('id', orderId);
+
+                if (orderError) throw orderError;
+
                 document.getElementById(`rate-box-${orderId}`).innerHTML = `<div style="color:var(--primary-green); font-size:12px;">✅ شكراً لتقييمك!</div>`;
-            } else {
-                alert("حدث خطأ أثناء إرسال التقييم");
+
+            } catch (err) {
+                console.error(err);
+                alert("حدث خطأ أثناء تحديث التقييم: " + err.message);
             }
         }
 
