@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DealWay - الصفحة الرئيسية</title>
+    <title>DealWay - الرئيسية</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,289 +13,267 @@
         :root {
             --primary-purple: #5b50e5;
             --primary-orange: #d98a36;
-            --bg-color: #f5f6f9;
-            --card-bg: #ffffff;
+            --bg: #f5f6f9;
+            --card: #fff;
             --text-dark: #2d2d2d;
             --text-light: #888888;
-            --pi-bg: #fceea7;
-            --pi-text: #966114;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: var(--text-dark); padding-bottom: 80px; }
 
-        body { background-color: var(--bg-color); color: var(--text-dark); padding-bottom: 80px; }
-
-        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: transparent; }
-
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
         .logo { font-size: 24px; font-weight: 700; }
         .logo span:first-child { color: var(--primary-purple); }
         .logo span:last-child { color: var(--primary-orange); }
 
-        .header-actions { display: flex; align-items: center; gap: 10px; }
-
-        .lang-btn {
-            background: white; border: 1px solid #ddd; color: var(--primary-purple);
-            border-radius: 50%; width: 40px; height: 40px; display: flex;
-            justify-content: center; align-items: center; font-weight: 600; cursor: pointer;
-        }
-
         .login-btn {
-            background-color: var(--primary-orange); color: white; border: none;
-            padding: 8px 20px; border-radius: 20px; font-weight: 600; display: flex;
-            align-items: center; gap: 8px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(217, 138, 54, 0.3); transition: 0.3s;
+            background: var(--primary-orange); border: none; color: #fff; padding: 8px 20px;
+            border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;
         }
-        .login-btn:hover { opacity: 0.9; }
 
-        .categories-scroll {
-            display: flex; overflow-x: auto; padding: 10px 20px; gap: 10px; scrollbar-width: none;
-        }
+        .categories-scroll { display: flex; overflow-x: auto; padding: 0 20px 15px 20px; gap: 10px; scrollbar-width: none; }
         .categories-scroll::-webkit-scrollbar { display: none; }
-
         .category-pill {
-            display: flex; align-items: center; gap: 8px; padding: 10px 20px;
-            border-radius: 25px; background-color: white; border: 1px solid #eee;
-            color: var(--text-dark); white-space: nowrap; cursor: pointer;
-            font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s;
+            display: flex; align-items: center; gap: 8px; padding: 8px 20px; border-radius: 25px;
+            background-color: var(--card); border: 1px solid #eee; color: var(--text-dark);
+            white-space: nowrap; cursor: pointer; font-weight: 600; transition: 0.3s;
         }
+        .category-pill.active { background-color: var(--primary-purple); color: white; border-color: var(--primary-purple); }
 
-        .category-pill.active { background-color: var(--primary-purple); color: white; border: none; }
+        .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .section-title i { color: var(--primary-purple); }
 
-        .section-header { display: flex; align-items: center; padding: 20px; gap: 10px; }
-        .section-header h2 { font-size: 20px; font-weight: 700; }
-        .section-icon {
-            background-color: var(--primary-purple); color: white; width: 35px;
-            height: 35px; display: flex; justify-content: center; align-items: center; border-radius: 10px;
-        }
-
-        .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px; }
-
+        .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px 20px 20px; }
         .product-card {
-            background-color: var(--card-bg); border-radius: 20px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center;
-            padding-bottom: 15px; display: flex; flex-direction: column;
+            background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            text-align: center; padding-bottom: 12px; display: flex; flex-direction: column; cursor: pointer;
         }
-
-        .product-image {
-            width: 100%; height: 150px; position: relative; background-color: #eee;
-            background-size: cover; background-position: center;
-        }
-
+        .product-image { height: 140px; background-size: cover; background-position: center; background-color: #eee; position: relative; }
         .location-tag {
-            position: absolute; bottom: 10px; left: 10px; background-color: rgba(30, 30, 30, 0.8);
-            color: white; padding: 4px 10px; border-radius: 12px; font-size: 10px;
-            display: flex; align-items: center; gap: 5px; max-width: 80%;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white;
+            padding: 3px 8px; border-radius: 10px; font-size: 10px; display: flex; align-items: center; gap: 4px;
         }
+        .product-title { font-weight: 700; font-size: 14px; margin: 12px 10px 8px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .product-price { background: #fceea7; color: #966114; padding: 4px 15px; border-radius: 20px; font-weight: 700; font-size: 14px; display: inline-block; margin: 0 auto; }
 
-        .product-title {
-            font-size: 14px; font-weight: 700; margin: 15px 0 10px 0;
-            padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
-        .product-price {
-            background-color: var(--pi-bg); color: var(--pi-text); display: inline-block;
-            padding: 5px 25px; border-radius: 20px; font-weight: 700; font-size: 14px;
-            margin: auto; margin-bottom: 5px;
-        }
-
-        .seller-initial { color: var(--text-light); font-size: 12px; }
-
-        .status-message { grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-weight: 600; }
+        .status { grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-light); font-weight: 600; }
 
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; background-color: white;
-            display: flex; justify-content: space-around; padding: 10px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05); border-top-left-radius: 20px;
-            border-top-right-radius: 20px; z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card);
+            display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000;
         }
-
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 5px;
-            color: var(--text-light); font-size: 12px; text-decoration: none;
-            cursor: pointer; padding: 8px 20px; border-radius: 15px; transition: 0.3s;
-        }
-
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-light); font-size: 12px; text-decoration: none; }
+        .nav-item.active { color: var(--primary-purple); }
         .nav-item i { font-size: 20px; }
-        .nav-item.active { color: var(--primary-purple); background-color: rgba(91, 80, 229, 0.1); }
 
+        /* نافذة تفاصيل المنتج والشراء (Modal) */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end;
+        }
+        .modal-content {
+            background: white; width: 100%; border-top-left-radius: 25px; border-top-right-radius: 25px;
+            padding: 25px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .close-modal { background: none; border: none; font-size: 24px; color: var(--text-light); cursor: pointer; }
+        
+        .modal-img { width: 100%; height: 200px; border-radius: 15px; object-fit: cover; margin-bottom: 15px; }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
+        .modal-price { color: var(--primary-orange); font-size: 22px; font-weight: 700; margin-bottom: 15px; }
+        .modal-desc { color: var(--text-light); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+
+        .checkout-form { display: flex; flex-direction: column; gap: 10px; }
+        .checkout-form input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-family: 'Cairo'; outline: none;}
+        .checkout-form input:focus { border-color: var(--primary-purple); }
+        .btn-order {
+            background: var(--primary-purple); color: white; border: none; padding: 15px;
+            border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">
-            <span>Deal</span><span>Way</span>
-        </div>
-        <div class="header-actions">
-            <div class="lang-btn">EN</div>
-            <button class="login-btn" onclick="signInWithGoogle()" id="login-btn">
-                دخول <i class="fa-solid fa-fingerprint"></i>
-            </button>
-        </div>
+        <div class="logo"><span>Deal</span><span>Way</span></div>
+        <button class="login-btn" id="loginBtn">دخول <i class="fa-solid fa-fingerprint"></i></button>
     </header>
 
-    <div class="categories-scroll">
-        <div class="category-pill active">
-            <i class="fa-solid fa-layer-group"></i> الكل
-        </div>
-        <div class="category-pill">
-            <i class="fa-solid fa-car"></i> سيارات
-        </div>
-        <div class="category-pill">
-            <i class="fa-solid fa-laptop"></i> إلكترونيات
-        </div>
+    <div class="categories-scroll" id="categories-filter">
+        <div class="category-pill active" data-id="all"><i class="fa-solid fa-layer-group"></i> الكل</div>
+        <div class="category-pill" data-id="2"><i class="fa-solid fa-car"></i> سيارات</div>
+        <div class="category-pill" data-id="3"><i class="fa-solid fa-laptop"></i> إلكترونيات</div>
+        <div class="category-pill" data-id="1"><i class="fa-solid fa-box"></i> أخرى</div>
     </div>
 
-    <div class="section-header">
-        <div class="section-icon">
-            <i class="fa-solid fa-fire"></i>
-        </div>
-        <h2>أحدث المعروضات</h2>
-    </div>
+    <div class="section-title"><i class="fa-solid fa-fire"></i> المعروضات</div>
 
-    <main class="products-grid" id="products-container">
-    </main>
+    <main class="products-grid" id="products"></main>
 
     <nav class="bottom-nav">
         <a class="nav-item active" href="index.html">
-            <i class="fa-solid fa-house"></i>
-            <span>الرئيسية</span>
+            <i class="fa-solid fa-house"></i><span>الرئيسية</span>
         </a>
-        <a class="nav-item" href="chats.html">
-            <i class="fa-solid fa-comment-dots"></i>
-            <span>المحادثات</span>
-        </a>
-        <a class="nav-item" href="account.html">
-            <i class="fa-solid fa-user"></i>
-            <span>حسابي</span>
+        <a class="nav-item" href="account.html" id="accountNavBtn" style="display: none;">
+            <i class="fa-solid fa-user"></i><span>حسابي</span>
         </a>
     </nav>
 
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="m-title" class="modal-title"></h3>
+                <button class="close-modal" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <img id="m-img" class="modal-img" src="" alt="Product">
+            <div id="m-price" class="modal-price"></div>
+            <p id="m-desc" class="modal-desc"></p>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
+            <h4 style="margin-bottom: 10px;">بيانات الاستلام</h4>
+            
+            <form class="checkout-form" id="checkoutForm">
+                <input type="hidden" id="order-product-id">
+                <input type="text" id="order-name" placeholder="الاسم بالكامل" required>
+                <input type="tel" id="order-phone" placeholder="رقم الهاتف" required>
+                <input type="text" id="order-address" placeholder="العنوان بالتفصيل" required>
+                <button type="submit" class="btn-order" id="submitOrderBtn">تأكيد الطلب</button>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // === إعدادات Supabase ===
-        const SUPABASE_URL = 'https://jtbxdymviqmfhffixmat.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_URL = "https://jtbxdymviqmfhffixmat.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null; // لتخزين بيانات المستخدم المسجل
 
         // === دالة جلب المنتجات ===
-        async function fetchProducts() {
-            const container = document.getElementById('products-container');
-            container.innerHTML = '<div class="status-message"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل المنتجات...</div>';
+        async function fetchProducts(categoryId = 'all') {
+            const container = document.getElementById("products");
+            container.innerHTML = `<div class="status"><i class="fa-solid fa-spinner fa-spin"></i> جارى التحميل...</div>`;
 
             try {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                let query = supabaseClient.from("products").select("*").order("created_at", { ascending: false });
+                if (categoryId !== 'all') query = query.eq('category_id', categoryId);
 
+                const { data, error } = await query;
                 if (error) throw error;
-                container.innerHTML = '';
+                if (!data || !data.length) { container.innerHTML = `<div class="status">لا توجد منتجات</div>`; return; }
 
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="status-message">لا توجد منتجات معروضة حالياً.</div>';
-                    return;
-                }
-
+                container.innerHTML = "";
                 data.forEach(product => {
-                    const sellerInitial = product.title ? product.title.charAt(0).toUpperCase() : 'U';
-                    const imageUrl = product.image_url || 'https://via.placeholder.com/300?text=لا+توجد+صورة';
-                    const location = product.location || 'غير محدد';
-
-                    const cardHTML = `
-                        <div class="product-card">
-                            <div class="product-image" style="background-image: url('${imageUrl}');">
-                                <div class="location-tag">
-                                    <i class="fa-solid fa-location-dot"></i> ${location}
-                                </div>
-                            </div>
-                            <div class="product-title">${product.title}</div>
-                            <div class="product-price">π ${product.price}</div>
-                            <div class="seller-initial">${sellerInitial}</div>
-                        </div>
-                    `;
-                    container.innerHTML += cardHTML;
-                });
-
-            } catch (error) {
-                console.error("خطأ في جلب المنتجات:", error.message);
-                container.innerHTML = '<div class="status-message" style="color: red;">حدث خطأ أثناء تحميل المنتجات.</div>';
-            }
-        }
-
-        // === دالة تسجيل الدخول باستخدام جوجل (محدثة لاكتشاف الأخطاء) ===
-        async function signInWithGoogle() {
-            try {
-                console.log("جاري التحويل لجوجل...");
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        // استخدام origin لتوجيه المستخدم لنفس الدومين بعد الدخول (Netlify)
-                        redirectTo: window.location.origin 
-                    }
-                });
-                
-                if (error) {
-                    throw error;
-                }
-            } catch (error) {
-                console.error("حدث خطأ أثناء تسجيل الدخول:", error.message);
-                alert("فشل تسجيل الدخول: " + error.message);
-            }
-        }
-
-        // === مراقبة حالة تسجيل الدخول (الطريقة المثالية والأصح) ===
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            const loginBtn = document.getElementById('login-btn');
-
-            if (session) {
-                // 1. تغيير شكل الزر
-                loginBtn.innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
-                loginBtn.onclick = () => window.location.href = 'account.html';
-
-                // 2. إذا كان الحدث هو تسجيل دخول ناجح
-                if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                    const user = session.user;
+                    const image = product.image_url || "https://via.placeholder.com/300";
+                    const location = product.location || "غير محدد";
                     
-                    // التحقق هل المستخدم موجود في جدول profiles
-                    const { data: existingUser, error: checkError } = await supabase
-                        .from('profiles')
-                        .select('id')
-                        .eq('id', user.id)
-                        .maybeSingle();
+                    // تمرير بيانات المنتج كـ JSON لفتحها في النافذة
+                    const prodJson = encodeURIComponent(JSON.stringify(product));
 
-                    // 3. إذا لم يكن موجوداً، نقوم بإضافته فوراً
-                    if (!existingUser && !checkError) {
-                        const fullName = user.user_metadata.full_name || 'مستخدم جديد';
-                        
-                        const { error: insertError } = await supabase
-                            .from('profiles')
-                            .insert([
-                                { 
-                                    id: user.id, 
-                                    full_name: fullName,
-                                    role: 'user' 
-                                }
-                            ]);
+                    container.innerHTML += `
+                    <div class="product-card" onclick="openProduct('${prodJson}')">
+                        <div class="product-image" style="background-image:url('${image}')">
+                            <div class="location-tag"><i class="fa-solid fa-location-dot"></i> ${location}</div>
+                        </div>
+                        <div class="product-title">${product.title}</div>
+                        <div class="product-price">π ${product.price}</div>
+                    </div>
+                    `;
+                });
+            } catch (error) { console.error(error); }
+        }
 
-                        if (insertError) {
-                            console.error("خطأ أثناء حفظ بيانات المستخدم:", insertError.message);
-                        } else {
-                            console.log("تم تسجيل حساب جديد في قاعدة البيانات بنجاح!");
-                        }
-                    }
-                }
-            } else {
-                // في حالة تسجيل الخروج
-                loginBtn.innerHTML = `دخول <i class="fa-solid fa-fingerprint"></i>`;
-                loginBtn.onclick = signInWithGoogle;
+        // فلترة الأقسام
+        document.querySelectorAll('.category-pill').forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+                const clickedPill = e.target.closest('.category-pill');
+                clickedPill.classList.add('active');
+                fetchProducts(clickedPill.getAttribute('data-id'));
+            });
+        });
+
+        // === التعامل مع النافذة المنبثقة (Modal) وإرسال الطلب ===
+        function openProduct(productJsonData) {
+            const product = JSON.parse(decodeURIComponent(productJsonData));
+            document.getElementById('m-title').innerText = product.title;
+            document.getElementById('m-img').src = product.image_url || "https://via.placeholder.com/300";
+            document.getElementById('m-price').innerText = `π ${product.price}`;
+            document.getElementById('m-desc').innerText = product.description || "لا يوجد وصف إضافي لهذا المنتج.";
+            document.getElementById('order-product-id').value = product.id;
+            
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        // إرسال الطلب لقاعدة البيانات
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if(!currentUser) {
+                alert("يجب تسجيل الدخول أولاً لإتمام الطلب!");
+                return;
+            }
+
+            const btn = document.getElementById('submitOrderBtn');
+            btn.innerText = "جاري الإرسال...";
+            btn.disabled = true;
+
+            const orderData = {
+                user_id: currentUser.id,
+                product_id: document.getElementById('order-product-id').value,
+                full_name: document.getElementById('order-name').value,
+                phone: document.getElementById('order-phone').value,
+                address: document.getElementById('order-address').value
+            };
+
+            try {
+                const { error } = await supabaseClient.from('orders').insert([orderData]);
+                if (error) throw error;
+                
+                alert("تم تسجيل طلبك بنجاح! يمكنك تتبعه من صفحة حسابي.");
+                closeModal();
+                document.getElementById('checkoutForm').reset();
+            } catch (error) {
+                alert("حدث خطأ أثناء الطلب: " + error.message);
+            } finally {
+                btn.innerText = "تأكيد الطلب";
+                btn.disabled = false;
             }
         });
 
-        // تشغيل دوال جلب المنتجات عند تحميل الصفحة
-        window.onload = () => {
-            fetchProducts();
-        };
+        // === تسجيل الدخول وحالة المستخدم ===
+        async function signIn() {
+            await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+        }
+
+        document.getElementById("loginBtn").onclick = signIn;
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            const btn = document.getElementById("loginBtn");
+            const accountNav = document.getElementById("accountNavBtn");
+            
+            if (session) {
+                currentUser = session.user; // حفظ بيانات المستخدم
+                btn.innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
+                btn.onclick = () => location.href = "account.html";
+                accountNav.style.display = "flex"; // إظهار زر حسابي في الأسفل
+            } else {
+                currentUser = null;
+                btn.innerHTML = `دخول <i class="fa-solid fa-fingerprint"></i>`;
+                btn.onclick = signIn;
+                accountNav.style.display = "none";
+            }
+        });
+
+        window.onload = () => fetchProducts('all');
     </script>
 </body>
 </html>
