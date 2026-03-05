@@ -222,24 +222,28 @@
             }
         }
 
-        // === دالة تسجيل الدخول باستخدام جوجل ===
+        // === دالة تسجيل الدخول باستخدام جوجل (محدثة لاكتشاف الأخطاء) ===
         async function signInWithGoogle() {
             try {
+                console.log("جاري التحويل لجوجل...");
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        // نستخدم origin بدلاً من href لتجنب تكرار الروابط عند العودة
+                        // استخدام origin لتوجيه المستخدم لنفس الدومين بعد الدخول (Netlify)
                         redirectTo: window.location.origin 
                     }
                 });
-                if (error) throw error;
+                
+                if (error) {
+                    throw error;
+                }
             } catch (error) {
                 console.error("حدث خطأ أثناء تسجيل الدخول:", error.message);
+                alert("فشل تسجيل الدخول: " + error.message);
             }
         }
 
         // === مراقبة حالة تسجيل الدخول (الطريقة المثالية والأصح) ===
-        // هذه الدالة تعمل تلقائياً بمجرد عودة المستخدم من صفحة جوجل
         supabase.auth.onAuthStateChange(async (event, session) => {
             const loginBtn = document.getElementById('login-btn');
 
