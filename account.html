@@ -37,6 +37,7 @@
 
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
+        /* تتبع الطلبات */
         .order-progress { display: flex; justify-content: space-between; margin-top: 15px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
@@ -53,6 +54,7 @@
         .order-title { font-weight: 700; font-size: 15px; }
         .order-price { font-weight: 700; color: var(--primary-orange); }
 
+        /* التقييم */
         .rating-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; text-align: center; }
         .stars { display: flex; justify-content: center; gap: 5px; direction: ltr; margin-bottom: 5px; }
         .stars i { font-size: 20px; color: #ccc; cursor: pointer; }
@@ -105,7 +107,6 @@
         const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUserId = null;
-        let currentUserName = "";
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -115,7 +116,6 @@
         }
         if(localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
-            document.getElementById('darkModeBtn').className = 'fa-solid fa-sun dark-mode-toggle';
         }
 
         async function loadUserData() {
@@ -124,8 +124,7 @@
 
             const user = session.user;
             currentUserId = user.id;
-            currentUserName = user.user_metadata.full_name || "مستخدم";
-            document.getElementById('user-name').innerText = currentUserName;
+            document.getElementById('user-name').innerText = user.user_metadata.full_name || "مستخدم";
             document.getElementById('user-email').innerText = user.email;
             document.getElementById('user-img').src = user.user_metadata.avatar_url || "https://via.placeholder.com/90";
 
@@ -151,6 +150,7 @@
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(s);
 
+                // بناء كود التقييم (فقط إذا كان مكتمل ولم يتم تقييمه)
                 let ratingHtml = "";
                 if (s === 'مكتمل') {
                     if (order.rated) {
@@ -158,13 +158,13 @@
                     } else {
                         ratingHtml = `
                             <div class="rating-box" id="rate-box-${order.id}">
-                                <div style="font-size:12px; margin-bottom:5px;">قيم المنتج:</div>
-                                <div class="stars" data-order="${order.id}">
-                                    <i class="fa-solid fa-star" data-v="1" onclick="setStar(this, 1)"></i>
-                                    <i class="fa-solid fa-star" data-v="2" onclick="setStar(this, 2)"></i>
-                                    <i class="fa-solid fa-star" data-v="3" onclick="setStar(this, 3)"></i>
-                                    <i class="fa-solid fa-star" data-v="4" onclick="setStar(this, 4)"></i>
-                                    <i class="fa-solid fa-star" data-v="5" onclick="setStar(this, 5)"></i>
+                                <div style="font-size:12px; margin-bottom:5px;">لقد وصل طلبك! قيم المنتج:</div>
+                                <div class="stars" data-order="${order.id}" data-value="0">
+                                    <i class="fa-solid fa-star" onclick="setStar(this, 1)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(this, 2)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(this, 3)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(this, 4)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(this, 5)"></i>
                                 </div>
                                 <button class="btn-rate" onclick="submitRating(${order.product_id}, ${order.id})">إرسال التقييم</button>
                             </div>
@@ -202,36 +202,29 @@
             el.parentElement.dataset.value = val;
         }
 
-        // تحديث التقييم في جدول المنتجات مباشرة
         async function submitRating(prodId, orderId) {
             const starBox = document.querySelector(`#rate-box-${orderId} .stars`);
             const userRating = parseInt(starBox.dataset.value);
-            if(!userRating) return alert("من فضلك اختر عدد النجوم أولاً");
+            if(!userRating || userRating === 0) return alert("من فضلك اختر عدد النجوم أولاً");
 
             try {
                 // 1. تحديث التقييم في جدول المنتجات
-                // ملاحظة: هذا الكود يفترض وجود عمود rating في جدول products
-                // يفضل أن يكون لديك منطق لحساب المتوسط، ولكن هنا سنضع تقييم المستخدم مباشرة أو نحدثه
                 const { error: prodError } = await supabaseClient
                     .from('products')
                     .update({ rating: userRating })
                     .eq('id', prodId);
-
                 if (prodError) throw prodError;
 
-                // 2. تحديث الطلب لتعليم أنه تم تقييمه (يفضل إضافة عمود rated في جدول orders)
+                // 2. تحديث الطلب لتعليم أنه تم تقييمه
                 const { error: orderError } = await supabaseClient
                     .from('orders')
                     .update({ rated: true })
                     .eq('id', orderId);
-
                 if (orderError) throw orderError;
 
                 document.getElementById(`rate-box-${orderId}`).innerHTML = `<div style="color:var(--primary-green); font-size:12px;">✅ شكراً لتقييمك!</div>`;
-
             } catch (err) {
-                console.error(err);
-                alert("حدث خطأ أثناء تحديث التقييم: " + err.message);
+                alert("حدث خطأ أثناء تحديث التقييم");
             }
         }
 
