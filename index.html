@@ -2,484 +2,414 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Donate Way - مجمع الخير والخدمات</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
-    
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DealWay - الصفحة الرئيسية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
+        /* الألوان والمتغيرات الأساسية */
         :root {
-            --primary-purple: #8e44ad;
-            --accent-purple: #a29bfe;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --warning: #f39c12;
-            --dark: #2d3436;
-            --light: #f9f9f9;
+            --primary-purple: #5b50e5;
+            --primary-orange: #d98a36;
+            --bg-color: #f5f6f9;
+            --card-bg: #ffffff;
+            --text-dark: #2d2d2d;
+            --text-light: #888888;
+            --pi-bg: #fceea7;
+            --pi-text: #966114;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
 
-        body { background: #f0f2f5; min-height: 100vh; padding-top: 90px; padding-bottom: 100px; overflow-x: hidden; }
-        body::before {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-gradient); clip-path: circle(40% at 100% 0%); z-index: -1;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            padding-bottom: 80px;
         }
 
         header {
-            position: fixed; top: 0; left: 0; right: 0; height: 70px; 
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: transparent;
         }
 
-        .logo { font-size: 1.5rem; font-weight: 900; color: var(--primary-purple); cursor: pointer; }
-        .user-pill { display: none; background: var(--primary-purple); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: 0.3s; }
-        .user-pill:hover { transform: scale(1.05); }
-        .btn-login { padding: 8px 15px; border-radius: 20px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .logo span:first-child { color: var(--primary-purple); }
+        .logo span:last-child { color: var(--primary-orange); }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        /* شريط التنقل السفلي */
+        .lang-btn {
+            background: white;
+            border: 1px solid #ddd;
+            color: var(--primary-purple);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-btn {
+            background-color: var(--primary-orange);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(217, 138, 54, 0.3);
+            transition: 0.3s;
+        }
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+
+        .categories-scroll {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 20px;
+            gap: 10px;
+            scrollbar-width: none;
+        }
+        .categories-scroll::-webkit-scrollbar { display: none; }
+
+        .category-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            background-color: white;
+            border: 1px solid #eee;
+            color: var(--text-dark);
+            white-space: nowrap;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            transition: 0.3s;
+        }
+
+        .category-pill.active {
+            background-color: var(--primary-purple);
+            color: white;
+            border: none;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            gap: 10px;
+        }
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .section-icon {
+            background-color: var(--primary-purple);
+            color: white;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 0 20px;
+        }
+
+        .product-card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            text-align: center;
+            padding-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 150px;
+            position: relative;
+            background-color: #eee;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .location-tag {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(30, 30, 30, 0.8);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            max-width: 80%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .product-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 15px 0 10px 0;
+            padding: 0 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .product-price {
+            background-color: var(--pi-bg);
+            color: var(--pi-text);
+            display: inline-block;
+            padding: 5px 25px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            margin: auto; /* لضبط التوسيط إذا كان العنوان طويلاً */
+            margin-bottom: 5px;
+        }
+
+        .seller-initial {
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        /* رسالة التحميل أو الخطأ */
+        .status-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
-            display: flex; justify-content: space-around; align-items: center;
-            padding: 10px 0 15px; box-shadow: 0 -5px 25px rgba(0,0,0,0.1);
-            border-top-left-radius: 25px; border-top-right-radius: 25px; z-index: 1000;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 1000;
         }
+
         .nav-item {
-            text-align: center; color: #888; cursor: pointer; transition: 0.3s;
-            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-light);
+            font-size: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 15px;
+            transition: 0.3s;
         }
-        .nav-item.active { color: var(--primary-purple); transform: translateY(-5px); }
-        .nav-icon { font-size: 1.6rem; }
-        .nav-text { font-size: 0.85rem; font-weight: bold; }
 
-        /* تصميم الكروت المشتركة */
-        .pool-section {
-            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
-            border-radius: 25px; padding: 30px 20px; text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.05); margin-bottom: 20px;
-            border: 2px solid var(--primary-purple); position: relative;
+        .nav-item i {
+            font-size: 20px;
         }
-        .pool-title { font-size: 1.5rem; color: var(--dark); margin-bottom: 5px; font-weight: 900; }
-        .pool-amount { font-size: 3rem; font-weight: 900; color: var(--primary-purple); margin: 10px 0; text-shadow: 0 4px 10px rgba(142, 68, 173, 0.2); }
-        
-        .progress-container { width: 100%; background: #eee; border-radius: 20px; height: 12px; margin: 15px 0; overflow: hidden; position: relative; }
-        .progress-bar { height: 100%; background: var(--success); width: 0%; transition: 1s ease-in-out; }
-        
-        .donate-pool-box { display: flex; flex-direction: column; gap: 12px; max-width: 100%; margin: 15px auto 0; }
-        .pool-input { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #eee; font-size: 1.1rem; text-align: center; outline: none; transition: 0.3s; }
-        .pool-input:focus { border-color: var(--primary-purple); }
-        .btn-primary { padding: 15px; border-radius: 15px; border: none; background: var(--primary-purple); color: white; font-weight: 700; cursor: pointer; font-size: 1.1rem; width: 100%; transition: 0.3s; }
-        .btn-primary:disabled { background: #bdc3c7; cursor: not-allowed; }
 
-        .leaderboard-section { background: white; border-radius: 20px; padding: 15px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; }
-        .leaderboard-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; margin-top: 10px; justify-content: center; }
-        .leader-item { background: var(--light); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; white-space: nowrap; border: 1px solid #eee; }
-
-        .section-header { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 20px; text-align: center; }
-        .btn-outline { padding: 10px 20px; border-radius: 15px; border: 2px dashed var(--primary-purple); background: white; color: var(--primary-purple); font-weight: 700; cursor: pointer; width: 100%; max-width: 300px; }
-
-        .grid-container { display: grid; grid-template-columns: 1fr; gap: 20px; padding-bottom: 20px; }
-        .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 8px 20px rgba(0,0,0,0.04); position: relative; display: flex; flex-direction: column; gap: 12px; }
-        .card.funded { border: 2px solid var(--success); background: #f2fcf5; }
-        .badge { position: absolute; top: -12px; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: white; }
-        .badge.success { background: var(--success); right: 20px; }
-        .badge.warning { background: var(--warning); left: 20px; }
-        .badge.info { background: #3498db; right: 20px; }
-
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 10px; }
-        .card-title { font-size: 1.2rem; color: var(--dark); font-weight: 700; line-height: 1.4; }
-        .card-user { font-size: 0.8rem; color: #888; background: #eee; padding: 3px 8px; border-radius: 10px; }
-        .card-desc { color: #666; font-size: 0.9rem; line-height: 1.6; }
-        
-        .meta-box { display: flex; justify-content: space-around; background: var(--light); padding: 12px; border-radius: 15px; }
-        .meta-item { text-align: center; }
-        .meta-value { font-weight: 900; display: block; font-size: 1.1rem; }
-        .meta-label { font-size: 0.75rem; color: #888; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
-        .vote-yes-btn, .vote-no-btn { padding: 10px; border-radius: 12px; border: none; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .vote-yes-btn { background: var(--success); } .vote-yes-btn:hover { background: #27ae60; }
-        .vote-no-btn { background: var(--danger); } .vote-no-btn:hover { background: #c0392b; }
-        .action-btn { padding: 10px; border-radius: 12px; border: 1px solid #ddd; background: white; color: #555; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        
-        .controls-row { display: flex; gap: 8px; margin-top: 5px; }
-        .delete-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; background: rgba(231, 76, 60, 0.1); color: var(--danger); font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .delete-btn:hover { background: var(--danger); color: white; }
-
-        /* النوافذ المنبثقة */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; padding: 15px; }
-        .modal-content { background: white; padding: 25px 20px; border-radius: 20px; width: 100%; max-width: 400px; position: relative; max-height: 90vh; overflow-y: auto; }
-        .close-btn { position: absolute; top: 15px; left: 15px; cursor: pointer; font-size: 1.5rem; color: #888; line-height: 1; }
-        .form-group { margin-bottom: 15px; text-align: right; }
-        .form-control { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-family: 'Tajawal'; }
-        
-        #admin-btn { display: none; background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; margin-left: 10px; }
-
-        @media (min-width: 768px) {
-            .donate-pool-box { flex-direction: row; }
-            .pool-input { width: 60%; }
-            .btn-primary { width: 40%; }
-            .grid-container { grid-template-columns: repeat(2, 1fr); }
-            .section-header { flex-direction: row; justify-content: space-between; text-align: right; }
-            .btn-outline { width: auto; }
+        .nav-item.active {
+            color: var(--primary-purple);
+            background-color: rgba(91, 80, 229, 0.1);
         }
+
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">Donate Way</div>
-        <div style="display: flex; align-items: center;">
-            <button id="admin-btn" onclick="openModal('admin-modal')">⚙️ الإدارة</button>
-            <button id="login-button" class="btn-login" onclick="login()">دخول بحساب Pi</button>
-            <div id="user-pill" class="user-pill" onclick="openProfile()">@username</div>
+        <div class="logo">
+            <span>Deal</span><span>Way</span>
+        </div>
+        <div class="header-actions">
+            <div class="lang-btn">EN</div>
+            <button class="login-btn" onclick="signInWithGoogle()" id="login-btn">
+                دخول <i class="fa-solid fa-fingerprint"></i>
+            </button>
         </div>
     </header>
 
-    <div id="view-donations" class="container">
-        <div class="pool-section">
-            <h1 class="pool-title">مجمع التبرعات العام 🌍</h1>
-            <p style="color: #555; font-size: 0.9rem;">تبرع للمجمع، والمجتمع يقرر من يستحق الدعم.</p>
-            <div class="pool-amount" id="global-pool-amount">0.00 π</div>
-            <div style="font-size: 0.8rem; color: #666; font-weight: bold;">الهدف الشهري: 1000 π</div>
-            <div class="progress-container"><div class="progress-bar" id="pool-progress"></div></div>
-            <div class="donate-pool-box">
-                <input type="number" id="pool-input" class="pool-input" placeholder="أدخل مبلغ التبرع للمجمع">
-                <button class="btn-primary" onclick="donateToPool()" id="donate-btn">تبرع لدعم المجمع</button>
-            </div>
+    <div class="categories-scroll">
+        <div class="category-pill active">
+            <i class="fa-solid fa-layer-group"></i> الكل
         </div>
-
-        <div class="leaderboard-section">
-            <h3 style="color: var(--primary-purple); margin-bottom: 5px;">🏆 أبطال الخير (Top Donors)</h3>
-            <div class="leaderboard-list" id="leaderboard">جاري التحميل...</div>
+        <div class="category-pill">
+            <i class="fa-solid fa-car"></i> سيارات
         </div>
-
-        <div class="section-header">
-            <h2 style="font-size: 1.4rem; color: var(--dark); font-weight: 900;">الحالات المعروضة 🗳️</h2>
-            <button class="btn-outline" onclick="openModal('request-modal')">+ تقديم طلب مساعدة</button>
-        </div>
-        <div class="grid-container" id="cases-container"></div>
-    </div>
-
-    <div id="view-services" class="container" style="display: none;">
-        <div class="pool-section" style="border-color: #3498db; background: linear-gradient(to bottom, #ffffff, #f0f8ff);">
-            <h1 class="pool-title" style="color: #2980b9;">تبادل الخدمات المجانية 🤝</h1>
-            <p style="color: #555; font-size: 0.9rem; line-height: 1.6;">هل تحتاج لبرمجة موقع، تصميم لوجو، أو استشارة؟ اطلب الخدمة والمجتمع سيساعدك مجاناً. الأدمن يقوم بمكافأة أكثر الأشخاص تقديماً للمساعدة بعملة Pi!</p>
-            <button class="btn-primary" style="background: #3498db; margin-top: 15px;" onclick="openModal('service-modal')">+ اطلب خدمة إلكترونية</button>
-        </div>
-
-        <div class="leaderboard-section" style="border-left: 4px solid #3498db;">
-            <h3 style="color: #2980b9; margin-bottom: 5px;">🌟 أكثر المساعدين (Top Helpers)</h3>
-            <p style="font-size: 0.8rem; color:#888; margin-bottom: 10px;">مرشحون لمكافآت الإدارة</p>
-            <div class="leaderboard-list" id="helpers-leaderboard">جاري التحميل...</div>
-        </div>
-
-        <h2 style="font-size: 1.4rem; color: var(--dark); font-weight: 900; margin-bottom: 15px; text-align: center;">الطلبات الحالية 💻</h2>
-        <div class="grid-container" id="services-container"></div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active" id="nav-donations" onclick="switchTab('donations')">
-            <span class="nav-icon">💖</span>
-            <span class="nav-text">التبرعات</span>
-        </div>
-        <div class="nav-item" id="nav-services" onclick="switchTab('services')">
-            <span class="nav-icon">🤝</span>
-            <span class="nav-text">الخدمات</span>
+        <div class="category-pill">
+            <i class="fa-solid fa-laptop"></i> إلكترونيات
         </div>
     </div>
 
-    <div id="service-modal" class="modal" onclick="closeModal('service-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="closeModal('service-modal')">&times;</span>
-            <h3 style="color: #3498db; margin-bottom: 20px; text-align: center;">طلب خدمة مجانية</h3>
-            <div class="form-group">
-                <input type="text" id="srv-title" class="form-control" placeholder="ما هي الخدمة؟ (مثال: تصميم لوجو)">
-            </div>
-            <div class="form-group">
-                <textarea id="srv-desc" class="form-control" rows="4" placeholder="اشرح تفاصيل الخدمة المطلوبة بدقة..."></textarea>
-            </div>
-            <button class="btn-primary" style="background: #3498db;" id="submit-srv-btn" onclick="submitService()">نشر الطلب للمجتمع</button>
+    <div class="section-header">
+        <div class="section-icon">
+            <i class="fa-solid fa-fire"></i>
         </div>
+        <h2>أحدث المعروضات</h2>
     </div>
 
-    <div id="request-modal" class="modal" onclick="closeModal('request-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="closeModal('request-modal')">&times;</span>
-            <h3 style="color: var(--primary-purple); margin-bottom: 20px; text-align: center;">رفع حالة للمجتمع</h3>
-            <div class="form-group"><input type="text" id="req-title" class="form-control" placeholder="عنوان الحالة"></div>
-            <div class="form-group"><textarea id="req-desc" class="form-control" rows="3" placeholder="اشرح الحالة بالتفصيل..."></textarea></div>
-            <div class="form-group"><input type="number" id="req-amount" class="form-control" placeholder="المبلغ المطلوب (π)"></div>
-            <div class="form-group"><label style="display:block; margin-bottom: 5px; color:#555; font-size: 0.9rem;">إرفاق الإثبات</label><input type="file" id="req-proof-file" class="form-control" accept="image/*"></div>
-            <button class="btn-primary" id="submit-req-btn" onclick="submitRequest()">إرسال الطلب</button>
-        </div>
-    </div>
+    <main class="products-grid" id="products-container">
+        </main>
 
-    <div id="admin-modal" class="modal" onclick="closeModal('admin-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="closeModal('admin-modal')">&times;</span><h3 style="color: #e74c3c; text-align: center;">لوحة الإدارة ⚙️</h3>
-            <p style="font-size:0.8rem; text-align:center; color:#666;">قم بإدخال ID الحالة المكتملة لرفع الأثر</p>
-            <div class="form-group"><input type="number" id="admin-case-id" class="form-control" placeholder="رقم الحالة (ID)"></div>
-            <div class="form-group"><input type="file" id="admin-impact-file" class="form-control" accept="image/*"></div>
-            <button class="btn-primary" style="background: var(--success);" onclick="markAsFunded()">تحويل الحالة لـ "تم التمويل"</button>
-        </div>
-    </div>
-
-    <div id="complete-service-modal" class="modal" onclick="closeModal('complete-service-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="closeModal('complete-service-modal')">&times;</span>
-            <h3 style="color: var(--success); margin-bottom: 15px; text-align: center;">تأكيد إنجاز الخدمة ✅</h3>
-            <p style="font-size:0.9rem; color:#555; text-align:center;">من هو الشخص الذي ساعدك؟ (اكتب اسم حسابه ليحصل على نقاط مساعدة)</p>
-            <div class="form-group" style="margin-top: 15px;">
-                <input type="text" id="helper-username" class="form-control" placeholder="مثال: ahmed123">
-            </div>
-            <button class="btn-primary" style="background: var(--success);" onclick="executeCompleteService()">تأكيد وإغلاق الطلب</button>
-        </div>
-    </div>
-
-    <div id="comments-modal" class="modal" onclick="closeModal('comments-modal')"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-btn" onclick="closeModal('comments-modal')">&times;</span><h3 style="color: var(--primary-purple); text-align: center;">النقاش 💬</h3><div id="comments-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;"></div><div style="display: flex; gap: 5px;"><input type="text" id="new-comment" class="form-control" placeholder="اكتب تعليقك..."><button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="postComment()">إرسال</button></div></div></div>
-    <div id="impact-modal" class="modal" onclick="closeModal('impact-modal')"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-btn" onclick="closeModal('impact-modal')">&times;</span><h3 style="color: var(--success); text-align: center;">الأثر 💚</h3><img id="impact-img-src" src="" class="impact-img"></div></div>
-    <div id="proof-modal" class="modal" onclick="closeModal('proof-modal')"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-btn" onclick="closeModal('proof-modal')">&times;</span><h3 style="color: var(--primary-purple); text-align: center;">الإثبات 📄</h3><img id="proof-img-src" src="" class="impact-img"></div></div>
-    <div id="custom-alert-modal" class="modal" onclick="closeModal('custom-alert-modal')"><div class="modal-content" style="max-width: 320px; text-align: center;" onclick="event.stopPropagation()"><p id="custom-alert-message" style="font-size: 1.1rem; margin-bottom: 25px;"></p><button style="background: transparent; color: var(--primary-purple); border: none; font-weight: 700; font-size: 1.1rem; cursor: pointer; padding: 10px 30px;" onclick="closeModal('custom-alert-modal')">موافق</button></div></div>
-    <div id="confirm-modal" class="modal" onclick="closeModal('confirm-modal')"><div class="modal-content" style="max-width: 340px; text-align: center; padding-top: 35px;" onclick="event.stopPropagation()"><p id="confirm-message" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 20px;"></p><div style="display: flex; gap: 10px;"><button style="background: var(--danger); color: white; border:none; padding:10px; border-radius:10px; flex: 1; font-weight:bold;" onclick="executeConfirm()">نعم</button><button style="background: #eee; border:none; padding:10px; border-radius:10px; flex: 1; font-weight:bold;" onclick="closeModal('confirm-modal')">إلغاء</button></div></div></div>
+    <nav class="bottom-nav">
+        <a class="nav-item active" href="index.html">
+            <i class="fa-solid fa-house"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a class="nav-item" href="chats.html">
+            <i class="fa-solid fa-comment-dots"></i>
+            <span>المحادثات</span>
+        </a>
+        <a class="nav-item" href="account.html">
+            <i class="fa-solid fa-user"></i>
+            <span>حسابي</span>
+        </a>
+    </nav>
 
     <script>
+        // === إعدادات Supabase ===
         const SUPABASE_URL = 'https://jtbxdymviqmfhffixmat.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const Pi = window.Pi;
+        const SUPABASE_ANON_KEY = 'sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
+        
+        // تهيئة العميل (Client)
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const ADMIN_USERNAME = 'medomohamed22'; 
-
-        let currentUser = null;
-        let confirmActionCallback = null;
-        let activeTab = 'donations';
-        let currentServiceToComplete = null;
-
-        // دوال مساعدة (التنبيهات والتبويبات)
-        function customAlert(msg) { document.getElementById('custom-alert-message').innerText = msg; openModal('custom-alert-modal'); }
-        function customConfirm(msg, cb) { document.getElementById('confirm-message').innerText = msg; confirmActionCallback = cb; openModal('confirm-modal'); }
-        function executeConfirm() { closeModal('confirm-modal'); if (confirmActionCallback) confirmActionCallback(); }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function getBadge(amount) { return amount >= 500 ? '💎' : amount >= 100 ? '🥇' : amount >= 20 ? '🥈' : '🥉'; }
-
-        function switchTab(tab) {
-            activeTab = tab;
-            document.getElementById('view-donations').style.display = tab === 'donations' ? 'block' : 'none';
-            document.getElementById('view-services').style.display = tab === 'services' ? 'block' : 'none';
-            document.getElementById('nav-donations').classList.toggle('active', tab === 'donations');
-            document.getElementById('nav-services').classList.toggle('active', tab === 'services');
-            if(tab === 'services') loadServices();
-        }
-
-        async function login() {
-            try {
-                const auth = await Pi.authenticate(['username', 'payments'], () => {});
-                currentUser = auth.user;
-                document.getElementById('login-button').style.display = 'none';
-                document.getElementById('user-pill').style.display = 'block';
-                document.getElementById('user-pill').textContent = '@' + currentUser.username;
-                if(currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) document.getElementById('admin-btn').style.display = 'block';
-                loadData();
-                if(activeTab === 'services') loadServices();
-            } catch (e) { customAlert("يرجى فتح الموقع من متصفح Pi Browser"); }
-        }
-
-        // ================= القسم المالي (التبرعات) =================
-        async function loadData() {
-            const { data: dons } = await _supabase.from('donations').select('username, amount');
-            let total = 0, users = {};
-            if(dons) dons.forEach(d => { total += parseFloat(d.amount); users[d.username] = (users[d.username] || 0) + parseFloat(d.amount); });
-            document.getElementById('global-pool-amount').innerText = total.toFixed(2) + ' π';
-            document.getElementById('pool-progress').style.width = Math.min((total / 1000) * 100, 100) + '%';
+        // === دالة جلب المنتجات من قاعدة البيانات ===
+        async function fetchProducts() {
+            const container = document.getElementById('products-container');
             
-            const tops = Object.keys(users).map(u => ({ u, t: users[u] })).sort((a,b) => b.t - a.t).slice(0, 5);
-            document.getElementById('leaderboard').innerHTML = tops.map(u => `<span class="leader-item">${getBadge(u.t)} @${u.u}</span>`).join('');
+            // عرض رسالة تحميل أثناء جلب البيانات
+            container.innerHTML = '<div class="status-message"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل المنتجات...</div>';
 
-            const { data: reqs } = await _supabase.from('requests').select('*').order('status', { ascending: false }).order('votes_yes', { ascending: false });
-            if(reqs) renderCases(reqs);
-        }
-
-        function renderCases(reqs) {
-            const cont = document.getElementById('cases-container');
-            if(reqs.length === 0) { cont.innerHTML = "<p style='text-align:center; color:#888;'>لا توجد حالات.</p>"; return; }
-            const isAdmin = currentUser && currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
-
-            cont.innerHTML = reqs.map(r => {
-                const isFunded = r.status === 'funded';
-                const isOwner = currentUser && currentUser.username === r.username;
-                
-                let btns = isFunded 
-                    ? `<button class="btn-primary" style="background:var(--success); grid-column:span 2;" onclick="showImpact('${r.impact_url}')">🖼️ الأثر</button>`
-                    : `<div class="vote-actions"><button class="vote-yes-btn" onclick="voteForCase(${r.id}, 'yes')">👍 نعم</button><button class="vote-no-btn" onclick="voteForCase(${r.id}, 'no')">👎 لا</button></div>
-                       <button class="action-btn" onclick="showProof('${r.proof_url}')">📄 الإثبات</button>
-                       <button class="action-btn" onclick="openComments(${r.id}, 'requests')">💬 نقاش</button>`;
-                
-                let mgmt = (isAdmin || isOwner) ? `<button class="delete-btn" onclick="deleteItem(${r.id}, 'requests')">🗑️ حذف</button>` : '';
-                
-                return `<div class="card ${isFunded ? 'funded' : ''}">
-                    <div class="badge ${isFunded ? 'success' : 'warning'}">${isFunded ? 'تم التمويل ✅' : 'مفتوح للتصويت'}</div>
-                    <div class="card-header"><h3 class="card-title">#${r.id} - ${r.title}</h3><span class="card-user">@${r.username}</span></div>
-                    <p class="card-desc">${r.description}</p>
-                    <div class="meta-box">
-                        <div class="meta-item"><span class="meta-value" style="color:var(--primary-purple);">${r.target_amount} π</span><span class="meta-label">مطلوب</span></div>
-                        <div class="meta-item"><span class="meta-value" style="color:var(--success);">${r.votes_yes || 0}</span><span class="meta-label">نعم 👍</span></div>
-                        <div class="meta-item"><span class="meta-value" style="color:var(--danger);">${r.votes_no || 0}</span><span class="meta-label">لا 👎</span></div>
-                    </div>
-                    <div class="btn-group">${btns}</div><div class="controls-row">${mgmt}</div>
-                </div>`;
-            }).join('');
-        }
-
-        function donateToPool() {
-            if (!currentUser) return customAlert('سجل دخولك أولاً');
-            const amt = parseFloat(document.getElementById('pool-input').value);
-            if (!amt || amt <= 0) return customAlert('أدخل مبلغاً صحيحاً');
-            const btn = document.getElementById('donate-btn'); btn.disabled = true; btn.innerText = "جاري الدفع...";
-            Pi.createPayment({ amount: amt, memo: `دعم مجمع الخير`, metadata: { type: 'global_pool' } }, {
-                onReadyForServerApproval: (payId) => fetch('/api/pi/approve', { method:'POST', body: JSON.stringify({ paymentId: payId }) }),
-                onReadyForServerCompletion: (payId, tx) => fetch('/api/pi/complete', { method:'POST', body: JSON.stringify({ paymentId: payId, txid: tx }) })
-                .then(async () => { await _supabase.from('donations').insert([{ username: currentUser.username, amount: amt }]); confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); customAlert('شكراً لعطائك! تم التبرع بنجاح.'); btn.disabled = false; btn.innerText = "تبرع لدعم المجمع"; document.getElementById('pool-input').value = ''; loadData(); }),
-                onCancel: () => { btn.disabled = false; btn.innerText = "تبرع لدعم المجمع"; },
-                onError: () => { btn.disabled = false; btn.innerText = "تبرع لدعم المجمع"; customAlert('حدث خطأ'); }
-            });
-        }
-
-        async function voteForCase(caseId, voteType) {
-            if (!currentUser) return customAlert('سجل دخولك');
-            const { error: vErr } = await _supabase.from('votes_log').insert([{ request_id: caseId, username: currentUser.username, vote_type: voteType }]);
-            if (vErr) return customAlert(vErr.code === '23505' ? 'صوتّ مسبقاً.' : 'خطأ بالتصويت.');
-            const { data: cur } = await _supabase.from('requests').select('votes_yes, votes_no').eq('id', caseId).single();
-            let up = voteType === 'yes' ? { votes_yes: (cur.votes_yes || 0) + 1 } : { votes_no: (cur.votes_no || 0) + 1 };
-            await _supabase.from('requests').update(up).eq('id', caseId);
-            customAlert('تم التسجيل!'); loadData();
-        }
-
-        async function submitRequest() {
-            if (!currentUser) return customAlert('سجل دخولك أولاً');
-            const title = document.getElementById('req-title').value, desc = document.getElementById('req-desc').value, amount = document.getElementById('req-amount').value, file = document.getElementById('req-proof-file').files[0];
-            if(!title || !amount || !file) return customAlert('أكمل البيانات وأرفق الصورة');
-            const btn = document.getElementById('submit-req-btn'); btn.disabled = true; btn.innerText = "جاري الإرسال...";
             try {
-                const fileName = `proof_${Date.now()}_${currentUser.username}.${file.name.split('.').pop()}`;
-                await _supabase.storage.from('proofs').upload(fileName, file);
-                const { data: { publicUrl } } = _supabase.storage.from('proofs').getPublicUrl(fileName);
-                await _supabase.from('requests').insert([{ username: currentUser.username, title, description: desc, target_amount: parseFloat(amount), proof_url: publicUrl }]);
-                customAlert('تم رفع طلبك للمجتمع بنجاح!'); closeModal('request-modal'); loadData();
-            } catch (e) { customAlert('حدث خطأ'); } finally { btn.disabled = false; btn.innerText = "إرسال الطلب"; }
+                // جلب المنتجات من جدول products وترتيبها من الأحدث للأقدم
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // مسح رسالة التحميل
+                container.innerHTML = '';
+
+                // إذا لم يكن هناك منتجات
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="status-message">لا توجد منتجات معروضة حالياً.</div>';
+                    return;
+                }
+
+                // إنشاء الكروت لكل منتج ووضعها في الصفحة
+                data.forEach(product => {
+                    // توليد حرف افتراضي للبائع (أول حرف من العنوان مثلاً إذا لم يكن هناك اسم)
+                    const sellerInitial = product.title ? product.title.charAt(0).toUpperCase() : 'U';
+                    // صورة افتراضية في حال لم يضع البائع صورة
+                    const imageUrl = product.image_url || 'https://via.placeholder.com/300?text=لا+توجد+صورة';
+                    const location = product.location || 'غير محدد';
+
+                    const cardHTML = `
+                        <div class="product-card">
+                            <div class="product-image" style="background-image: url('${imageUrl}');">
+                                <div class="location-tag">
+                                    <i class="fa-solid fa-location-dot"></i> ${location}
+                                </div>
+                            </div>
+                            <div class="product-title">${product.title}</div>
+                            <div class="product-price">π ${product.price}</div>
+                            <div class="seller-initial">${sellerInitial}</div>
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
+                });
+
+            } catch (error) {
+                console.error("خطأ في جلب المنتجات:", error.message);
+                container.innerHTML = '<div class="status-message" style="color: red;">حدث خطأ أثناء تحميل المنتجات. تأكد من إعدادات قاعدة البيانات.</div>';
+            }
         }
 
-        // ================= قسم الخدمات المجانية =================
-        async function loadServices() {
-            // جلب المساعدين للمتصدرين
-            const { data: completed } = await _supabase.from('services').select('helper_username').eq('status', 'completed').not('helper_username', 'is', null);
-            let helpersCount = {};
-            if(completed) completed.forEach(s => helpersCount[s.helper_username] = (helpersCount[s.helper_username] || 0) + 1);
-            const topHelpers = Object.keys(helpersCount).map(u => ({ u, c: helpersCount[u] })).sort((a,b) => b.c - a.c).slice(0, 5);
-            document.getElementById('helpers-leaderboard').innerHTML = topHelpers.length ? topHelpers.map(u => `<span class="leader-item">⭐ @${u.u} (${u.c} مساعدة)</span>`).join('') : '<span class="leader-item" style="color:#888;">لا يوجد مساعدين بعد</span>';
+        // === دالة تسجيل الدخول باستخدام جوجل ===
+        async function signInWithGoogle() {
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin // للعودة لنفس الصفحة بعد التسجيل
+                    }
+                });
+                if (error) throw error;
+            } catch (error) {
+                console.error("حدث خطأ أثناء تسجيل الدخول:", error.message);
+                alert("لم نتمكن من تسجيل الدخول. تأكد من تفعيل Google Provider في Supabase.");
+            }
+        }
 
-            // جلب طلبات الخدمات
-            const { data: srvs } = await _supabase.from('services').select('*').order('status', { ascending: false }).order('id', { ascending: false });
-            const cont = document.getElementById('services-container');
-            const isAdmin = currentUser && currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
-
-            if(!srvs || srvs.length === 0) { cont.innerHTML = "<p style='text-align:center; color:#888;'>لا توجد خدمات مطلوبة حالياً.</p>"; return; }
-
-            cont.innerHTML = srvs.map(s => {
-                const isCompleted = s.status === 'completed';
-                const isOwner = currentUser && currentUser.username === s.username;
+        // === دالة للتحقق من حالة المستخدم ===
+        async function checkUserSession() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const loginBtn = document.getElementById('login-btn');
                 
-                let btns = isCompleted 
-                    ? `<button class="btn-primary" style="background:#eee; color:#555; cursor:default; grid-column:span 2;">تم إنجازها بواسطة @${s.helper_username}</button>`
-                    : `<button class="btn-primary" style="background:#3498db;" onclick="openComments(${s.id}, 'services')">💬 تقديم المساعدة (نقاش)</button>
-                       ${(isOwner || isAdmin) ? `<button class="btn-primary" style="background:var(--success);" onclick="promptHelper(${s.id})">✅ إنهاء الخدمة بنجاح</button>` : ''}`;
-                
-                let mgmt = (isAdmin || isOwner) ? `<button class="delete-btn" onclick="deleteItem(${s.id}, 'services')">🗑️ حذف الطلب</button>` : '';
-
-                return `<div class="card ${isCompleted ? 'funded' : ''}" style="border-color: ${isCompleted ? 'var(--success)' : '#3498db'};">
-                    <div class="badge ${isCompleted ? 'success' : 'info'}">${isCompleted ? 'مكتملة ✅' : 'تبحث عن مساعد 🔍'}</div>
-                    <div class="card-header"><h3 class="card-title">${s.title}</h3><span class="card-user">@${s.username}</span></div>
-                    <p class="card-desc">${s.description}</p>
-                    <div class="btn-group">${btns}</div><div class="controls-row">${mgmt}</div>
-                </div>`;
-            }).join('');
+                if (session) {
+                    // تغيير شكل الزر إذا كان مسجل دخول
+                    loginBtn.innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
+                    loginBtn.onclick = () => window.location.href = 'account.html';
+                }
+            } catch (error) {
+                console.error("خطأ في التحقق من الجلسة:", error.message);
+            }
         }
 
-        async function submitService() {
-            if (!currentUser) return customAlert('سجل دخولك');
-            const title = document.getElementById('srv-title').value, desc = document.getElementById('srv-desc').value;
-            if(!title || !desc) return customAlert('أكمل البيانات');
-            const btn = document.getElementById('submit-srv-btn'); btn.disabled = true; btn.innerText = "جاري النشر...";
-            await _supabase.from('services').insert([{ username: currentUser.username, title, description: desc }]);
-            customAlert('تم نشر طلبك! تابع النقاشات قريباً.'); closeModal('service-modal'); loadServices();
-            btn.disabled = false; btn.innerText = "نشر الطلب للمجتمع";
-            document.getElementById('srv-title').value = ''; document.getElementById('srv-desc').value = '';
-        }
-
-        function promptHelper(id) {
-            currentServiceToComplete = id;
-            document.getElementById('helper-username').value = '';
-            openModal('complete-service-modal');
-        }
-
-        async function executeCompleteService() {
-            const helper = document.getElementById('helper-username').value.trim();
-            if(!helper) return customAlert('يرجى كتابة اسم المساعد');
-            await _supabase.from('services').update({ status: 'completed', helper_username: helper }).eq('id', currentServiceToComplete);
-            confetti(); customAlert('تم إغلاق الطلب! شكراً لتعاونكم.'); closeModal('complete-service-modal'); loadServices();
-        }
-
-        // المشتركات (حذف، تعليقات، إدارة)
-        function deleteItem(id, table) {
-            customConfirm('هل أنت متأكد من الحذف؟', async () => {
-                await _supabase.from(table).delete().eq('id', id);
-                customAlert('تم الحذف.');
-                table === 'requests' ? loadData() : loadServices();
-            });
-        }
-
-        let currentCommentTable = 'requests';
-        async function openComments(id, table) {
-            currentCaseIdForComment = id; currentCommentTable = table;
-            document.getElementById('comments-list').innerHTML = 'جاري التحميل...'; openModal('comments-modal');
-            // نحتاج إضافة عمود 'type' أو استخدام جدول موحد. للتبسيط سأفترض أن Comments للطلبات فقط حالياً، 
-            // لكن لتجنب التعقيد سأجعلها تعمل على Requests فقط (تم إضافة دعم Services ضمناً إذا كان الـ ID لا يتعارض).
-            const { data } = await _supabase.from('comments').select('*').eq('request_id', id).order('id', { ascending: true });
-            if(data && data.length > 0) document.getElementById('comments-list').innerHTML = data.map(c => `<div class="comment-box"><div class="comment-user">@${c.username}</div>${c.comment}</div>`).join('');
-            else document.getElementById('comments-list').innerHTML = '<p style="color:#888; text-align:center;">لا توجد تعليقات.</p>';
-        }
-
-        async function postComment() {
-            if(!currentUser) return customAlert('سجل دخولك');
-            const text = document.getElementById('new-comment').value; if(!text) return;
-            await _supabase.from('comments').insert([{ request_id: currentCaseIdForComment, username: currentUser.username, comment: text }]);
-            document.getElementById('new-comment').value = ''; openComments(currentCaseIdForComment, currentCommentTable);
-        }
-
-        async function markAsFunded() {
-            const id = document.getElementById('admin-case-id').value, file = document.getElementById('admin-impact-file').files[0];
-            if(!id || !file) return;
-            const fileName = `impact_${Date.now()}.${file.name.split('.').pop()}`;
-            await _supabase.storage.from('proofs').upload(fileName, file);
-            const { data: { publicUrl } } = _supabase.storage.from('proofs').getPublicUrl(fileName);
-            await _supabase.from('requests').update({ status: 'funded', impact_url: publicUrl }).eq('id', id);
-            customAlert('تم التمويل!'); closeModal('admin-modal'); loadData();
-        }
-
-        function showImpact(url) { document.getElementById('impact-img-src').src = url; openModal('impact-modal'); }
-        function showProof(url) { document.getElementById('proof-img-src').src = url; openModal('proof-modal'); }
-
-        window.onload = () => { Pi.init({version:"2.0"}); loadData(); };
+        // تشغيل الدوال عند تحميل الصفحة
+        window.onload = () => {
+            fetchProducts();
+            checkUserSession();
+        };
     </script>
 </body>
 </html>
