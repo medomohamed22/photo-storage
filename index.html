@@ -16,7 +16,6 @@
             --text-light: #888888; --success-green: #2ecc71; --danger-red: #e74c3c;
         }
 
-        /* الوضع الداكن */
         body.dark-mode {
             --bg: #121212; --card: #1e1e1e; --text-dark: #f5f6f9; --text-light: #aaa;
         }
@@ -35,7 +34,6 @@
             border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
-        /* خانة البحث */
         .search-container { padding: 0 20px 15px; }
         .search-bar { 
             width: 100%; padding: 12px 15px; border-radius: 15px; border: 1px solid #ddd; 
@@ -54,7 +52,6 @@
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         .countdown { font-size: 13px; color: var(--primary-red); font-weight: bold; margin-right: auto; background: #fee2e2; padding: 4px 10px; border-radius: 10px; }
 
-        /* شبكة المنتجات */
         .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px 20px; }
         .product-card {
             background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
@@ -64,13 +61,13 @@
         .product-image-container { position: relative; width: 100%; height: 180px; overflow: hidden; cursor: pointer; }
         .product-image { width: 100%; height: 100%; background-size: cover; background-position: center; background-color: #eee; }
         
-        /* المفضلة */
         .wishlist-btn { 
             position: absolute; top: 10px; left: 10px; z-index: 11; 
             background: rgba(255,255,255,0.9); border: none; width: 32px; height: 32px; 
             border-radius: 50%; color: #ccc; cursor: pointer; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .wishlist-btn.active { color: var(--primary-red); }
+        .wishlist-btn.active { color: var(--primary-red) !important; }
 
         .availability-badge {
             position: absolute; top: 10px; right: 10px; color: white;
@@ -92,7 +89,6 @@
         .nav-item.active { color: var(--primary-purple); }
         .nav-item i { font-size: 20px; }
 
-        /* نافذة التفاصيل */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: flex-end;
@@ -209,6 +205,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
         let allProducts = [];
+        let userWishlist = [];
 
         // 1. الوضع الداكن
         function toggleDarkMode() {
@@ -229,49 +226,84 @@
             renderProducts(filtered);
         }
 
-        // 3. جلب المنتجات
+        // 3. جلب المفضلة للمستخدم الحالي
+        async function fetchUserWishlist() {
+            if (!currentUser) return;
+            const { data } = await supabaseClient.from('wishlist').select('product_id').eq('user_id', currentUser.id);
+            userWishlist = data ? data.map(item => item.product_id) : [];
+        }
+
+        // 4. جلب المنتجات مع التقييمات
         async function fetchProducts(catId = 'all') {
             const container = document.getElementById("products");
             container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px;">جاري التحميل...</div>`;
             
-            let query = supabaseClient.from("products").select("*").order("created_at", { ascending: false });
-            if(catId !== 'all') query = query.eq('category_id', catId);
+            // جلب المنتجات مع متوسط التقييمات من جدول reviews
+            let { data: products, error } = await supabaseClient.from("products").select(`*, reviews(rating)`).order("created_at", { ascending: false });
             
-            const { data, error } = await query;
+            if(catId !== 'all') products = products.filter(p => p.category_id == catId);
+            
             if (!error) { 
-                if(catId === 'all') allProducts = data; 
-                renderProducts(data); 
+                if(catId === 'all') allProducts = products;
+                await fetchUserWishlist();
+                renderProducts(products); 
             }
         }
 
         function renderProducts(data) {
             const container = document.getElementById("products");
             container.innerHTML = data.length ? "" : `<div style="grid-column:1/-1; text-align:center; padding:50px;">لا توجد نتائج</div>`;
+            
             data.forEach(p => {
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
+                const isWished = userWishlist.includes(p.id);
+                
+                // حساب التقييم الحقيقي
+                const ratings = p.reviews || [];
+                const avgRating = ratings.length > 0 ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length).toFixed(1) : "جديد";
+
                 container.innerHTML += `
                     <div class="product-card">
-                        <button class="wishlist-btn" onclick="toggleWishlist(${p.id})"><i class="fa-solid fa-heart"></i></button>
+                        <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(event, ${p.id})">
+                            <i class="fa-solid fa-heart"></i>
+                        </button>
                         <div class="product-image-container" onclick="openProduct('${encodeURIComponent(JSON.stringify(p))}')">
                             <div class="availability-badge ${p.is_available ? 'badge-available' : 'badge-unavailable'}">${p.is_available ? 'متوفر' : 'نفد'}</div>
                             <div class="product-image" style="background-image:url('${img}')"></div>
                         </div>
                         <div class="product-title">${p.title}</div>
-                        <div class="product-rating"><i class="fa-solid fa-star"></i> 4.9 (موصى به)</div>
+                        <div class="product-rating"><i class="fa-solid fa-star"></i> ${avgRating}</div>
                         <div class="product-price">${p.price} ج.م</div>
                     </div>`;
             });
         }
 
-        // 4. المفضلة
-        async function toggleWishlist(prodId) {
+        // 5. نظام المفضلة المطور
+        async function toggleWishlist(event, prodId) {
+            event.stopPropagation();
             if(!currentUser) return alert("سجل دخولك أولاً لإضافة المنتج للمفضلة");
-            const { error } = await supabaseClient.from('wishlist').insert([{ user_id: currentUser.id, product_id: prodId }]);
-            if(error) alert("المنتج موجود في مفضلتك بالفعل");
-            else alert("تمت الإضافة للمفضلة بنجاح ❤️");
+
+            const btn = event.currentTarget;
+            const isRemoving = btn.classList.contains('active');
+
+            if (isRemoving) {
+                // حذف من المفضلة
+                const { error } = await supabaseClient.from('wishlist').delete().eq('user_id', currentUser.id).eq('product_id', prodId);
+                if(!error) {
+                    btn.classList.remove('active');
+                    userWishlist = userWishlist.filter(id => id !== prodId);
+                }
+            } else {
+                // إضافة للمفضلة
+                const { error } = await supabaseClient.from('wishlist').insert([{ user_id: currentUser.id, product_id: prodId }]);
+                if(!error) {
+                    btn.classList.add('active');
+                    userWishlist.push(prodId);
+                }
+            }
         }
 
-        // 5. العداد التنازلي
+        // 6. العداد التنازلي
         function startTimer() {
             let time = 3600 * 8; 
             setInterval(() => {
@@ -283,10 +315,8 @@
             }, 1000);
         }
 
-        // 6. تفاصيل المنتج وسلايدر الصور
         function scrollGallery(dir) {
             const g = document.getElementById('m-gallery');
-            // في اتجاه RTL التمرير لليمين يكون بالقيمة الموجبة لليسار
             g.scrollBy({ left: dir * g.clientWidth, behavior: 'smooth' });
         }
 
@@ -312,7 +342,6 @@
 
         function closeModal() { document.getElementById('productModal').style.display = 'none'; }
 
-        // 7. الفلترة
         document.querySelectorAll('.category-pill').forEach(pill => {
             pill.addEventListener('click', (e) => {
                 document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
@@ -321,7 +350,6 @@
             });
         });
 
-        // 8. تسجيل الدخول
         async function signIn() { 
             await supabaseClient.auth.signInWithOAuth({ 
                 provider: "google", 
@@ -332,12 +360,12 @@
         document.getElementById("loginBtn").onclick = () => currentUser ? location.href="account.html" : signIn();
         document.getElementById("accountNavBtn").onclick = () => currentUser ? location.href="account.html" : signIn();
 
-        supabaseClient.auth.onAuthStateChange((event, session) => {
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
             currentUser = session?.user;
             document.getElementById("loginBtn").innerHTML = session ? `حسابي <i class="fa-solid fa-user-check"></i>` : `تسجيل دخول <i class="fa-solid fa-fingerprint"></i>`;
+            if (currentUser) fetchProducts(); // تحديث القائمة لإظهار القلوب الحمراء
         });
 
-        // إرسال الطلب
         document.getElementById('checkoutForm').onsubmit = async (e) => {
             e.preventDefault();
             if(!currentUser) return alert("سجل دخولك أولاً!");
