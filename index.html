@@ -37,7 +37,7 @@
         .category-pill {
             display: flex; align-items: center; gap: 8px; padding: 8px 20px; border-radius: 25px;
             background-color: var(--card); border: 1px solid #eee; color: var(--text-dark);
-            white-space: nowrap; cursor: pointer; font-weight: 600; transition: 0.3s;
+            white-space: nowrap; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 15px;
         }
         .category-pill.active { background-color: var(--primary-purple); color: white; border-color: var(--primary-purple); }
 
@@ -46,16 +46,14 @@
 
         .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px 20px 20px; }
         .product-card {
-            background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            text-align: center; padding-bottom: 12px; display: flex; flex-direction: column; cursor: pointer;
+            background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            text-align: center; padding-bottom: 15px; display: flex; flex-direction: column; cursor: pointer; transition: 0.3s;
         }
-        .product-image { height: 140px; background-size: cover; background-position: center; background-color: #eee; position: relative; }
-        .location-tag {
-            position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white;
-            padding: 3px 8px; border-radius: 10px; font-size: 10px; display: flex; align-items: center; gap: 4px;
-        }
-        .product-title { font-weight: 700; font-size: 14px; margin: 12px 10px 8px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .product-price { background: #fceea7; color: #966114; padding: 4px 15px; border-radius: 20px; font-weight: 700; font-size: 14px; display: inline-block; margin: 0 auto; }
+        .product-card:active { transform: scale(0.98); }
+        .product-image { height: 180px; background-size: cover; background-position: center; background-color: #eee; position: relative; }
+        
+        .product-title { font-weight: 700; font-size: 15px; margin: 12px 10px 8px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dark);}
+        .product-price { background: #fceea7; color: #966114; padding: 5px 18px; border-radius: 20px; font-weight: 700; font-size: 15px; display: inline-block; margin: 0 auto; }
 
         .status { grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-light); font-weight: 600; }
 
@@ -71,7 +69,7 @@
         /* نافذة تفاصيل المنتج والشراء (Modal) */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end;
+            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: flex-end;
         }
         .modal-content {
             background: white; width: 100%; border-top-left-radius: 25px; border-top-right-radius: 25px;
@@ -79,20 +77,48 @@
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .close-modal { background: none; border: none; font-size: 24px; color: var(--text-light); cursor: pointer; }
         
-        .modal-img { width: 100%; height: 200px; border-radius: 15px; object-fit: cover; margin-bottom: 15px; }
-        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
-        .modal-price { color: var(--primary-orange); font-size: 22px; font-weight: 700; margin-bottom: 15px; }
-        .modal-desc { color: var(--text-light); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+        /* معرض الصور المطور بأسهم وتمرير ناعم */
+        .gallery-wrapper { position: relative; width: 100%; margin-bottom: 10px; }
+        .modal-gallery {
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 0;
+            scrollbar-width: none; border-radius: 15px; scroll-behavior: smooth;
+        }
+        .modal-gallery::-webkit-scrollbar { display: none; }
+        .modal-gallery img {
+            width: 100%; height: 320px; flex-shrink: 0; object-fit: cover; scroll-snap-align: center;
+        }
+        
+        /* أسهم التنقل */
+        .gallery-nav {
+            position: absolute; top: 50%; width: 100%; display: flex;
+            justify-content: space-between; transform: translateY(-50%);
+            padding: 0 10px; pointer-events: none;
+        }
+        .nav-arrow {
+            width: 35px; height: 35px; background: rgba(255,255,255,0.8);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            color: var(--text-dark); cursor: pointer; pointer-events: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;
+        }
+        .nav-arrow:active { transform: scale(0.9); }
 
-        .checkout-form { display: flex; flex-direction: column; gap: 10px; }
-        .checkout-form input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-family: 'Cairo'; outline: none;}
+        .modal-title { font-size: 22px; font-weight: 700; margin-bottom: 5px; color: var(--text-dark);}
+        .modal-price { color: var(--primary-orange); font-size: 24px; font-weight: 700; margin-bottom: 15px; }
+        .modal-desc { color: #555; font-size: 15px; margin-bottom: 15px; line-height: 1.6; }
+        
+        .info-box { background: var(--bg); padding: 12px 15px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-dark);}
+        .info-box i { color: var(--primary-purple); font-size: 18px; }
+        .info-box.cod i { color: #2ecc71; }
+
+        .checkout-form { display: flex; flex-direction: column; gap: 10px; margin-top: 15px;}
+        .checkout-form input { padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-family: 'Cairo'; outline: none; font-size: 14px;}
         .checkout-form input:focus { border-color: var(--primary-purple); }
         .btn-order {
             background: var(--primary-purple); color: white; border: none; padding: 15px;
-            border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;
+            border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.3s;
         }
     </style>
 </head>
@@ -105,12 +131,12 @@
 
     <div class="categories-scroll" id="categories-filter">
         <div class="category-pill active" data-id="all"><i class="fa-solid fa-layer-group"></i> الكل</div>
-        <div class="category-pill" data-id="2"><i class="fa-solid fa-car"></i> سيارات</div>
-        <div class="category-pill" data-id="3"><i class="fa-solid fa-laptop"></i> إلكترونيات</div>
-        <div class="category-pill" data-id="1"><i class="fa-solid fa-box"></i> أخرى</div>
+        <div class="category-pill" data-id="1"><i class="fa-solid fa-bag-shopping"></i> شنط</div>
+        <div class="category-pill" data-id="2"><i class="fa-solid fa-shoe-prints"></i> أحذية</div>
+        <div class="category-pill" data-id="3"><i class="fa-solid fa-gem"></i> إكسسوارات</div>
     </div>
 
-    <div class="section-title"><i class="fa-solid fa-fire"></i> المعروضات</div>
+    <div class="section-title"><i class="fa-solid fa-fire"></i> أحدث المعروضات</div>
 
     <main class="products-grid" id="products"></main>
 
@@ -129,19 +155,34 @@
                 <h3 id="m-title" class="modal-title"></h3>
                 <button class="close-modal" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
             </div>
-            <img id="m-img" class="modal-img" src="" alt="Product">
+            
+            <div class="gallery-wrapper">
+                <div id="m-gallery" class="modal-gallery"></div>
+                <div class="gallery-nav" id="gallery-arrows">
+                    <div class="nav-arrow" onclick="scrollGallery(1)"><i class="fa-solid fa-chevron-right"></i></div>
+                    <div class="nav-arrow" onclick="scrollGallery(-1)"><i class="fa-solid fa-chevron-left"></i></div>
+                </div>
+            </div>
+
             <div id="m-price" class="modal-price"></div>
             <p id="m-desc" class="modal-desc"></p>
             
-            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
-            <h4 style="margin-bottom: 10px;">بيانات الاستلام</h4>
+            <div class="info-box cod">
+                <i class="fa-solid fa-hand-holding-dollar"></i> <span>الدفع عند الاستلام (كاش)</span>
+            </div>
+            <div class="info-box">
+                <i class="fa-solid fa-truck-fast"></i> <span>سعر التوصيل: <b id="m-delivery"></b> ج.م</span>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            <h4 style="margin-bottom: 10px; color: var(--text-dark);">بيانات الاستلام للتأكيد</h4>
             
             <form class="checkout-form" id="checkoutForm">
                 <input type="hidden" id="order-product-id">
-                <input type="text" id="order-name" placeholder="الاسم بالكامل" required>
-                <input type="tel" id="order-phone" placeholder="رقم الهاتف" required>
+                <input type="text" id="order-name" placeholder="الاسم بالكامل الثلاثي" required>
+                <input type="tel" id="order-phone" placeholder="رقم الهاتف للتواصل" required>
                 <input type="text" id="order-address" placeholder="العنوان بالتفصيل" required>
-                <button type="submit" class="btn-order" id="submitOrderBtn">تأكيد الطلب</button>
+                <button type="submit" class="btn-order" id="submitOrderBtn">تأكيد وإرسال الطلب</button>
             </form>
         </div>
     </div>
@@ -151,43 +192,31 @@
         const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let currentUser = null; // لتخزين بيانات المستخدم المسجل
+        let currentUser = null; 
 
-        // === دالة جلب المنتجات ===
         async function fetchProducts(categoryId = 'all') {
             const container = document.getElementById("products");
             container.innerHTML = `<div class="status"><i class="fa-solid fa-spinner fa-spin"></i> جارى التحميل...</div>`;
-
             try {
                 let query = supabaseClient.from("products").select("*").order("created_at", { ascending: false });
                 if (categoryId !== 'all') query = query.eq('category_id', categoryId);
-
                 const { data, error } = await query;
                 if (error) throw error;
-                if (!data || !data.length) { container.innerHTML = `<div class="status">لا توجد منتجات</div>`; return; }
-
+                if (!data || !data.length) { container.innerHTML = `<div class="status">لا توجد منتجات حالياً</div>`; return; }
                 container.innerHTML = "";
                 data.forEach(product => {
-                    const image = product.image_url || "https://via.placeholder.com/300";
-                    const location = product.location || "غير محدد";
-                    
-                    // تمرير بيانات المنتج كـ JSON لفتحها في النافذة
+                    let firstImage = product.image_url ? product.image_url.split(',')[0] : "https://via.placeholder.com/300";
                     const prodJson = encodeURIComponent(JSON.stringify(product));
-
                     container.innerHTML += `
                     <div class="product-card" onclick="openProduct('${prodJson}')">
-                        <div class="product-image" style="background-image:url('${image}')">
-                            <div class="location-tag"><i class="fa-solid fa-location-dot"></i> ${location}</div>
-                        </div>
+                        <div class="product-image" style="background-image:url('${firstImage}')"></div>
                         <div class="product-title">${product.title}</div>
-                        <div class="product-price">π ${product.price}</div>
-                    </div>
-                    `;
+                        <div class="product-price">${product.price} ج.م</div>
+                    </div>`;
                 });
             } catch (error) { console.error(error); }
         }
 
-        // فلترة الأقسام
         document.querySelectorAll('.category-pill').forEach(pill => {
             pill.addEventListener('click', (e) => {
                 document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
@@ -197,74 +226,67 @@
             });
         });
 
-        // === التعامل مع النافذة المنبثقة (Modal) وإرسال الطلب ===
+        // دوال معرض الصور
+        function scrollGallery(direction) {
+            const gallery = document.getElementById('m-gallery');
+            const width = gallery.clientWidth;
+            gallery.scrollBy({ left: direction * width, behavior: 'smooth' });
+        }
+
         function openProduct(productJsonData) {
             const product = JSON.parse(decodeURIComponent(productJsonData));
             document.getElementById('m-title').innerText = product.title;
-            document.getElementById('m-img').src = product.image_url || "https://via.placeholder.com/300";
-            document.getElementById('m-price').innerText = `π ${product.price}`;
-            document.getElementById('m-desc').innerText = product.description || "لا يوجد وصف إضافي لهذا المنتج.";
-            document.getElementById('order-product-id').value = product.id;
+            document.getElementById('m-price').innerText = `${product.price} ج.م`;
+            document.getElementById('m-desc').innerText = product.description || "";
+            document.getElementById('m-delivery').innerText = (product.delivery_cost == 0 || !product.delivery_cost) ? "مجاناً" : product.delivery_cost;
             
+            const gallery = document.getElementById('m-gallery');
+            gallery.innerHTML = '';
+            let imagesArray = product.image_url ? product.image_url.split(',') : ["https://via.placeholder.com/300"];
+            
+            imagesArray.forEach(imgUrl => {
+                if(imgUrl.trim()) gallery.innerHTML += `<img src="${imgUrl.trim()}">`;
+            });
+
+            document.getElementById('gallery-arrows').style.display = imagesArray.length > 1 ? 'flex' : 'none';
+            document.getElementById('order-product-id').value = product.id;
             document.getElementById('productModal').style.display = 'flex';
+            gallery.scrollLeft = 0; // إعادة التمرير للبداية عند الفتح
         }
 
-        function closeModal() {
-            document.getElementById('productModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('productModal').style.display = 'none'; }
 
-        // إرسال الطلب لقاعدة البيانات
         document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            if(!currentUser) {
-                alert("يجب تسجيل الدخول أولاً لإتمام الطلب!");
-                return;
-            }
-
+            if(!currentUser) { alert("يجب تسجيل الدخول أولاً!"); return; }
             const btn = document.getElementById('submitOrderBtn');
-            btn.innerText = "جاري الإرسال...";
-            btn.disabled = true;
-
-            const orderData = {
-                user_id: currentUser.id,
-                product_id: document.getElementById('order-product-id').value,
-                full_name: document.getElementById('order-name').value,
-                phone: document.getElementById('order-phone').value,
-                address: document.getElementById('order-address').value
-            };
-
+            btn.innerText = "جاري الإرسال..."; btn.disabled = true;
             try {
-                const { error } = await supabaseClient.from('orders').insert([orderData]);
+                const { error } = await supabaseClient.from('orders').insert([{
+                    user_id: currentUser.id,
+                    product_id: document.getElementById('order-product-id').value,
+                    full_name: document.getElementById('order-name').value,
+                    phone: document.getElementById('order-phone').value,
+                    address: document.getElementById('order-address').value
+                }]);
                 if (error) throw error;
-                
-                alert("تم تسجيل طلبك بنجاح! يمكنك تتبعه من صفحة حسابي.");
-                closeModal();
+                alert("تم تسجيل طلبك بنجاح!"); closeModal();
                 document.getElementById('checkoutForm').reset();
-            } catch (error) {
-                alert("حدث خطأ أثناء الطلب: " + error.message);
-            } finally {
-                btn.innerText = "تأكيد الطلب";
-                btn.disabled = false;
-            }
+            } catch (error) { alert("خطأ: " + error.message); }
+            finally { btn.innerText = "تأكيد وإرسال الطلب"; btn.disabled = false; }
         });
 
-        // === تسجيل الدخول وحالة المستخدم ===
-        async function signIn() {
-            await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
-        }
-
+        async function signIn() { await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); }
         document.getElementById("loginBtn").onclick = signIn;
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
             const btn = document.getElementById("loginBtn");
             const accountNav = document.getElementById("accountNavBtn");
-            
             if (session) {
-                currentUser = session.user; // حفظ بيانات المستخدم
+                currentUser = session.user;
                 btn.innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
                 btn.onclick = () => location.href = "account.html";
-                accountNav.style.display = "flex"; // إظهار زر حسابي في الأسفل
+                accountNav.style.display = "flex";
             } else {
                 currentUser = null;
                 btn.innerHTML = `دخول <i class="fa-solid fa-fingerprint"></i>`;
