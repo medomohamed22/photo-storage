@@ -7,7 +7,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
 
     <style>
         :root {
@@ -153,7 +153,8 @@
         <div class="countdown" id="timer">00:00:00</div>
     </div>
 
-    <main class="products-grid" id="products"></main>
+    <main class="products-grid" id="products">
+        </main>
 
     <nav class="bottom-nav">
         <a class="nav-item active" href="index.html">
@@ -203,6 +204,7 @@
         const SUPABASE_URL = "https://jtbxdymviqmfhffixmat.supabase.co";
         const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         let currentUser = null;
         let allProducts = [];
         let userWishlist = [];
@@ -226,39 +228,49 @@
             renderProducts(filtered);
         }
 
-        // 3. جلب المفضلة للمستخدم الحالي
+        // 3. جلب المفضلة
         async function fetchUserWishlist() {
             if (!currentUser) return;
-            const { data } = await supabaseClient.from('wishlist').select('product_id').eq('user_id', currentUser.id);
-            userWishlist = data ? data.map(item => item.product_id) : [];
+            try {
+                const { data } = await supabaseClient.from('wishlist').select('product_id').eq('user_id', currentUser.id);
+                userWishlist = data ? data.map(item => item.product_id) : [];
+            } catch (e) { console.error(e); }
         }
 
-        // 4. جلب المنتجات (تعديل: جلب التقييم من جدول المنتجات مباشرة)
+        // 4. جلب المنتجات (تحسين الأداء والتأكد من التنفيذ)
         async function fetchProducts(catId = 'all') {
             const container = document.getElementById("products");
+            // مسح المحتوى القديم وإظهار رسالة تحميل
             container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px;">جاري التحميل...</div>`;
             
-            let query = supabaseClient.from("products").select("*").order("created_at", { ascending: false });
-            
-            const { data, error } = await query;
-            if (!error) { 
-                allProducts = data;
+            try {
+                let { data: products, error } = await supabaseClient.from("products").select("*").order("created_at", { ascending: false });
+                
+                if (error) throw error;
+
+                allProducts = products;
                 await fetchUserWishlist();
                 
-                let displayData = (catId !== 'all') ? data.filter(p => p.category_id == catId) : data;
+                let displayData = (catId !== 'all') ? products.filter(p => p.category_id == catId) : products;
                 renderProducts(displayData); 
+
+            } catch (error) {
+                container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; color:red;">حدث خطأ في تحميل المنتجات: ${error.message}</div>`;
+                console.error("Supabase Error:", error);
             }
         }
 
         function renderProducts(data) {
             const container = document.getElementById("products");
-            container.innerHTML = data.length ? "" : `<div style="grid-column:1/-1; text-align:center; padding:50px;">لا توجد نتائج</div>`;
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px;">لا توجد نتائج متوفرة</div>`;
+                return;
+            }
             
+            container.innerHTML = "";
             data.forEach(p => {
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
                 const isWished = userWishlist.includes(p.id);
-                
-                // جلب التقييم من عمود rating في جدول المنتجات
                 const ratingValue = p.rating ? parseFloat(p.rating).toFixed(1) : "5.0";
 
                 container.innerHTML += `
@@ -277,7 +289,7 @@
             });
         }
 
-        // 5. نظام المفضلة
+        // 5. المفضلة
         async function toggleWishlist(event, prodId) {
             event.stopPropagation();
             if(!currentUser) return alert("سجل دخولك أولاً لإضافة المنتج للمفضلة");
@@ -285,22 +297,24 @@
             const btn = event.currentTarget;
             const isRemoving = btn.classList.contains('active');
 
-            if (isRemoving) {
-                const { error } = await supabaseClient.from('wishlist').delete().eq('user_id', currentUser.id).eq('product_id', prodId);
-                if(!error) {
-                    btn.classList.remove('active');
-                    userWishlist = userWishlist.filter(id => id !== prodId);
+            try {
+                if (isRemoving) {
+                    const { error } = await supabaseClient.from('wishlist').delete().eq('user_id', currentUser.id).eq('product_id', prodId);
+                    if(!error) {
+                        btn.classList.remove('active');
+                        userWishlist = userWishlist.filter(id => id !== prodId);
+                    }
+                } else {
+                    const { error } = await supabaseClient.from('wishlist').insert([{ user_id: currentUser.id, product_id: prodId }]);
+                    if(!error) {
+                        btn.classList.add('active');
+                        userWishlist.push(prodId);
+                    }
                 }
-            } else {
-                const { error } = await supabaseClient.from('wishlist').insert([{ user_id: currentUser.id, product_id: prodId }]);
-                if(!error) {
-                    btn.classList.add('active');
-                    userWishlist.push(prodId);
-                }
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // 6. العداد التنازلي
+        // العداد التنازلي
         function startTimer() {
             let time = 3600 * 8; 
             setInterval(() => {
@@ -339,6 +353,7 @@
 
         function closeModal() { document.getElementById('productModal').style.display = 'none'; }
 
+        // الفلترة
         document.querySelectorAll('.category-pill').forEach(pill => {
             pill.addEventListener('click', (e) => {
                 document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
@@ -347,6 +362,7 @@
             });
         });
 
+        // تسجيل الدخول
         async function signIn() { 
             await supabaseClient.auth.signInWithOAuth({ 
                 provider: "google", 
@@ -354,39 +370,50 @@
             }); 
         }
 
-        document.getElementById("loginBtn").onclick = () => currentUser ? location.href="account.html" : signIn();
-        document.getElementById("accountNavBtn").onclick = () => currentUser ? location.href="account.html" : signIn();
+        document.getElementById("loginBtn").onclick = () => currentUser ? (location.href="account.html") : signIn();
+        document.getElementById("accountNavBtn").onclick = () => currentUser ? (location.href="account.html") : signIn();
 
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
             currentUser = session?.user;
-            document.getElementById("loginBtn").innerHTML = session ? `حسابي <i class="fa-solid fa-user-check"></i>` : `تسجيل دخول <i class="fa-solid fa-fingerprint"></i>`;
-            if (currentUser) {
+            if(currentUser) {
+                document.getElementById("loginBtn").innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
                 await fetchUserWishlist();
                 renderProducts(allProducts);
+            } else {
+                document.getElementById("loginBtn").innerHTML = `تسجيل دخول <i class="fa-solid fa-fingerprint"></i>`;
             }
         });
 
+        // تشغيل الجلب فور تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProducts(); 
+            startTimer();
+        });
+
+        // معالجة طلبات الشراء
         document.getElementById('checkoutForm').onsubmit = async (e) => {
             e.preventDefault();
             if(!currentUser) return alert("سجل دخولك أولاً!");
             const btn = document.getElementById('submitOrderBtn');
             btn.innerText = "جاري الإرسال..."; btn.disabled = true;
             
-            const { error } = await supabaseClient.from('orders').insert([{
-                user_id: currentUser.id,
-                product_id: document.getElementById('order-product-id').value,
-                full_name: document.getElementById('order-name').value,
-                phone: document.getElementById('order-phone').value,
-                address: document.getElementById('order-address').value
-            }]);
+            try {
+                const { error } = await supabaseClient.from('orders').insert([{
+                    user_id: currentUser.id,
+                    product_id: document.getElementById('order-product-id').value,
+                    full_name: document.getElementById('order-name').value,
+                    phone: document.getElementById('order-phone').value,
+                    address: document.getElementById('order-address').value
+                }]);
 
-            if(!error) { alert("تم تسجيل طلبك بنجاح!"); closeModal(); }
-            else alert("خطأ: " + error.message);
-            btn.innerText = "تأكيد الطلب"; btn.disabled = false;
+                if(!error) { alert("تم تسجيل طلبك بنجاح!"); closeModal(); }
+                else throw error;
+            } catch (error) {
+                alert("خطأ: " + error.message);
+            } finally {
+                btn.innerText = "تأكيد الطلب"; btn.disabled = false;
+            }
         };
-
-        window.onload = () => { fetchProducts(); startTimer(); };
     </script>
 </body>
 </html>
-
