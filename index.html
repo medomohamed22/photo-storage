@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* الألوان والمتغيرات الأساسية */
         :root {
             --primary-purple: #5b50e5;
             --primary-orange: #d98a36;
@@ -21,242 +20,103 @@
             --pi-text: #966114;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Cairo', sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-dark);
-            padding-bottom: 80px;
-        }
+        body { background-color: var(--bg-color); color: var(--text-dark); padding-bottom: 80px; }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background-color: transparent;
-        }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: transparent; }
 
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-        }
+        .logo { font-size: 24px; font-weight: 700; }
         .logo span:first-child { color: var(--primary-purple); }
         .logo span:last-child { color: var(--primary-orange); }
 
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
 
         .lang-btn {
-            background: white;
-            border: 1px solid #ddd;
-            color: var(--primary-purple);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 600;
-            cursor: pointer;
+            background: white; border: 1px solid #ddd; color: var(--primary-purple);
+            border-radius: 50%; width: 40px; height: 40px; display: flex;
+            justify-content: center; align-items: center; font-weight: 600; cursor: pointer;
         }
 
         .login-btn {
-            background-color: var(--primary-orange);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(217, 138, 54, 0.3);
-            transition: 0.3s;
+            background-color: var(--primary-orange); color: white; border: none;
+            padding: 8px 20px; border-radius: 20px; font-weight: 600; display: flex;
+            align-items: center; gap: 8px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(217, 138, 54, 0.3); transition: 0.3s;
         }
-        .login-btn:hover {
-            opacity: 0.9;
-        }
+        .login-btn:hover { opacity: 0.9; }
 
         .categories-scroll {
-            display: flex;
-            overflow-x: auto;
-            padding: 10px 20px;
-            gap: 10px;
-            scrollbar-width: none;
+            display: flex; overflow-x: auto; padding: 10px 20px; gap: 10px; scrollbar-width: none;
         }
         .categories-scroll::-webkit-scrollbar { display: none; }
 
         .category-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: 25px;
-            background-color: white;
-            border: 1px solid #eee;
-            color: var(--text-dark);
-            white-space: nowrap;
-            cursor: pointer;
-            font-weight: 600;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            transition: 0.3s;
+            display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+            border-radius: 25px; background-color: white; border: 1px solid #eee;
+            color: var(--text-dark); white-space: nowrap; cursor: pointer;
+            font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s;
         }
 
-        .category-pill.active {
-            background-color: var(--primary-purple);
-            color: white;
-            border: none;
-        }
+        .category-pill.active { background-color: var(--primary-purple); color: white; border: none; }
 
-        .section-header {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            gap: 10px;
-        }
-        .section-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
+        .section-header { display: flex; align-items: center; padding: 20px; gap: 10px; }
+        .section-header h2 { font-size: 20px; font-weight: 700; }
         .section-icon {
-            background-color: var(--primary-purple);
-            color: white;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 10px;
+            background-color: var(--primary-purple); color: white; width: 35px;
+            height: 35px; display: flex; justify-content: center; align-items: center; border-radius: 10px;
         }
 
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            padding: 0 20px;
-        }
+        .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px; }
 
         .product-card {
-            background-color: var(--card-bg);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            text-align: center;
-            padding-bottom: 15px;
-            display: flex;
-            flex-direction: column;
+            background-color: var(--card-bg); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center;
+            padding-bottom: 15px; display: flex; flex-direction: column;
         }
 
         .product-image {
-            width: 100%;
-            height: 150px;
-            position: relative;
-            background-color: #eee;
-            background-size: cover;
-            background-position: center;
+            width: 100%; height: 150px; position: relative; background-color: #eee;
+            background-size: cover; background-position: center;
         }
 
         .location-tag {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(30, 30, 30, 0.8);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            max-width: 80%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            position: absolute; bottom: 10px; left: 10px; background-color: rgba(30, 30, 30, 0.8);
+            color: white; padding: 4px 10px; border-radius: 12px; font-size: 10px;
+            display: flex; align-items: center; gap: 5px; max-width: 80%;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         .product-title {
-            font-size: 14px;
-            font-weight: 700;
-            margin: 15px 0 10px 0;
-            padding: 0 10px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 14px; font-weight: 700; margin: 15px 0 10px 0;
+            padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         .product-price {
-            background-color: var(--pi-bg);
-            color: var(--pi-text);
-            display: inline-block;
-            padding: 5px 25px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 14px;
-            margin: auto; /* لضبط التوسيط إذا كان العنوان طويلاً */
-            margin-bottom: 5px;
+            background-color: var(--pi-bg); color: var(--pi-text); display: inline-block;
+            padding: 5px 25px; border-radius: 20px; font-weight: 700; font-size: 14px;
+            margin: auto; margin-bottom: 5px;
         }
 
-        .seller-initial {
-            color: var(--text-light);
-            font-size: 12px;
-        }
+        .seller-initial { color: var(--text-light); font-size: 12px; }
 
-        /* رسالة التحميل أو الخطأ */
-        .status-message {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 20px;
-            color: var(--text-light);
-            font-weight: 600;
-        }
+        .status-message { grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-weight: 600; }
 
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; background-color: white;
+            display: flex; justify-content: space-around; padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05); border-top-left-radius: 20px;
+            border-top-right-radius: 20px; z-index: 1000;
         }
 
         .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            color: var(--text-light);
-            font-size: 12px;
-            text-decoration: none;
-            cursor: pointer;
-            padding: 8px 20px;
-            border-radius: 15px;
-            transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            color: var(--text-light); font-size: 12px; text-decoration: none;
+            cursor: pointer; padding: 8px 20px; border-radius: 15px; transition: 0.3s;
         }
 
-        .nav-item i {
-            font-size: 20px;
-        }
-
-        .nav-item.active {
-            color: var(--primary-purple);
-            background-color: rgba(91, 80, 229, 0.1);
-        }
+        .nav-item i { font-size: 20px; }
+        .nav-item.active { color: var(--primary-purple); background-color: rgba(91, 80, 229, 0.1); }
 
     </style>
 </head>
@@ -294,7 +154,7 @@
     </div>
 
     <main class="products-grid" id="products-container">
-        </main>
+    </main>
 
     <nav class="bottom-nav">
         <a class="nav-item active" href="index.html">
@@ -315,40 +175,29 @@
         // === إعدادات Supabase ===
         const SUPABASE_URL = 'https://jtbxdymviqmfhffixmat.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW';
-        
-        // تهيئة العميل (Client)
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // === دالة جلب المنتجات من قاعدة البيانات ===
+        // === دالة جلب المنتجات ===
         async function fetchProducts() {
             const container = document.getElementById('products-container');
-            
-            // عرض رسالة تحميل أثناء جلب البيانات
             container.innerHTML = '<div class="status-message"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل المنتجات...</div>';
 
             try {
-                // جلب المنتجات من جدول products وترتيبها من الأحدث للأقدم
                 const { data, error } = await supabase
                     .from('products')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
-
-                // مسح رسالة التحميل
                 container.innerHTML = '';
 
-                // إذا لم يكن هناك منتجات
                 if (data.length === 0) {
                     container.innerHTML = '<div class="status-message">لا توجد منتجات معروضة حالياً.</div>';
                     return;
                 }
 
-                // إنشاء الكروت لكل منتج ووضعها في الصفحة
                 data.forEach(product => {
-                    // توليد حرف افتراضي للبائع (أول حرف من العنوان مثلاً إذا لم يكن هناك اسم)
                     const sellerInitial = product.title ? product.title.charAt(0).toUpperCase() : 'U';
-                    // صورة افتراضية في حال لم يضع البائع صورة
                     const imageUrl = product.image_url || 'https://via.placeholder.com/300?text=لا+توجد+صورة';
                     const location = product.location || 'غير محدد';
 
@@ -369,7 +218,7 @@
 
             } catch (error) {
                 console.error("خطأ في جلب المنتجات:", error.message);
-                container.innerHTML = '<div class="status-message" style="color: red;">حدث خطأ أثناء تحميل المنتجات. تأكد من إعدادات قاعدة البيانات.</div>';
+                container.innerHTML = '<div class="status-message" style="color: red;">حدث خطأ أثناء تحميل المنتجات.</div>';
             }
         }
 
@@ -379,36 +228,68 @@
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        redirectTo: window.location.origin // للعودة لنفس الصفحة بعد التسجيل
+                        // نستخدم origin بدلاً من href لتجنب تكرار الروابط عند العودة
+                        redirectTo: window.location.origin 
                     }
                 });
                 if (error) throw error;
             } catch (error) {
                 console.error("حدث خطأ أثناء تسجيل الدخول:", error.message);
-                alert("لم نتمكن من تسجيل الدخول. تأكد من تفعيل Google Provider في Supabase.");
             }
         }
 
-        // === دالة للتحقق من حالة المستخدم ===
-        async function checkUserSession() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                const loginBtn = document.getElementById('login-btn');
-                
-                if (session) {
-                    // تغيير شكل الزر إذا كان مسجل دخول
-                    loginBtn.innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
-                    loginBtn.onclick = () => window.location.href = 'account.html';
+        // === مراقبة حالة تسجيل الدخول (الطريقة المثالية والأصح) ===
+        // هذه الدالة تعمل تلقائياً بمجرد عودة المستخدم من صفحة جوجل
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            const loginBtn = document.getElementById('login-btn');
+
+            if (session) {
+                // 1. تغيير شكل الزر
+                loginBtn.innerHTML = `حسابي <i class="fa-solid fa-user-check"></i>`;
+                loginBtn.onclick = () => window.location.href = 'account.html';
+
+                // 2. إذا كان الحدث هو تسجيل دخول ناجح
+                if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                    const user = session.user;
+                    
+                    // التحقق هل المستخدم موجود في جدول profiles
+                    const { data: existingUser, error: checkError } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('id', user.id)
+                        .maybeSingle();
+
+                    // 3. إذا لم يكن موجوداً، نقوم بإضافته فوراً
+                    if (!existingUser && !checkError) {
+                        const fullName = user.user_metadata.full_name || 'مستخدم جديد';
+                        
+                        const { error: insertError } = await supabase
+                            .from('profiles')
+                            .insert([
+                                { 
+                                    id: user.id, 
+                                    full_name: fullName,
+                                    role: 'user' 
+                                }
+                            ]);
+
+                        if (insertError) {
+                            console.error("خطأ أثناء حفظ بيانات المستخدم:", insertError.message);
+                        } else {
+                            console.log("تم تسجيل حساب جديد في قاعدة البيانات بنجاح!");
+                        }
+                    }
                 }
-            } catch (error) {
-                console.error("خطأ في التحقق من الجلسة:", error.message);
+            } else {
+                // في حالة تسجيل الخروج
+                loginBtn.innerHTML = `دخول <i class="fa-solid fa-fingerprint"></i>`;
+                loginBtn.onclick = signInWithGoogle;
             }
-        }
+        });
 
-        // تشغيل الدوال عند تحميل الصفحة
+        // تشغيل دوال جلب المنتجات عند تحميل الصفحة
         window.onload = () => {
             fetchProducts();
-            checkUserSession();
         };
     </script>
 </body>
