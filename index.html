@@ -34,9 +34,10 @@
             border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
+        /* تنسيق بار العرض العام */
         #global-offer-bar {
             display: none; background: var(--primary-red); color: white;
-            padding: 10px 20px; margin: 0 20px 15px; border-radius: 15px;
+            padding: 12px 20px; margin: 0 20px 15px; border-radius: 15px;
             justify-content: space-between; align-items: center; font-weight: bold;
             box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
         }
@@ -83,8 +84,7 @@
         .badge-unavailable { background-color: var(--danger-red); }
 
         .product-title { font-weight: 700; font-size: 15px; margin: 12px 10px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dark);}
-        .product-rating { color: #f1c40f; font-size: 12px; margin-bottom: 5px; }
-        .product-price { background: #fceea7; color: #966114; padding: 5px 18px; border-radius: 20px; font-weight: 700; font-size: 15px; display: inline-block; }
+        .product-price { background: #fceea7; color: #966114; padding: 5px 18px; border-radius: 20px; font-weight: 700; font-size: 15px; display: inline-block; margin-top: 5px; }
 
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card);
@@ -291,9 +291,6 @@
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
                 const isWished = userWishlist.includes(p.id);
 
-                // --- التعديل المطلوب: يظهر 0 إذا لم توجد قيمة، ثم يعرض البيانات من عمود rating ---
-                const ratingValue = (p.rating != null) ? parseFloat(p.rating).toFixed(1) : "0";
-
                 container.innerHTML += `
                     <div class="product-card">
                         <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(event, ${p.id})">
@@ -304,7 +301,6 @@
                             <div class="product-image" style="background-image:url('${img}')"></div>
                         </div>
                         <div class="product-title">${p.title}</div>
-                        <div class="product-rating"><i class="fa-solid fa-star"></i> ${ratingValue}</div>
                         <div class="product-price">${p.price} ج.م</div>
                     </div>`;
             });
