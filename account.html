@@ -38,13 +38,13 @@
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
         /* تتبع الطلبات */
-        .order-progress { display: flex; justify-content: space-between; margin-top: 15px; position: relative; padding: 0 5px; }
+        .order-progress { display: flex; justify-content: space-between; margin: 20px 0 10px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
-        .step-dot { width: 20px; height: 20px; border-radius: 50%; background: #eee; border: 2px solid var(--card); }
+        .step-dot { width: 20px; height: 20px; border-radius: 50%; background: #eee; border: 2px solid var(--card); transition: 0.3s; }
         .progress-step.active .step-dot { background: var(--primary-purple); }
         .progress-step.active .step-label { color: var(--primary-purple); font-weight: bold; }
-        .step-label { font-size: 9px; color: var(--text-light); white-space: nowrap; }
+        .step-label { font-size: 10px; color: var(--text-light); white-space: nowrap; }
 
         .orders-container, .wishlist-grid { padding: 0 20px; display: flex; flex-direction: column; gap: 15px; }
         .order-card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 10px; }
@@ -53,6 +53,13 @@
         .order-info { flex: 1; }
         .order-title { font-weight: 700; font-size: 15px; }
         .order-price { font-weight: 700; color: var(--primary-orange); }
+
+        /* تنسيق النجوم */
+        .rating-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; text-align: center; }
+        .stars { display: flex; justify-content: center; gap: 5px; direction: ltr; margin-bottom: 8px; }
+        .stars i { font-size: 24px; color: #ccc; cursor: pointer; transition: 0.2s; }
+        .stars i.active { color: #f1c40f; }
+        .btn-rate { background: var(--primary-purple); color: white; border: none; padding: 8px 20px; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: bold; }
 
         .wishlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; }
@@ -99,6 +106,7 @@
         const SUPABASE_URL = "https://jtbxdymviqmfhffixmat.supabase.co";
         const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUserId = null;
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -115,6 +123,7 @@
             if (!session) { window.location.href = "index.html"; return; }
 
             const user = session.user;
+            currentUserId = user.id;
             document.getElementById('user-name').innerText = user.user_metadata.full_name || "مستخدم";
             document.getElementById('user-email').innerText = user.email;
             document.getElementById('user-img').src = user.user_metadata.avatar_url || "https://via.placeholder.com/90";
@@ -127,7 +136,7 @@
             const container = document.getElementById('orders-list');
             const { data, error } = await supabaseClient
                 .from('orders')
-                .select(`id, status, products ( title, image_url, price )`)
+                .select(`id, status, product_id, rated, products ( title, image_url, price )`)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
@@ -140,10 +149,31 @@
             data.forEach(order => {
                 const p = order.products;
                 const img = p?.image_url ? p.image_url.split(',')[0] : 'https://via.placeholder.com/80';
-                
                 const s = order.status;
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(s);
+
+                // بناء كود التقييم
+                let ratingHtml = "";
+                if (s === 'مكتمل') {
+                    if (order.rated) {
+                        ratingHtml = `<div class="rating-box" style="color:var(--primary-green); font-size:12px; font-weight:bold;">✅ شكراً على تقييمك!</div>`;
+                    } else {
+                        ratingHtml = `
+                            <div class="rating-box" id="rate-box-${order.id}">
+                                <div style="font-size:12px; margin-bottom:5px; font-weight:600;">لقد وصل طلبك! قيم المنتج:</div>
+                                <div class="stars" id="stars-${order.id}" data-value="0">
+                                    <i class="fa-solid fa-star" onclick="setStar(${order.id}, 1)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(${order.id}, 2)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(${order.id}, 3)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(${order.id}, 4)"></i>
+                                    <i class="fa-solid fa-star" onclick="setStar(${order.id}, 5)"></i>
+                                </div>
+                                <button class="btn-rate" onclick="submitRating(${order.product_id}, ${order.id})">إرسال التقييم</button>
+                            </div>
+                        `;
+                    }
+                }
 
                 container.innerHTML += `
                     <div class="order-card">
@@ -162,9 +192,51 @@
                                 </div>
                             `).join('')}
                         </div>
+                        ${ratingHtml}
                     </div>
                 `;
             });
+        }
+
+        // وظيفة اختيار النجوم
+        function setStar(orderId, val) {
+            const container = document.getElementById(`stars-${orderId}`);
+            const stars = container.querySelectorAll('i');
+            stars.forEach((s, idx) => {
+                s.classList.toggle('active', idx < val);
+            });
+            container.setAttribute('data-value', val);
+        }
+
+        // وظيفة إرسال التقييم
+        async function submitRating(productId, orderId) {
+            const rating = document.getElementById(`stars-${orderId}`).getAttribute('data-value');
+            if (rating == "0") return alert("برجاء اختيار عدد النجوم أولاً");
+
+            try {
+                // 1. تحديث عمود التقييم في جدول المنتجات (بشكل مبسط، يفضل عمل متوسط لاحقاً)
+                const { error: prodError } = await supabaseClient
+                    .from('products')
+                    .update({ rating: rating })
+                    .eq('id', productId);
+
+                if (prodError) throw prodError;
+
+                // 2. تحديث الطلب لتعليم أنه تم تقييمه لكي لا يظهر الزر مرة أخرى
+                const { error: orderError } = await supabaseClient
+                    .from('orders')
+                    .update({ rated: true })
+                    .eq('id', orderId);
+
+                if (orderError) throw orderError;
+
+                // تحديث الواجهة
+                document.getElementById(`rate-box-${orderId}`).innerHTML = `<div style="color:var(--primary-green); font-size:12px; font-weight:bold;">✅ شكراً على تقييمك!</div>`;
+
+            } catch (err) {
+                alert("حدث خطأ أثناء إرسال التقييم");
+                console.error(err);
+            }
         }
 
         async function loadMyWishlist(userId) {
