@@ -37,12 +37,12 @@
 
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
-        /* تتبع الطلبات */
+        /* شريط تتبع الطلبات من جدول الطلبات */
         .order-progress { display: flex; justify-content: space-between; margin: 20px 0 10px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
         .step-dot { width: 20px; height: 20px; border-radius: 50%; background: #eee; border: 2px solid var(--card); transition: 0.3s; }
-        .progress-step.active .step-dot { background: var(--primary-purple); }
+        .progress-step.active .step-dot { background: var(--primary-purple); box-shadow: 0 0 10px rgba(91, 80, 229, 0.3); }
         .progress-step.active .step-label { color: var(--primary-purple); font-weight: bold; }
         .step-label { font-size: 10px; color: var(--text-light); white-space: nowrap; }
 
@@ -54,15 +54,15 @@
         .order-title { font-weight: 700; font-size: 15px; }
         .order-price { font-weight: 700; color: var(--primary-orange); }
 
-        /* تنسيق النجوم */
+        /* التقييم - يذهب لجدول المنتجات */
         .rating-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; text-align: center; }
-        .stars { display: flex; justify-content: center; gap: 5px; direction: ltr; margin-bottom: 8px; }
-        .stars i { font-size: 24px; color: #ccc; cursor: pointer; transition: 0.2s; }
+        .stars { display: flex; justify-content: center; gap: 8px; direction: ltr; margin-bottom: 8px; }
+        .stars i { font-size: 26px; color: #ccc; cursor: pointer; transition: 0.2s; }
         .stars i.active { color: #f1c40f; }
-        .btn-rate { background: var(--primary-purple); color: white; border: none; padding: 8px 20px; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .btn-rate { background: var(--primary-purple); color: white; border: none; padding: 8px 25px; border-radius: 12px; font-size: 13px; cursor: pointer; font-weight: bold; }
 
         .wishlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-        .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; }
+        .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; cursor: pointer; }
         .wish-img { width: 100%; height: 140px; background-size: cover; background-position: center; }
 
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card); display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
@@ -81,7 +81,7 @@
     </header>
 
     <div class="profile-card">
-        <img id="user-img" class="profile-img" src="" alt="User">
+        <img id="user-img" class="profile-img" src="https://via.placeholder.com/90" alt="User">
         <div id="user-name" class="profile-name">جاري التحميل...</div>
         <div id="user-email" class="profile-email"></div>
         <button class="logout-btn" onclick="signOut()"><i class="fa-solid fa-right-from-bracket"></i> تسجيل خروج</button>
@@ -89,7 +89,7 @@
 
     <div class="section-title"><i class="fa-solid fa-heart" style="color:var(--primary-red);"></i> مفضلتي</div>
     <div class="wishlist-grid" id="wishlist-container">
-        <div class="status-msg">لا توجد منتجات في المفضلة.</div>
+        <div class="status-msg">جاري تحميل المفضلة...</div>
     </div>
 
     <div class="section-title"><i class="fa-solid fa-box-open"></i> تتبع طلباتي</div>
@@ -114,26 +114,23 @@
             localStorage.setItem('darkMode', isDark);
             document.getElementById('darkModeBtn').className = isDark ? 'fa-solid fa-sun dark-mode-toggle' : 'fa-solid fa-moon dark-mode-toggle';
         }
-        if(localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-        }
+        if(localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
 
         async function loadUserData() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = "index.html"; return; }
-
             const user = session.user;
             currentUserId = user.id;
             document.getElementById('user-name').innerText = user.user_metadata.full_name || "مستخدم";
             document.getElementById('user-email').innerText = user.email;
             document.getElementById('user-img').src = user.user_metadata.avatar_url || "https://via.placeholder.com/90";
-
             loadMyOrders(user.id);
             loadMyWishlist(user.id);
         }
 
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
+            // التتبع يُجلب من جدول الطلبات (orders)
             const { data, error } = await supabaseClient
                 .from('orders')
                 .select(`id, status, product_id, rated, products ( title, image_url, price )`)
@@ -141,7 +138,7 @@
                 .order('created_at', { ascending: false });
 
             if (error || !data || data.length === 0) {
-                container.innerHTML = `<div class="status-msg">لا توجد طلبات سابقة.</div>`;
+                container.innerHTML = `<div class="status-msg">لا توجد طلبات حالية للتتبع.</div>`;
                 return;
             }
 
@@ -153,15 +150,15 @@
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(s);
 
-                // بناء كود التقييم
+                // نظام التقييم يظهر فقط عند اكتمال الطلب
                 let ratingHtml = "";
                 if (s === 'مكتمل') {
                     if (order.rated) {
-                        ratingHtml = `<div class="rating-box" style="color:var(--primary-green); font-size:12px; font-weight:bold;">✅ شكراً على تقييمك!</div>`;
+                        ratingHtml = `<div class="rating-box" style="color:var(--primary-green); font-size:13px; font-weight:bold;">✅ شكراً، تم استلام تقييمك بنجاح</div>`;
                     } else {
                         ratingHtml = `
                             <div class="rating-box" id="rate-box-${order.id}">
-                                <div style="font-size:12px; margin-bottom:5px; font-weight:600;">لقد وصل طلبك! قيم المنتج:</div>
+                                <div style="font-size:12px; margin-bottom:8px; font-weight:600;">وصل المنتج؟ قيمنا الآن:</div>
                                 <div class="stars" id="stars-${order.id}" data-value="0">
                                     <i class="fa-solid fa-star" onclick="setStar(${order.id}, 1)"></i>
                                     <i class="fa-solid fa-star" onclick="setStar(${order.id}, 2)"></i>
@@ -198,60 +195,43 @@
             });
         }
 
-        // وظيفة اختيار النجوم
         function setStar(orderId, val) {
-            const container = document.getElementById(`stars-${orderId}`);
-            const stars = container.querySelectorAll('i');
-            stars.forEach((s, idx) => {
-                s.classList.toggle('active', idx < val);
-            });
-            container.setAttribute('data-value', val);
+            const starBox = document.getElementById(`stars-${orderId}`);
+            const stars = starBox.querySelectorAll('i');
+            stars.forEach((s, idx) => s.classList.toggle('active', idx < val));
+            starBox.setAttribute('data-value', val);
         }
 
-        // وظيفة إرسال التقييم
+        // التقييم يذهب لجدول المنتجات (products)
         async function submitRating(productId, orderId) {
-            const rating = document.getElementById(`stars-${orderId}`).getAttribute('data-value');
-            if (rating == "0") return alert("برجاء اختيار عدد النجوم أولاً");
+            const val = document.getElementById(`stars-${orderId}`).getAttribute('data-value');
+            if (val == "0") return alert("يرجى اختيار عدد النجوم أولاً");
 
             try {
-                // 1. تحديث عمود التقييم في جدول المنتجات (بشكل مبسط، يفضل عمل متوسط لاحقاً)
-                const { error: prodError } = await supabaseClient
-                    .from('products')
-                    .update({ rating: rating })
-                    .eq('id', productId);
+                // 1. تحديث عمود rating في جدول المنتجات
+                const { error: pErr } = await supabaseClient.from('products').update({ rating: val }).eq('id', productId);
+                if (pErr) throw pErr;
 
-                if (prodError) throw prodError;
+                // 2. تحديث الطلب لكي لا يظهر التقييم مرة أخرى
+                const { error: oErr } = await supabaseClient.from('orders').update({ rated: true }).eq('id', orderId);
+                if (oErr) throw oErr;
 
-                // 2. تحديث الطلب لتعليم أنه تم تقييمه لكي لا يظهر الزر مرة أخرى
-                const { error: orderError } = await supabaseClient
-                    .from('orders')
-                    .update({ rated: true })
-                    .eq('id', orderId);
-
-                if (orderError) throw orderError;
-
-                // تحديث الواجهة
-                document.getElementById(`rate-box-${orderId}`).innerHTML = `<div style="color:var(--primary-green); font-size:12px; font-weight:bold;">✅ شكراً على تقييمك!</div>`;
-
+                document.getElementById(`rate-box-${orderId}`).innerHTML = `<div style="color:var(--primary-green); font-size:13px; font-weight:bold;">✅ تم إرسال تقييمك لجدول المنتجات بنجاح!</div>`;
             } catch (err) {
-                alert("حدث خطأ أثناء إرسال التقييم");
-                console.error(err);
+                alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
             }
         }
 
         async function loadMyWishlist(userId) {
             const container = document.getElementById('wishlist-container');
-            const { data, error } = await supabaseClient
-                .from('wishlist')
-                .select(`product_id, products ( id, title, image_url, price )`)
-                .eq('user_id', userId);
-
-            if (error || !data || data.length === 0) return;
-
+            const { data, error } = await supabaseClient.from('wishlist').select(`product_id, products ( id, title, image_url, price )`).eq('user_id', userId);
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<div class="status-msg">قائمة المفضلة فارغة.</div>`;
+                return;
+            }
             container.innerHTML = "";
             data.forEach(item => {
-                const p = item.products;
-                if(!p) return;
+                const p = item.products; if(!p) return;
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/150";
                 container.innerHTML += `
                     <div class="wish-card" onclick="location.href='index.html'">
@@ -265,10 +245,7 @@
         }
 
         async function signOut() {
-            if(confirm("هل أنت متأكد من تسجيل الخروج؟")) {
-                await supabaseClient.auth.signOut();
-                window.location.href = "index.html";
-            }
+            if(confirm("تسجيل خروج؟")) { await supabaseClient.auth.signOut(); window.location.href = "index.html"; }
         }
 
         window.onload = loadUserData;
