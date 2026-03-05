@@ -84,7 +84,10 @@
         .badge-unavailable { background-color: var(--danger-red); }
 
         .product-title { font-weight: 700; font-size: 15px; margin: 12px 10px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dark);}
-        .product-price { background: #fceea7; color: #966114; padding: 5px 18px; border-radius: 20px; font-weight: 700; font-size: 15px; display: inline-block; margin-top: 5px; }
+        
+        /* تنسيق السعر الحالي والسعر المشطوب */
+        .product-price { background: #fceea7; color: #966114; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 15px; display: inline-block; margin-top: 5px; }
+        .old-price { text-decoration: line-through; color: #e74c3c; font-size: 12px; margin-right: 8px; opacity: 0.8; font-weight: 600; }
 
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card);
@@ -291,6 +294,9 @@
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
                 const isWished = userWishlist.includes(p.id);
 
+                // تجهيز كود السعر القديم لو موجود
+                const oldPriceHtml = p.old_price ? `<span class="old-price">${p.old_price} ج.م</span>` : "";
+
                 container.innerHTML += `
                     <div class="product-card">
                         <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(event, ${p.id})">
@@ -301,7 +307,7 @@
                             <div class="product-image" style="background-image:url('${img}')"></div>
                         </div>
                         <div class="product-title">${p.title}</div>
-                        <div class="product-price">${p.price} ج.م</div>
+                        <div class="product-price">${p.price} ج.م ${oldPriceHtml}</div>
                     </div>`;
             });
         }
@@ -326,18 +332,26 @@
 
         async function openProduct(json) {
             const p = JSON.parse(decodeURIComponent(json));
+            
+            // تجهيز كود السعر القديم في تفاصيل المنتج
+            const oldPriceHtml = p.old_price ? `<span style="text-decoration: line-through; color: #e74c3c; font-size: 16px; margin-right: 10px; font-weight: normal;">${p.old_price} ج.م</span>` : "";
+            
             document.getElementById('m-title').innerText = p.title;
-            document.getElementById('m-price').innerText = `${p.price} ج.م`;
+            // استخدام innerHTML هنا لكي يظهر تأثير الخط المشطوب
+            document.getElementById('m-price').innerHTML = `${p.price} ج.م ${oldPriceHtml}`;
             document.getElementById('m-desc').innerText = p.description || "";
             document.getElementById('m-delivery').innerText = p.delivery_cost || "0";
+            
             const gallery = document.getElementById('m-gallery');
             gallery.innerHTML = "";
             const imgs = p.image_url ? p.image_url.split(',') : ["https://via.placeholder.com/300"];
             imgs.forEach(url => { if(url.trim()) gallery.innerHTML += `<img src="${url.trim()}">`; });
+            
             document.getElementById('m-arrows').style.display = imgs.length > 1 ? 'flex' : 'none';
             document.getElementById('checkout-section').style.display = p.is_available ? 'block' : 'none';
             document.getElementById('out-of-stock-msg').style.display = p.is_available ? 'none' : 'block';
             document.getElementById('order-product-id').value = p.id;
+            
             document.getElementById('productModal').style.display = 'flex';
             gallery.scrollLeft = 0;
         }
