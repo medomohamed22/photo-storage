@@ -41,25 +41,35 @@
         .order-progress { display: flex; justify-content: space-between; margin-top: 15px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
-        .step-dot { width: 20px; height: 20px; border-radius: 50%; background: #eee; border: 2px solid var(--card); }
-        .progress-step.active .step-dot { background: var(--primary-purple); }
+        .step-dot { width: 20px; height: 20px; border-radius: 50%; background: #eee; border: 2px solid var(--card); transition: 0.3s;}
+        .progress-step.active .step-dot { background: var(--primary-purple); box-shadow: 0 0 8px rgba(91, 80, 229, 0.4); }
         .progress-step.active .step-label { color: var(--primary-purple); font-weight: bold; }
         .step-label { font-size: 9px; color: var(--text-light); white-space: nowrap; }
 
         .orders-container, .wishlist-grid { padding: 0 20px; display: flex; flex-direction: column; gap: 15px; }
         .order-card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 10px; }
+        
+        /* تفاصيل الطلب (الميزة 1) */
+        .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eee; padding-bottom: 8px; margin-bottom: 5px;}
+        .order-id { font-weight: bold; color: var(--primary-purple); font-size: 12px; }
+        .order-date { font-size: 11px; color: var(--text-light); }
+        
         .order-main-info { display: flex; gap: 15px; align-items: center; }
         .order-img { width: 80px; height: 80px; border-radius: 15px; object-fit: cover; background: #eee; }
         .order-info { flex: 1; }
         .order-title { font-weight: 700; font-size: 15px; }
         .order-price { font-weight: 700; color: var(--primary-orange); }
+        .order-variants { font-size: 11px; color: #666; background: var(--bg); padding: 2px 8px; border-radius: 8px; display: inline-block; margin-top: 4px; }
 
         /* تنسيق السعر قبل الخصم */
         .old-price { text-decoration: line-through; color: #e74c3c; font-size: 12px; margin-right: 6px; opacity: 0.8; font-weight: 600; }
 
         .wishlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-        .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; }
-        .wish-img { width: 100%; height: 140px; background-size: cover; background-position: center; }
+        .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; position: relative;}
+        .wish-img { width: 100%; height: 140px; background-size: cover; background-position: center; cursor: pointer;}
+        
+        /* زر الحذف من المفضلة (الميزة 3) */
+        .wish-remove-btn { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,0.9); color: var(--danger-red); border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;}
 
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card); display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-light); font-size: 12px; text-decoration: none; }
@@ -85,12 +95,12 @@
 
     <div class="section-title"><i class="fa-solid fa-heart" style="color:var(--primary-red);"></i> مفضلتي</div>
     <div class="wishlist-grid" id="wishlist-container">
-        <div class="status-msg">لا توجد منتجات في المفضلة.</div>
+        <div class="status-msg"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...</div>
     </div>
 
     <div class="section-title"><i class="fa-solid fa-box-open"></i> تتبع طلباتي</div>
     <div class="orders-container" id="orders-list">
-        <div class="status-msg">جاري تحميل الطلبات...</div>
+        <div class="status-msg"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...</div>
     </div>
 
     <nav class="bottom-nav">
@@ -128,10 +138,10 @@
 
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
-            // تم إضافة old_price في الاستعلام لجلب السعر القديم
+            // تم إضافة selected_size و selected_color و created_at لجلب كافة تفاصيل الطلب
             const { data, error } = await supabaseClient
                 .from('orders')
-                .select(`id, status, products ( title, image_url, price, old_price )`)
+                .select(`id, status, created_at, selected_size, selected_color, products ( title, image_url, price, old_price )`)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
@@ -143,22 +153,36 @@
             container.innerHTML = "";
             data.forEach(order => {
                 const p = order.products;
-                const img = p?.image_url ? p.image_url.split(',')[0] : 'https://via.placeholder.com/80';
+                if(!p) return; 
                 
-                // تجهيز كود السعر القديم لو موجود
-                const oldPriceHtml = p?.old_price ? `<span class="old-price">${p.old_price} ج.م</span>` : "";
+                const img = p.image_url ? p.image_url.split(',')[0] : 'https://via.placeholder.com/80';
+                const oldPriceHtml = p.old_price ? `<span class="old-price">${p.old_price} ج.م</span>` : "";
                 
-                const s = order.status;
+                const s = order.status || 'قيد المراجعة';
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(s);
 
+                // تجهيز نص المقاس واللون
+                let variantText = [];
+                if(order.selected_size) variantText.push(`مقاس: ${order.selected_size}`);
+                if(order.selected_color) variantText.push(`لون: ${order.selected_color}`);
+                const variantHtml = variantText.length > 0 ? `<div class="order-variants">${variantText.join(' | ')}</div>` : '';
+
+                // تجهيز التاريخ
+                const orderDate = new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+
                 container.innerHTML += `
                     <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-id">طلب #${order.id}</span>
+                            <span class="order-date"><i class="fa-regular fa-calendar"></i> ${orderDate}</span>
+                        </div>
                         <div class="order-main-info">
                             <img src="${img}" class="order-img">
                             <div class="order-info">
-                                <div class="order-title">${p?.title || 'منتج'}</div>
-                                <div class="order-price">${p?.price || 0} ج.م ${oldPriceHtml}</div>
+                                <div class="order-title">${p.title}</div>
+                                <div class="order-price">${p.price} ج.م ${oldPriceHtml}</div>
+                                ${variantHtml}
                             </div>
                         </div>
                         <div class="order-progress">
@@ -176,32 +200,52 @@
 
         async function loadMyWishlist(userId) {
             const container = document.getElementById('wishlist-container');
-            // تم إضافة old_price في الاستعلام لجلب السعر القديم
             const { data, error } = await supabaseClient
                 .from('wishlist')
                 .select(`product_id, products ( id, title, image_url, price, old_price )`)
                 .eq('user_id', userId);
 
-            if (error || !data || data.length === 0) return;
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<div class="status-msg">المفضلة فارغة.</div>`;
+                return;
+            }
 
             container.innerHTML = "";
             data.forEach(item => {
                 const p = item.products;
                 if(!p) return;
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/150";
-                
-                // تجهيز كود السعر القديم لو موجود
                 const oldPriceHtml = p.old_price ? `<span class="old-price" style="font-size: 11px;">${p.old_price} ج.م</span>` : "";
 
                 container.innerHTML += `
-                    <div class="wish-card" onclick="location.href='index.html'">
-                        <div class="wish-img" style="background-image:url('${img}')"></div>
-                        <div style="padding:10px;">
+                    <div class="wish-card" id="wish-${p.id}">
+                        <button class="wish-remove-btn" onclick="removeFromWishlist(event, ${p.id}, '${userId}')">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        <div class="wish-img" style="background-image:url('${img}')" onclick="location.href='index.html'"></div>
+                        <div style="padding:10px;" onclick="location.href='index.html'">
                             <div style="font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
-                            <div style="color:var(--primary-orange); font-weight:700;">${p.price} ج.م ${oldPriceHtml}</div>
+                            <div style="color:var(--primary-orange); font-weight:700; margin-top:2px;">${p.price} ج.م ${oldPriceHtml}</div>
                         </div>
                     </div>`;
             });
+        }
+
+        // دالة حذف المنتج من المفضلة مباشرة
+        async function removeFromWishlist(event, productId, userId) {
+            event.stopPropagation();
+            if(confirm("هل تريد إزالة هذا المنتج من المفضلة؟")) {
+                const { error } = await supabaseClient.from('wishlist').delete().eq('user_id', userId).eq('product_id', productId);
+                if(!error) {
+                    const card = document.getElementById(`wish-${productId}`);
+                    if(card) card.remove();
+                    
+                    const container = document.getElementById('wishlist-container');
+                    if(container.children.length === 0) {
+                        container.innerHTML = `<div class="status-msg">المفضلة فارغة.</div>`;
+                    }
+                }
+            }
         }
 
         async function signOut() {
