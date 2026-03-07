@@ -22,9 +22,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: background 0.3s, color 0.3s; }
         body { background: var(--bg); color: var(--text-dark); padding-bottom: 90px; }
 
-        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
+        header { display: flex; justify-content: center; align-items: center; padding: 20px; }
         .header-title { font-size: 22px; font-weight: 700; color: var(--primary-purple); }
-        .dark-mode-toggle { cursor: pointer; font-size: 20px; color: var(--text-dark); }
 
         .profile-card {
             background: var(--card); margin: 10px 20px 25px; padding: 25px; border-radius: 20px;
@@ -49,7 +48,6 @@
         .orders-container, .wishlist-grid { padding: 0 20px; display: flex; flex-direction: column; gap: 15px; }
         .order-card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 10px; }
         
-        /* تفاصيل الطلب (الميزة 1) */
         .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eee; padding-bottom: 8px; margin-bottom: 5px;}
         .order-id { font-weight: bold; color: var(--primary-purple); font-size: 12px; }
         .order-date { font-size: 11px; color: var(--text-light); }
@@ -68,7 +66,6 @@
         .wish-card { background: var(--card); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); text-align: center; padding-bottom: 12px; position: relative;}
         .wish-img { width: 100%; height: 140px; background-size: cover; background-position: center; cursor: pointer;}
         
-        /* زر الحذف من المفضلة (الميزة 3) */
         .wish-remove-btn { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,0.9); color: var(--danger-red); border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;}
 
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card); display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
@@ -83,7 +80,6 @@
 
     <header>
         <div class="header-title">ملفي الشخصي</div>
-        <i class="fa-solid fa-moon dark-mode-toggle" id="darkModeBtn" onclick="toggleDarkMode()"></i>
     </header>
 
     <div class="profile-card">
@@ -112,13 +108,8 @@
         const SUPABASE_URL = "https://jtbxdymviqmfhffixmat.supabase.co";
         const SUPABASE_KEY = "sb_publishable_godTBImi2vbpHJ1IA8BBrA_dfcZSHXW";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUser = null;
 
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            document.getElementById('darkModeBtn').className = isDark ? 'fa-solid fa-sun dark-mode-toggle' : 'fa-solid fa-moon dark-mode-toggle';
-        }
         if(localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
         }
@@ -127,30 +118,36 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = "index.html"; return; }
 
-            const user = session.user;
-            document.getElementById('user-name').innerText = user.user_metadata.full_name || "مستخدم";
-            document.getElementById('user-email').innerText = user.email;
-            document.getElementById('user-img').src = user.user_metadata.avatar_url || "https://via.placeholder.com/90";
+            currentUser = session.user;
+            document.getElementById('user-name').innerText = currentUser.user_metadata.full_name || "مستخدم";
+            document.getElementById('user-email').innerText = currentUser.email;
+            document.getElementById('user-img').src = currentUser.user_metadata.avatar_url || "https://via.placeholder.com/90";
 
-            loadMyOrders(user.id);
-            loadMyWishlist(user.id);
+            loadMyOrders(currentUser.id);
+            loadMyWishlist(currentUser.id);
+            subscribeToOrderUpdates(currentUser.id); // تفعيل التحديث اللحظي
         }
 
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
-            // تم إضافة selected_size و selected_color و created_at لجلب كافة تفاصيل الطلب
             const { data, error } = await supabaseClient
                 .from('orders')
-                .select(`id, status, created_at, selected_size, selected_color, products ( title, image_url, price, old_price )`)
+                .select(`id, status, created_at, selected_size, selected_color, quantity, products ( title, image_url, price, old_price )`)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
             if (error || !data || data.length === 0) {
-                container.innerHTML = `<div class="status-msg">لا توجد طلبات سابقة.</div>`;
+                container.innerHTML = `<div class="status-msg">لا توجد طلبات سابقة. ابدأ التسوق الآن!</div>`;
                 return;
             }
 
+            renderOrders(data);
+        }
+
+        function renderOrders(data) {
+            const container = document.getElementById('orders-list');
             container.innerHTML = "";
+            
             data.forEach(order => {
                 const p = order.products;
                 if(!p) return; 
@@ -162,17 +159,16 @@
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(s);
 
-                // تجهيز نص المقاس واللون
                 let variantText = [];
                 if(order.selected_size) variantText.push(`مقاس: ${order.selected_size}`);
                 if(order.selected_color) variantText.push(`لون: ${order.selected_color}`);
+                if(order.quantity > 1) variantText.push(`الكمية: ${order.quantity}`);
+                
                 const variantHtml = variantText.length > 0 ? `<div class="order-variants">${variantText.join(' | ')}</div>` : '';
-
-                // تجهيز التاريخ
                 const orderDate = new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
 
                 container.innerHTML += `
-                    <div class="order-card">
+                    <div class="order-card" id="order-${order.id}">
                         <div class="order-header">
                             <span class="order-id">طلب #${order.id}</span>
                             <span class="order-date"><i class="fa-regular fa-calendar"></i> ${orderDate}</span>
@@ -185,7 +181,7 @@
                                 ${variantHtml}
                             </div>
                         </div>
-                        <div class="order-progress">
+                        <div class="order-progress" id="progress-${order.id}">
                             ${steps.map((step, idx) => `
                                 <div class="progress-step ${idx <= currentIdx ? 'active' : ''}">
                                     <div class="step-dot"></div>
@@ -197,6 +193,38 @@
                 `;
             });
         }
+
+        // --- نظام التحديث اللحظي (Real-time) لحالة الطلبات ---
+        function subscribeToOrderUpdates(userId) {
+            supabaseClient
+                .channel('realtime_orders')
+                .on('postgres_changes', { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'orders',
+                    filter: `user_id=eq.${userId}` 
+                }, payload => {
+                    // عندما يحدث تغيير في قاعدة البيانات، نقوم بتحديث الـ UI للطلب المعني
+                    updateOrderUI(payload.new.id, payload.new.status);
+                })
+                .subscribe();
+        }
+
+        function updateOrderUI(orderId, newStatus) {
+            const progressContainer = document.getElementById(`progress-${orderId}`);
+            if(!progressContainer) return;
+
+            const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
+            const currentIdx = steps.indexOf(newStatus || 'قيد المراجعة');
+
+            progressContainer.innerHTML = steps.map((step, idx) => `
+                <div class="progress-step ${idx <= currentIdx ? 'active' : ''}">
+                    <div class="step-dot"></div>
+                    <div class="step-label">${step}</div>
+                </div>
+            `).join('');
+        }
+        // ----------------------------------------------------
 
         async function loadMyWishlist(userId) {
             const container = document.getElementById('wishlist-container');
@@ -231,7 +259,6 @@
             });
         }
 
-        // دالة حذف المنتج من المفضلة مباشرة
         async function removeFromWishlist(event, productId, userId) {
             event.stopPropagation();
             if(confirm("هل تريد إزالة هذا المنتج من المفضلة؟")) {
