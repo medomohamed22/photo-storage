@@ -34,7 +34,6 @@
             border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;
         }
 
-        /* تنسيق بار العرض العام */
         #global-offer-bar {
             display: none; background: var(--primary-red); color: white;
             padding: 12px 20px; margin: 0 20px 15px; border-radius: 15px;
@@ -85,7 +84,6 @@
 
         .product-title { font-weight: 700; font-size: 15px; margin: 12px 10px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dark);}
         
-        /* تنسيق السعر الحالي والسعر المشطوب */
         .product-price { background: #fceea7; color: #966114; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 15px; display: inline-block; margin-top: 5px; }
         .old-price { text-decoration: line-through; color: #e74c3c; font-size: 12px; margin-right: 8px; opacity: 0.8; font-weight: 600; }
 
@@ -134,6 +132,10 @@
             background: var(--primary-purple); color: white; border: none; padding: 15px;
             border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px;
         }
+        
+        /* تنسيق حقول الإدخال */
+        .form-input { padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; width: 100%; font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text-dark); transition: border 0.3s; }
+        .form-input:focus { border-color: var(--primary-purple); }
     </style>
 </head>
 <body>
@@ -200,11 +202,13 @@
             
             <div id="checkout-section">
                 <hr style="margin: 15px 0; opacity: 0.1;">
+                <h4 style="margin-bottom: 10px; font-size: 15px;">بيانات التوصيل:</h4>
                 <form id="checkoutForm" style="display:flex; flex-direction:column; gap:10px;">
                     <input type="hidden" id="order-product-id">
-                    <input type="text" id="order-name" placeholder="الاسم بالكامل" required style="padding:12px; border-radius:10px; border:1px solid #ddd; outline:none;">
-                    <input type="tel" id="order-phone" placeholder="رقم الهاتف" required style="padding:12px; border-radius:10px; border:1px solid #ddd; outline:none;">
-                    <input type="text" id="order-address" placeholder="العنوان بالتفصيل" required style="padding:12px; border-radius:10px; border:1px solid #ddd; outline:none;">
+                    <input type="text" id="order-name" class="form-input" placeholder="الاسم بالكامل" required>
+                    <input type="tel" id="order-phone" class="form-input" placeholder="رقم الهاتف الأساسي" required>
+                    <input type="tel" id="order-alt-phone" class="form-input" placeholder="رقم هاتف بديل (اختياري)">
+                    <input type="text" id="order-address" class="form-input" placeholder="العنوان بالتفصيل (المحافظة، المنطقة، الشارع)" required>
                     <button type="submit" class="btn-order" id="submitOrderBtn">تأكيد الطلب</button>
                 </form>
             </div>
@@ -294,7 +298,6 @@
                 const img = p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300";
                 const isWished = userWishlist.includes(p.id);
 
-                // تجهيز كود السعر القديم لو موجود
                 const oldPriceHtml = p.old_price ? `<span class="old-price">${p.old_price} ج.م</span>` : "";
 
                 container.innerHTML += `
@@ -333,11 +336,9 @@
         async function openProduct(json) {
             const p = JSON.parse(decodeURIComponent(json));
             
-            // تجهيز كود السعر القديم في تفاصيل المنتج
             const oldPriceHtml = p.old_price ? `<span style="text-decoration: line-through; color: #e74c3c; font-size: 16px; margin-right: 10px; font-weight: normal;">${p.old_price} ج.م</span>` : "";
             
             document.getElementById('m-title').innerText = p.title;
-            // استخدام innerHTML هنا لكي يظهر تأثير الخط المشطوب
             document.getElementById('m-price').innerHTML = `${p.price} ج.م ${oldPriceHtml}`;
             document.getElementById('m-desc').innerText = p.description || "";
             document.getElementById('m-delivery').innerText = p.delivery_cost || "0";
@@ -351,6 +352,9 @@
             document.getElementById('checkout-section').style.display = p.is_available ? 'block' : 'none';
             document.getElementById('out-of-stock-msg').style.display = p.is_available ? 'none' : 'block';
             document.getElementById('order-product-id').value = p.id;
+            
+            // تصفير حقول الإدخال عند فتح منتج جديد
+            document.getElementById('checkoutForm').reset();
             
             document.getElementById('productModal').style.display = 'flex';
             gallery.scrollLeft = 0;
@@ -381,14 +385,35 @@
 
         document.getElementById('checkoutForm').onsubmit = async (e) => {
             e.preventDefault();
+            
+            if(!currentUser) {
+                alert("يرجى تسجيل الدخول أولاً لتتمكن من الطلب!");
+                return;
+            }
+
+            const btn = document.getElementById('submitOrderBtn');
+            btn.innerText = "جاري التأكيد...";
+            btn.disabled = true;
+
             const { error } = await supabaseClient.from('orders').insert([{
                 user_id: currentUser.id,
                 product_id: document.getElementById('order-product-id').value,
                 full_name: document.getElementById('order-name').value,
                 phone: document.getElementById('order-phone').value,
+                alt_phone: document.getElementById('order-alt-phone').value || null, // إرسال الهاتف البديل
                 address: document.getElementById('order-address').value
             }]);
-            if(!error) { alert("تم تسجيل طلبك بنجاح!"); closeModal(); }
+            
+            btn.innerText = "تأكيد الطلب";
+            btn.disabled = false;
+
+            if(!error) { 
+                alert("تم تسجيل طلبك بنجاح! سيتم التواصل معك قريباً."); 
+                closeModal(); 
+            } else {
+                alert("حدث خطأ أثناء تسجيل الطلب، يرجى المحاولة مرة أخرى.");
+                console.error(error);
+            }
         };
 
         window.onload = () => {
