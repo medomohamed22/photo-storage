@@ -262,6 +262,7 @@
         let currentProductDetails = null;
         let selectedSize = null;
         let selectedColor = null;
+        let selectedColorIndex = 0; // تم إضافة هذا المتغير لتتبع رقم صورة اللون المختار
 
         function showToast(message, type = "success") {
             const container = document.getElementById("toast-container");
@@ -388,7 +389,6 @@
             g.scrollBy({ left: dir * g.clientWidth, behavior: 'smooth' });
         }
 
-        // --- تعديل دالة اختيار المتغيرات لربط اللون بالصورة ---
         function selectVariant(el, type, val, index) {
             const siblings = el.parentElement.querySelectorAll('.variant-pill');
             siblings.forEach(s => s.classList.remove('active'));
@@ -398,10 +398,10 @@
             
             if(type === 'color') {
                 selectedColor = val;
-                // إذا تم اختيار لون، انتقل للصورة المقابلة له في المعرض (Gallery)
+                selectedColorIndex = index; // حفظ رقم اللون هنا لاستخدامه عند الإضافة للسلة
+                
                 const gallery = document.getElementById('m-gallery');
                 const images = gallery.querySelectorAll('img');
-                // نتحقق من وجود صورة لهذا الترتيب
                 if (images[index]) {
                     gallery.scrollTo({
                         left: images[index].offsetLeft,
@@ -418,7 +418,7 @@
             const sizeCont = document.getElementById('m-sizes-container');
             const colorCont = document.getElementById('m-colors-container');
             
-            selectedSize = null; selectedColor = null;
+            selectedSize = null; selectedColor = null; selectedColorIndex = 0; // إعادة التعيين
             sizeCont.innerHTML = ""; colorCont.innerHTML = "";
             let hasVariants = false;
 
@@ -434,7 +434,6 @@
             if (colorsStr && colorsStr.trim() !== "") {
                 const colors = colorsStr.split(',');
                 colors.forEach((c, index) => {
-                    // نمرر الـ index لربط اللون بالصورة بنفس الترتيب
                     colorCont.innerHTML += `<div class="variant-pill color-pill" onclick="selectVariant(this, 'color', '${c.trim()}', ${index})">${c.trim()}</div>`;
                 });
                 colorWrap.style.display = 'block';
@@ -477,16 +476,21 @@
             if (p.sizes && p.sizes.trim() !== "" && !selectedSize) return showToast("يرجى اختيار المقاس أولاً", "error");
             if (p.colors && p.colors.trim() !== "" && !selectedColor) return showToast("يرجى اختيار اللون أولاً", "error");
             const existingItem = cart.find(i => i.id === p.id && i.size === selectedSize && i.color === selectedColor);
+            
             if (existingItem) {
                 existingItem.quantity = (existingItem.quantity || 1) + 1;
             } else {
+                // سحب الصور، ثم تحديد الصورة الموافقة لرقم اللون المختار (إذا لم يجدها سيأخذ الصورة الأولى كاحتياطي)
+                const imgs = p.image_url ? p.image_url.split(',') : ["https://via.placeholder.com/300"];
+                const variantImage = (imgs[selectedColorIndex] || imgs[0]).trim();
+
                 const item = {
                     cart_id: Date.now(),
                     id: p.id,
                     title: p.title,
                     price: parseFloat(p.price),
                     delivery_cost: parseFloat(p.delivery_cost || 0),
-                    image: p.image_url ? p.image_url.split(',')[0] : "https://via.placeholder.com/300",
+                    image: variantImage, // تم التحديث لاستخدام صورة اللون
                     size: selectedSize,
                     color: selectedColor,
                     quantity: 1
