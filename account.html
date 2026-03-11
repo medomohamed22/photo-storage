@@ -36,7 +36,6 @@
 
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
-        /* تتبع الطلبات */
         .order-progress { display: flex; justify-content: space-between; margin-top: 15px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
@@ -62,10 +61,9 @@
         .order-price { font-weight: 700; color: var(--primary-orange); font-size: 13px;}
         .order-variants { font-size: 11px; color: #666; background: var(--bg); padding: 3px 8px; border-radius: 8px; display: inline-flex; gap: 10px; width: fit-content;}
 
-        /* تنسيق ملخص السعر الجديد */
-        .order-summary { background: #fdfaf6; padding: 12px 15px; border-radius: 12px; margin-top: 5px; border: 1px solid #fceea7; display: flex; flex-direction: column; gap: 5px; }
-        .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #966114; }
-        .summary-row.total { border-top: 1px dashed #fceea7; padding-top: 5px; margin-top: 5px; font-weight: 900; font-size: 16px; color: var(--primary-orange); }
+        .order-summary { background: #fdfaf6; padding: 12px 15px; border-radius: 12px; margin-top: 5px; border: 1px solid #fceea7; display: flex; flex-direction: column; gap: 4px; }
+        .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: #966114; }
+        .summary-row.total-line { border-top: 1px dashed #fceea7; padding-top: 5px; margin-top: 5px; font-weight: 900; font-size: 15px; color: var(--primary-orange); }
 
         .old-price { text-decoration: line-through; color: #e74c3c; font-size: 12px; margin-right: 6px; opacity: 0.8; font-weight: 600; }
 
@@ -137,7 +135,6 @@
 
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
-            // قمنا بإضافة "shipping_price" إلى استعلام الـ products
             const { data, error } = await supabaseClient
                 .from('orders')
                 .select(`id, status, created_at, selected_size, selected_color, quantity, products ( title, image_url, price, old_price, colors, shipping_price )`)
@@ -166,7 +163,7 @@
             Object.values(groupedOrders).forEach(group => {
                 let itemsHtml = '';
                 let productsSubtotal = 0;
-                let maxShipping = 0; // سنأخذ أعلى سعر شحن في المجموعة كسياسة شحن موحد للطلب الواحد
+                let finalShipping = 0; 
                 
                 const orderStatus = group[0].status || 'قيد المراجعة';
                 const orderDate = new Date(group[0].created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
@@ -188,18 +185,18 @@
 
                     const oldPriceHtml = p.old_price ? `<span class="old-price">${p.old_price} ج.م</span>` : "";
                     
-                    // حساب سعر المنتجات
-                    const itemPrice = parseFloat(p.price) || 0;
-                    productsSubtotal += (itemPrice * order.quantity);
+                    const price = parseFloat(p.price) || 0;
+                    const qty = parseInt(order.quantity) || 1;
+                    productsSubtotal += (price * qty);
 
-                    // جلب سعر التوصيل لكل منتج ومقارنته للحصول على الأعلى في الطلبية
-                    const itemShipping = parseFloat(p.shipping_price) || 0;
-                    if(itemShipping > maxShipping) maxShipping = itemShipping;
+                    // نأخذ أعلى قيمة شحن موجودة في المنتجات كقيمة شحن للطلب بالكامل
+                    const sPrice = parseFloat(p.shipping_price) || 0;
+                    if(sPrice > finalShipping) finalShipping = sPrice;
 
                     let variantText = [];
                     if(order.selected_size) variantText.push(`<span>مقاس: <strong>${order.selected_size}</strong></span>`);
                     if(order.selected_color) variantText.push(`<span>لون: <strong>${order.selected_color}</strong></span>`);
-                    if(order.quantity > 1) variantText.push(`<span>الكمية: <strong>${order.quantity}</strong></span>`);
+                    if(qty > 1) variantText.push(`<span>الكمية: <strong>${qty}</strong></span>`);
                     
                     const variantHtml = variantText.length > 0 ? `<div class="order-variants">${variantText.join('')}</div>` : '';
 
@@ -215,8 +212,7 @@
                     `;
                 });
 
-                const totalWithShipping = productsSubtotal + maxShipping;
-
+                const totalBill = productsSubtotal + finalShipping;
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(orderStatus);
 
@@ -238,11 +234,11 @@
                             </div>
                             <div class="summary-row">
                                 <span>مصاريف التوصيل:</span>
-                                <span>${maxShipping === 0 ? 'مجاني' : maxShipping + ' ج.م'}</span>
+                                <span>${finalShipping === 0 ? 'مجاني' : finalShipping + ' ج.م'}</span>
                             </div>
-                            <div class="summary-row total">
+                            <div class="summary-row total-line">
                                 <span>الإجمالي الكلي:</span>
-                                <span>${totalWithShipping} ج.م</span>
+                                <span>${totalBill} ج.م</span>
                             </div>
                         </div>
 
@@ -313,11 +309,8 @@
                 if(!error) {
                     const card = document.getElementById(`wish-${productId}`);
                     if(card) card.remove();
-                    
                     const container = document.getElementById('wishlist-container');
-                    if(container.children.length === 0) {
-                        container.innerHTML = `<div class="status-msg">المفضلة فارغة.</div>`;
-                    }
+                    if(container.children.length === 0) container.innerHTML = `<div class="status-msg">المفضلة فارغة.</div>`;
                 }
             }
         }
