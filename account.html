@@ -36,7 +36,6 @@
 
         .section-title { padding: 10px 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
-        /* تتبع الطلبات */
         .order-progress { display: flex; justify-content: space-between; margin-top: 15px; position: relative; padding: 0 5px; }
         .order-progress::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: #eee; z-index: 1; }
         .progress-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
@@ -62,11 +61,10 @@
         .order-price { font-weight: 700; color: var(--primary-orange); font-size: 13px;}
         .order-variants { font-size: 11px; color: #666; background: var(--bg); padding: 3px 8px; border-radius: 8px; display: inline-flex; gap: 10px; width: fit-content;}
 
-        .order-summary { display: flex; justify-content: space-between; align-items: center; background: #fdfaf6; padding: 12px 15px; border-radius: 12px; margin-top: 5px; border: 1px solid #fceea7; }
-        .summary-label { font-weight: bold; font-size: 14px; color: #966114; }
-        .summary-total { font-weight: 900; font-size: 16px; color: var(--primary-orange); }
+        .order-summary { background: #fdfaf6; padding: 12px 15px; border-radius: 12px; margin-top: 5px; border: 1px solid #fceea7; display: flex; flex-direction: column; gap: 5px; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #966114; }
+        .summary-row.total { border-top: 1px dashed #fceea7; padding-top: 5px; margin-top: 5px; font-weight: 900; font-size: 16px; color: var(--primary-orange); }
 
-        /* تنسيق السعر قبل الخصم */
         .old-price { text-decoration: line-through; color: #e74c3c; font-size: 12px; margin-right: 6px; opacity: 0.8; font-weight: 600; }
 
         .wishlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
@@ -137,10 +135,10 @@
 
         async function loadMyOrders(userId) {
             const container = document.getElementById('orders-list');
-            // قمنا بإضافة "colors" إلى استعلام الـ products لكي نتمكن من مطابقة اللون مع الصورة
+            // قمنا بإضافة "shipping_price" إلى الاستعلام
             const { data, error } = await supabaseClient
                 .from('orders')
-                .select(`id, status, created_at, selected_size, selected_color, quantity, products ( title, image_url, price, old_price, colors )`)
+                .select(`id, status, created_at, selected_size, selected_color, quantity, products ( title, image_url, price, old_price, colors, shipping_price )`)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
@@ -156,47 +154,46 @@
             const container = document.getElementById('orders-list');
             container.innerHTML = "";
             
-            // تجميع الطلبات بناءً على وقت الإنشاء (باعتبار أن المنتجات المضافة في نفس السلة لها نفس الطابع الزمني تقريباً)
             const groupedOrders = {};
             data.forEach(item => {
-                const timeKey = item.created_at.substring(0, 19); // أخذ التاريخ والوقت لتجميع الطلب
+                const timeKey = item.created_at.substring(0, 19);
                 if (!groupedOrders[timeKey]) groupedOrders[timeKey] = [];
                 groupedOrders[timeKey].push(item);
             });
 
-            // رسم الكروت المجمعة
             Object.values(groupedOrders).forEach(group => {
                 let itemsHtml = '';
-                let orderTotalPrice = 0;
+                let productsTotal = 0;
+                let maxShipping = 0; // سنأخذ أعلى سعر شحن بين المنتجات المجمعة في طلب واحد
                 
-                // أخذ حالة وتاريخ الطلب من أول عنصر في المجموعة
                 const orderStatus = group[0].status || 'قيد المراجعة';
                 const orderDate = new Date(group[0].created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
-                // يمكننا استخدام معرف أول منتج كمعرف رمزي للطلب المجمع بأكمله
                 const groupRefId = group[0].id; 
 
                 group.forEach(order => {
                     const p = order.products;
                     if(!p) return; 
 
-                    // --- منطق تحديد الصورة حسب اللون المختار ---
+                    // تحديد الصورة حسب اللون
                     let imgIndex = 0;
                     if (order.selected_color && p.colors) {
                         const colorsArray = p.colors.split(',').map(c => c.trim());
                         const colorIdx = colorsArray.indexOf(order.selected_color.trim());
-                        if (colorIdx !== -1) {
-                            imgIndex = colorIdx;
-                        }
+                        if (colorIdx !== -1) imgIndex = colorIdx;
                     }
                     
                     const imgs = p.image_url ? p.image_url.split(',') : ['https://via.placeholder.com/80'];
-                    // نختار الصورة بناءً على ترتيب اللون، وإذا لم تكن موجودة نأخذ الصورة الأولى
                     const img = (imgs[imgIndex] || imgs[0]).trim();
-                    // ------------------------------------------
 
                     const oldPriceHtml = p.old_price ? `<span class="old-price">${p.old_price} ج.م</span>` : "";
-                    const itemTotal = (parseFloat(p.price) * order.quantity);
-                    orderTotalPrice += itemTotal;
+                    
+                    // حساب إجمالي المنتجات
+                    const itemPrice = parseFloat(p.price) || 0;
+                    productsTotal += (itemPrice * order.quantity);
+
+                    // حساب سعر الشحن (نأخذ القيمة المرفوعة من المنتج)
+                    const itemShipping = parseFloat(p.shipping_price) || 0;
+                    if(itemShipping > maxShipping) maxShipping = itemShipping;
 
                     let variantText = [];
                     if(order.selected_size) variantText.push(`<span>مقاس: <strong>${order.selected_size}</strong></span>`);
@@ -217,7 +214,8 @@
                     `;
                 });
 
-                // شريط التتبع
+                const totalBill = productsTotal + maxShipping;
+
                 const steps = ['قيد المراجعة', 'تم التأكيد', 'تم الشحن', 'مكتمل'];
                 const currentIdx = steps.indexOf(orderStatus);
 
@@ -233,8 +231,18 @@
                         </div>
 
                         <div class="order-summary">
-                            <span class="summary-label">إجمالي الطلب:</span>
-                            <span class="summary-total">${orderTotalPrice} ج.م</span>
+                            <div class="summary-row">
+                                <span>إجمالي المنتجات:</span>
+                                <span>${productsTotal} ج.م</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>مصاريف الشحن:</span>
+                                <span>${maxShipping === 0 ? 'شحن مجاني' : maxShipping + ' ج.م'}</span>
+                            </div>
+                            <div class="summary-row total">
+                                <span>الإجمالي الكلي:</span>
+                                <span>${totalBill} ج.م</span>
+                            </div>
                         </div>
 
                         <div class="order-progress">
@@ -250,7 +258,6 @@
             });
         }
 
-        // --- نظام التحديث اللحظي (Real-time) ---
         function subscribeToOrderUpdates(userId) {
             supabaseClient
                 .channel('realtime_orders')
@@ -260,12 +267,10 @@
                     table: 'orders',
                     filter: `user_id=eq.${userId}` 
                 }, payload => {
-                    // نقوم بإعادة تحميل الطلبات بالكامل لضمان تحديث حالة المجموعة كلها بشكل متناسق
                     loadMyOrders(userId);
                 })
                 .subscribe();
         }
-        // ----------------------------------------------------
 
         async function loadMyWishlist(userId) {
             const container = document.getElementById('wishlist-container');
@@ -307,11 +312,8 @@
                 if(!error) {
                     const card = document.getElementById(`wish-${productId}`);
                     if(card) card.remove();
-                    
                     const container = document.getElementById('wishlist-container');
-                    if(container.children.length === 0) {
-                        container.innerHTML = `<div class="status-msg">المفضلة فارغة.</div>`;
-                    }
+                    if(container.children.length === 0) container.innerHTML = `<div class="status-msg">المفضلة فارغة.</div>`;
                 }
             }
         }
