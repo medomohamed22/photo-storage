@@ -236,9 +236,9 @@
                 <h4 style="margin-bottom: 10px; font-size: 15px;"><i class="fa-solid fa-truck-fast"></i> بيانات التوصيل:</h4>
                 <form id="checkoutForm" style="display:flex; flex-direction:column; gap:10px;">
                     <input type="text" id="order-name" class="form-input" placeholder="الاسم بالكامل" required>
-                    <input type="tel" id="order-phone" class="form-input" placeholder="رقم الهاتف الأساسي" required>
-                    <input type="tel" id="order-alt-phone" class="form-input" placeholder="رقم هاتف بديل (اختياري)">
-                    <input type="text" id="order-address" class="form-input" placeholder="العنوان بالتفصيل (المحافظة، المنطقة، الشارع)" required>
+                    <input type="tel" id="order-phone" class="form-input" placeholder="رقم الهاتف الأساسي (11 رقم)" required pattern="[0-9]{11}" title="يجب إدخال 11 رقم">
+                    <input type="tel" id="order-alt-phone" class="form-input" placeholder="رقم هاتف بديل (اختياري)" pattern="[0-9]{11}" title="يجب إدخال 11 رقم">
+                    <input type="text" id="order-address" class="form-input" placeholder="العنوان بالتفصيل (المحافظة، المنطقة، الشارع)" required minlength="10">
                     <button type="submit" class="btn-order" id="submitOrderBtn">تأكيد الطلب بالكامل</button>
                 </form>
             </div>
@@ -263,7 +263,7 @@
         let currentProductDetails = null;
         let selectedSize = null;
         let selectedColor = null;
-        let selectedColorIndex = 0; // تم إضافة هذا المتغير لتتبع رقم صورة اللون المختار
+        let selectedColorIndex = 0;
 
         function showToast(message, type = "success") {
             const container = document.getElementById("toast-container");
@@ -394,21 +394,13 @@
             const siblings = el.parentElement.querySelectorAll('.variant-pill');
             siblings.forEach(s => s.classList.remove('active'));
             el.classList.add('active');
-            
             if(type === 'size') selectedSize = val;
-            
             if(type === 'color') {
                 selectedColor = val;
-                selectedColorIndex = index; // حفظ رقم اللون هنا لاستخدامه عند الإضافة للسلة
-                
+                selectedColorIndex = index;
                 const gallery = document.getElementById('m-gallery');
                 const images = gallery.querySelectorAll('img');
-                if (images[index]) {
-                    gallery.scrollTo({
-                        left: images[index].offsetLeft,
-                        behavior: 'smooth'
-                    });
-                }
+                if (images[index]) gallery.scrollTo({ left: images[index].offsetLeft, behavior: 'smooth' });
             }
         }
 
@@ -418,29 +410,21 @@
             const colorWrap = document.getElementById('m-colors-wrapper');
             const sizeCont = document.getElementById('m-sizes-container');
             const colorCont = document.getElementById('m-colors-container');
-            
-            selectedSize = null; selectedColor = null; selectedColorIndex = 0; // إعادة التعيين
+            selectedSize = null; selectedColor = null; selectedColorIndex = 0;
             sizeCont.innerHTML = ""; colorCont.innerHTML = "";
             let hasVariants = false;
-
             if (sizesStr && sizesStr.trim() !== "") {
                 const sizes = sizesStr.split(',');
-                sizes.forEach(s => {
-                    sizeCont.innerHTML += `<div class="variant-pill size-pill" onclick="selectVariant(this, 'size', '${s.trim()}', 0)">${s.trim()}</div>`;
-                });
+                sizes.forEach(s => { sizeCont.innerHTML += `<div class="variant-pill size-pill" onclick="selectVariant(this, 'size', '${s.trim()}', 0)">${s.trim()}</div>`; });
                 sizeWrap.style.display = 'block';
                 hasVariants = true;
             } else { sizeWrap.style.display = 'none'; }
-
             if (colorsStr && colorsStr.trim() !== "") {
                 const colors = colorsStr.split(',');
-                colors.forEach((c, index) => {
-                    colorCont.innerHTML += `<div class="variant-pill color-pill" onclick="selectVariant(this, 'color', '${c.trim()}', ${index})">${c.trim()}</div>`;
-                });
+                colors.forEach((c, index) => { colorCont.innerHTML += `<div class="variant-pill color-pill" onclick="selectVariant(this, 'color', '${c.trim()}', ${index})">${c.trim()}</div>`; });
                 colorWrap.style.display = 'block';
                 hasVariants = true;
             } else { colorWrap.style.display = 'none'; }
-
             sec.style.display = hasVariants ? 'block' : 'none';
         }
 
@@ -477,21 +461,18 @@
             if (p.sizes && p.sizes.trim() !== "" && !selectedSize) return showToast("يرجى اختيار المقاس أولاً", "error");
             if (p.colors && p.colors.trim() !== "" && !selectedColor) return showToast("يرجى اختيار اللون أولاً", "error");
             const existingItem = cart.find(i => i.id === p.id && i.size === selectedSize && i.color === selectedColor);
-            
             if (existingItem) {
                 existingItem.quantity = (existingItem.quantity || 1) + 1;
             } else {
-                // سحب الصور، ثم تحديد الصورة الموافقة لرقم اللون المختار (إذا لم يجدها سيأخذ الصورة الأولى كاحتياطي)
                 const imgs = p.image_url ? p.image_url.split(',') : ["https://via.placeholder.com/300"];
                 const variantImage = (imgs[selectedColorIndex] || imgs[0]).trim();
-
                 const item = {
                     cart_id: Date.now(),
                     id: p.id,
                     title: p.title,
                     price: parseFloat(p.price),
                     delivery_cost: parseFloat(p.delivery_cost || 0),
-                    image: variantImage, // تم التحديث لاستخدام صورة اللون
+                    image: variantImage,
                     size: selectedSize,
                     color: selectedColor,
                     quantity: 1
@@ -602,11 +583,20 @@
 
         document.getElementById('checkoutForm').onsubmit = async (e) => {
             e.preventDefault();
+            
+            // تحقق إضافي للهاتف البديل إذا تم إدخاله (لأن المتصفح قد يتخطى الـ pattern إذا كان الحقل فارغاً)
+            const altPhoneInput = document.getElementById('order-alt-phone');
+            if(altPhoneInput.value.length > 0 && altPhoneInput.value.length !== 11) {
+                return showToast("رقم الهاتف البديل يجب أن يكون 11 رقماً", "error");
+            }
+
             if(!currentUser) return showToast("يرجى تسجيل الدخول أولاً لتتمكن من الطلب!", "error");
             if(cart.length === 0) return;
+            
             const btn = document.getElementById('submitOrderBtn');
             btn.innerText = "جاري تأكيد الطلبات...";
             btn.disabled = true;
+            
             const ordersToInsert = cart.map(item => ({
                 user_id: currentUser.id,
                 product_id: item.id,
@@ -615,12 +605,14 @@
                 quantity: item.quantity || 1,
                 full_name: document.getElementById('order-name').value,
                 phone: document.getElementById('order-phone').value,
-                alt_phone: document.getElementById('order-alt-phone').value || null,
+                alt_phone: altPhoneInput.value || null,
                 address: document.getElementById('order-address').value
             }));
+
             const { error } = await supabaseClient.from('orders').insert(ordersToInsert);
             btn.innerText = "تأكيد الطلب بالكامل";
             btn.disabled = false;
+            
             if(!error) { 
                 cart = []; 
                 localStorage.removeItem('shopping_cart');
